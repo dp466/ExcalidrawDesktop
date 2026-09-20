@@ -27,3 +27,6 @@ vectors so they adapt to the app's light and dark themes.
 
 This replaces the earlier monitor-and-pencil artwork and the unused sword asset.
 Build 129 is the first build with this identity.
+
+The artwork's MIT notice covers copyright reuse, not blanket trademark permission
+or endorsement. See [distribution status](DISTRIBUTION.md) before public release.

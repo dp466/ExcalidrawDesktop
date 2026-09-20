@@ -20,6 +20,9 @@ The complete implementation summary is in [docs/FORK-CHANGES.md](docs/FORK-CHANG
 
 ## Build and install
 
+Source is available on GitHub. A public downloadable binary is pending dependency
+licensing review; see [distribution status and installer instructions](docs/DISTRIBUTION.md).
+
 Requirements: an Apple Silicon Mac, Xcode 27 command-line tools, Node.js 24, and network access for the first dependency download.
 
 ```sh

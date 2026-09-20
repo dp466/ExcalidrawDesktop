@@ -1,0 +1,53 @@
+diff --git a/Sources/SwiftyDMG.swift b/Sources/SwiftyDMG.swift
+index 3435ffc..91d83d6 100644
+--- a/Sources/SwiftyDMG.swift
++++ b/Sources/SwiftyDMG.swift
+@@ -79,40 +79,14 @@ struct CreateDMG: AsyncParsableCommand {
+         }
+         
+         
+-        try await withThrowingTaskGroup(of: Void.self) { [verbose] taskGroup in
+-            taskGroup.addTask {
+-                let url = try await AppDMG.default.createDMG(
+-                    url: url,
+-                    to: desURL,
+-                    backgroundImage: bgURL,
+-                    codesign: codesignOption
+-                ) { progress in
+-                    if verbose {
+-                        print("\r", terminator: "")
+-                        print(progress.description)
+-                    }
+-                }
+-                print("\r", terminator: "")
+-                print("create-dmg success🎉: \(url.path)")
+-            }
+-            
+-            taskGroup.addTask {
+-                let animationCharacters = ["-", "\\", "|", "/"]
+-                let animationInterval = 0.1
+-                let animationCycles = 100
+-                
+-                for _ in 0..<animationCycles {
+-                    for character in animationCharacters {
+-                        print("\rcreate-dmg \(character)", terminator: "")
+-                        fflush(stdout) // 刷新输出，以立即显示字符
+-                        try await Task.sleep(nanoseconds: UInt64(Int(1e+9 * animationInterval)))
+-                    }
+-                }
+-                print("\r", terminator: "") // 清除最后的动画字符
+-            }
+-            
+-            try await taskGroup.next()
+-            taskGroup.cancelAll()
++        let completedURL = try await AppDMG.default.createDMG(
++            url: url,
++            to: desURL,
++            backgroundImage: bgURL,
++            codesign: codesignOption
++        ) { progress in
++            if verbose { print(progress.description) }
+         }
++        print("create-dmg success: \(completedURL.path)")
+     }
+ }

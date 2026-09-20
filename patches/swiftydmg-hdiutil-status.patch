@@ -1,0 +1,29 @@
+diff --git a/Sources/hdiutil/hdiutil.swift b/Sources/hdiutil/hdiutil.swift
+index db0080a..0ff4543 100644
+--- a/Sources/hdiutil/hdiutil.swift
++++ b/Sources/hdiutil/hdiutil.swift
+@@ -404,17 +404,14 @@ internal extension hdiutilClass {
+                 struct TaskError: LocalizedError {
+                     var errorDescription: String?
+                 }
+-                if #available(macOS 10.15.4, *), let data = try errPipe.fileHandleForReading.readToEnd() {
+-                    guard data.isEmpty else {
+-                        throw hdiutilError.processError(String(data: data, encoding: .utf8))
+-                    }
+-                } else {
+-                    let data = errPipe.fileHandleForReading.readDataToEndOfFile()
+-                    guard data.isEmpty else {
+-                        throw hdiutilError.processError(String(data: data, encoding: .utf8))
+-                    }
++                let errorData = errPipe.fileHandleForReading.readDataToEndOfFile()
++                guard task.terminationStatus == 0 else {
++                    throw hdiutilError.processError(String(data: errorData, encoding: .utf8)
++                        ?? "hdiutil exited with status \(task.terminationStatus)")
+                 }
+-                
++                // Successful commands may emit deprecation warnings on newer macOS.
++                // Only a nonzero exit status indicates command failure.
++
+                 if #available(macOS 10.15.4, *), let data = try pipe.fileHandleForReading.readToEnd() {
+                     output = String(data: data, encoding: .utf8) ?? ""
+                 } else {
