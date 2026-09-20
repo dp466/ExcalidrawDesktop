@@ -17,6 +17,6 @@ struct ToolbarDoneButton: View {
         } label: {
             Label(.localizable(.generalButtonDone), systemSymbol: .checkmark)
         }
-        .modernButtonStyle(style: .glassProminent)
+        .editorChromeButtonStyle(style: .glassProminent)
     }
 }

@@ -335,7 +335,7 @@ struct ScreenAnnotationView: View {
             }
         }
         .padding(20)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .background(editorChromeSurface(), in: RoundedRectangle(cornerRadius: 16))
     }
 }
 #endif

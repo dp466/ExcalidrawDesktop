@@ -129,7 +129,7 @@ struct LockedFileUnlockView: View {
     @ViewBuilder
     private var background: some View {
         Rectangle()
-            .fill(.ultraThickMaterial)
+            .fill(editorChromeSurface(material: .ultraThick))
             .ignoresSafeArea()
     }
 
@@ -161,7 +161,7 @@ struct LockedFileUnlockView: View {
             } label: {
                 systemUnlockButtonLabel
             }
-            .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
+            .editorChromeButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
             .disabled(isUnlockingOrLoading || !systemUnlockAvailability.isAvailable)
             .help(systemUnlockAvailability.buttonTitle)
 
@@ -203,7 +203,7 @@ struct LockedFileUnlockView: View {
             } label: {
                 recoveryUnlockButtonLabel
             }
-            .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
+            .editorChromeButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
             .disabled(inlineRecoveryKeyButtonDisabled)
         }
         .onAppear {

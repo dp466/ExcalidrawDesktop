@@ -173,12 +173,12 @@ struct ArchiveFilesView: View {
                         .padding(.vertical, 1)
                 }
             }
-            .modernButtonStyle(style: .glassProminent, size: .large, shape: .modern)
+            .editorChromeButtonStyle(style: .glassProminent, size: .large, shape: .modern)
             .disabled(isArchiving || lockedFileCountForArchive == nil)
 
             Spacer()
         }
-        .modernButtonStyle(style: .glass, size: .regular, shape: .modern)
+        .editorChromeButtonStyle(style: .glass, size: .regular, shape: .modern)
 #if os(macOS)
         .frame(height: macOSActionsSectionHeight)
 #endif

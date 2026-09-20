@@ -77,7 +77,7 @@ struct CloudStorageConflictResolutionSheetView: View {
             } label: {
                 Image(systemSymbol: .xmark)
             }
-            .modernButtonStyle(style: .glass, size: .large, shape: .circle)
+            .editorChromeButtonStyle(style: .glass, size: .large, shape: .circle)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(
@@ -142,7 +142,7 @@ struct CloudStorageConflictResolutionSheetView: View {
             } label: {
                 Text(.localizable(.generalButtonRetry))
             }
-            .modernButtonStyle(style: .glassProminent, shape: .modern)
+            .editorChromeButtonStyle(style: .glassProminent, shape: .modern)
         }
         .padding()
     }
@@ -269,7 +269,7 @@ struct CloudStorageConflictResolutionSheetView: View {
             } label: {
                 Text(.localizable(.generalButtonCancel))
             }
-            .modernButtonStyle(style: .glass, shape: .modern)
+            .editorChromeButtonStyle(style: .glass, shape: .modern)
             .keyboardShortcut(.cancelAction)
 
             Button {
@@ -287,7 +287,7 @@ struct CloudStorageConflictResolutionSheetView: View {
                     )
                 }
             }
-            .modernButtonStyle(style: .glassProminent, shape: .modern)
+            .editorChromeButtonStyle(style: .glassProminent, shape: .modern)
             .disabled(selectedVersion == nil || isResolving)
         }
         .padding()

@@ -18,7 +18,7 @@ struct CircularProgressIndicator: View {
         ZStack {
             // Background circle
             Circle()
-                .fill(.regularMaterial)
+                .fill(editorChromeSurface())
                 .frame(width: size, height: size)
 
             // Progress arc

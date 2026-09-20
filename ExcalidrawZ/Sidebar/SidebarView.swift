@@ -11,6 +11,7 @@ import CoreData
 import ChocofordUI
 
 struct SidebarView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.alertToast) private var alertToast
     @Environment(\.searchExcalidrawAction) private var searchExcalidraw
     
@@ -34,7 +35,12 @@ struct SidebarView: View {
     @ViewBuilder
     private func oneColumnSidebar() -> some View {
         GroupListView(sortField: fileState.sortField)
-            .border(.top, color: .separatorColor)
+            .background(NavigationShellTheme.surface(for: colorScheme))
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(NavigationShellTheme.border(for: colorScheme))
+                    .frame(height: 1)
+            }
 #if os(iOS)
             .background {
                 List(selection: fileState.activeFileBinding) {}

@@ -20,7 +20,7 @@ struct MenuBarImportHandlerModifier: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            .bindWindow($window)
+            .bindAppWindow($window)
             .onReceive(NotificationCenter.default.publisher(for: .shouldHandleImport)) { notification in
                 handleImport(notification)
             }
@@ -28,7 +28,15 @@ struct MenuBarImportHandlerModifier: ViewModifier {
     
     private func handleImport(_ notification: Notification) {
         guard let urls = notification.object as? [URL] else { return }
+#if os(macOS)
+        if let target = notification.userInfo?["targetWindowNumber"] as? Int {
+            guard window?.windowNumber == target else { return }
+        } else {
+            guard window?.isKeyWindow == true else { return }
+        }
+#else
         guard window?.isKeyWindow == true else { return }
+#endif
         
         Task.detached {
             do {

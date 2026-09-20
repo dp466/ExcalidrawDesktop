@@ -30,8 +30,11 @@ final class ApplicationTerminationCanvasFlushCoordinator {
         self.fileState = fileState
     }
 
-    func flushPendingCanvasSnapshot() async {
-        await fileState?.flushPendingCanvasSnapshotBeforeTermination()
+    func beginTermination() { fileState?.beginApplicationTermination() }
+    func cancelTermination() { fileState?.cancelApplicationTermination() }
+
+    func flushPendingCanvasSnapshot() async -> Bool {
+        await fileState?.flushPendingCanvasSnapshotBeforeTermination() ?? true
     }
 }
 
@@ -101,19 +104,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        if AppRuntime.isRunningTests { return .terminateNow }
         guard !isHandlingApplicationTermination else {
             return .terminateCancel
         }
 
         isHandlingApplicationTermination = true
+        ApplicationTerminationCanvasFlushCoordinator.shared.beginTermination()
         scheduleTerminationSheetIfNeeded(for: sender)
         terminationTask = Task { @MainActor [weak self, weak sender] in
             guard let self, let sender else { return }
-            await prepareForApplicationTermination()
+            let canTerminate = await prepareForApplicationTermination()
             guard !Task.isCancelled, isHandlingApplicationTermination else {
                 return
             }
-            finishTerminationRequest(sender, shouldTerminate: true)
+            finishTerminationRequest(sender, shouldTerminate: canTerminate)
         }
         return .terminateLater
     }
@@ -169,6 +174,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         terminationTask = nil
         ApplicationTerminationPresentationCoordinator.shared.dismiss()
         isHandlingApplicationTermination = false
+        if !shouldTerminate {
+            ApplicationTerminationCanvasFlushCoordinator.shared.cancelTermination()
+        }
         application.reply(toApplicationShouldTerminate: shouldTerminate)
     }
     
@@ -177,22 +185,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @MainActor
-    private func prepareForApplicationTermination() async {
-        guard !Task.isCancelled else { return }
+    private func prepareForApplicationTermination() async -> Bool {
+        guard !Task.isCancelled else { return false }
         updateTerminationStage(.screenAnnotationSaves)
         await ScreenAnnotationSaveTaskManager.shared.waitUntilIdle()
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled else { return false }
         updateTerminationStage(.backgroundDocumentOperations)
         await OffscreenExcalidrawEditor.waitForPendingOperations()
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled else { return false }
         updateTerminationStage(.currentDrawing)
-        await ApplicationTerminationCanvasFlushCoordinator.shared.flushPendingCanvasSnapshot()
-        guard !Task.isCancelled else { return }
+        guard await ApplicationTerminationCanvasFlushCoordinator.shared.flushPendingCanvasSnapshot() else {
+            logger.error("Cancelled termination because the current drawing could not be saved")
+            return false
+        }
+        guard !Task.isCancelled else { return false }
         updateTerminationStage(.applicationData)
         PersistenceController.shared.save()
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled else { return false }
         updateTerminationStage(.backup)
         await backupFilesBeforeTermination()
+        return !Task.isCancelled
     }
 
     @MainActor

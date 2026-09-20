@@ -118,7 +118,7 @@ private struct WindowOnNotificationViewModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .bindWindow($window)
+            .bindAppWindow($window)
             .onReceive(NotificationCenter.default.publisher(for: event.notificationName)) { notification in
                 // Only handle if notification is from the current window
                 guard let notificationWindow = notification.object as? NSWindow,

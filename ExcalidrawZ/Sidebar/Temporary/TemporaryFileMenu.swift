@@ -74,6 +74,8 @@ enum TemporaryFileActions {
 
 
 struct TemporaryFileMenuItems: View {
+    @Environment(\.dismissFlatFileMenu) private var dismissFlatFileMenu
+
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.alertToast) private var alertToast
     
@@ -117,7 +119,7 @@ struct TemporaryFileMenuItems: View {
     
     var body: some View {
         // Open - only for single file
-        Button {
+        FileActionButton {
             if let file = firstFile {
                 fileState.setActiveFile(.temporaryFile(file))
             }
@@ -129,7 +131,7 @@ struct TemporaryFileMenuItems: View {
         }
         .disabled(!isSingleFile)
         
-        Menu {
+        FileActionSubmenu {
             let groups: [Group] = topLevelGroups
                 .filter{ $0.groupType != .trash }
                 .sorted { a, b in
@@ -162,7 +164,7 @@ struct TemporaryFileMenuItems: View {
             }
         }
         
-        Menu {
+        FileActionSubmenu {
             ForEach(topLevelLocalFolders) { folder in
                 MoveToGroupMenu(
                     destination: folder,
@@ -186,7 +188,7 @@ struct TemporaryFileMenuItems: View {
         
         Divider()
         
-        Button {
+        FileActionButton {
             TemporaryFileActions.close(files, fileState: fileState)
         } label: {
             Label {

@@ -11,7 +11,11 @@ import Logging
 
 class PersistenceController {
     static let shared = {
-        let cloudKitEnabled = !UserDefaults.standard.bool(forKey: "DisableCloudSync")
+        if AppRuntime.isRunningTests {
+            return PersistenceController(inMemory: true, cloudKitEnabled: false)
+        }
+        let cloudKitEnabled = !ExcalidrawFeaturePolicy.isLocalMacOSFork &&
+            !UserDefaults.standard.bool(forKey: "DisableCloudSync")
         let stack = PersistenceController(cloudKitEnabled: cloudKitEnabled)
         stack.prepare()
         return stack
@@ -45,7 +49,7 @@ class PersistenceController {
     ///   - cloudKitEnabled: Enabled status for app internal.
     init(inMemory: Bool = false, cloudKitEnabled: Bool = true) {
         self.logger.info("[PersistenceController] init with\(cloudKitEnabled ? "" : "out") cloudKit")
-        if cloudKitEnabled {
+        if cloudKitEnabled && !inMemory {
             container = NSPersistentCloudKitContainer(name: "Model")
         } else {
             container = NSPersistentContainer(name: "Model")
@@ -54,26 +58,31 @@ class PersistenceController {
         let storeDir = FileManager.default.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask
-        )[0].appendingPathComponent("ExcalidrawZ", conformingTo: .directory)
+        )[0].appendingPathComponent(
+            ExcalidrawFeaturePolicy.isLocalMacOSFork ? "ExcalidrawDesktop" : "ExcalidrawZ",
+            conformingTo: .directory
+        )
         
         if !FileManager.default.fileExists(at: storeDir) {
             try? FileManager.default.createDirectory(at: storeDir, withIntermediateDirectories: false)
         }
         
         let cloudStoreDescription: NSPersistentStoreDescription = if inMemory {
-            NSPersistentStoreDescription(url: URL(fileURLWithPath: "/dev/null"))
+            NSPersistentStoreDescription(url: URL(string: "memory://test-\(UUID().uuidString)/Cloud")!)
         } else {
             // Historical reason
             NSPersistentStoreDescription(
-                url: container.persistentStoreDescriptions.first?.url ??
-                storeDir.appendingPathComponent("Model.sqlite")
+                url: ExcalidrawFeaturePolicy.isLocalMacOSFork
+                    ? storeDir.appendingPathComponent("Model.sqlite")
+                    : (container.persistentStoreDescriptions.first?.url ??
+                       storeDir.appendingPathComponent("Model.sqlite"))
             )
         }
-        cloudStoreDescription.type = NSSQLiteStoreType
+        cloudStoreDescription.type = inMemory ? NSInMemoryStoreType : NSSQLiteStoreType
         cloudStoreDescription.configuration = "Cloud"
 
         // Only configure CloudKit options when CloudKit is enabled
-        if cloudKitEnabled {
+        if cloudKitEnabled && !inMemory {
             cloudStoreDescription.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
                 containerIdentifier: "iCloud.com.chocoford.excalidraw"
             )
@@ -84,11 +93,11 @@ class PersistenceController {
         
         let localStoreLocation = storeDir.appendingPathComponent("ExcalidrawZLocal.sqlite")
         let localStoreDescription: NSPersistentStoreDescription = if inMemory {
-            NSPersistentStoreDescription(url: URL(fileURLWithPath: "/dev/null"))
+            NSPersistentStoreDescription(url: URL(string: "memory://test-\(UUID().uuidString)/Local")!)
         } else {
             NSPersistentStoreDescription(url: localStoreLocation)
         }
-        localStoreDescription.type = NSSQLiteStoreType
+        localStoreDescription.type = inMemory ? NSInMemoryStoreType : NSSQLiteStoreType
         localStoreDescription.configuration = "Local"
         localStoreDescription.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
         localStoreDescription.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)

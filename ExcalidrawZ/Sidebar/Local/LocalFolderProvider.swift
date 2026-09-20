@@ -43,24 +43,20 @@ struct LocalFoldersProvider<Content: View>: View {
 
     @State private var window: PlatformWindow?
     @State private var folderUrlBeforeResignKey: URL?
+    @State private var refreshGeneration = 0
+    @State private var refreshTask: Task<Void, Never>?
 
     
     var body: some View {
         content(folders)
-            .bindWindow($window)
+            .bindAppWindow($window)
     #if os(macOS)
             .onReceive(
                 NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
             ) { notification in
                 if let window = notification.object as? NSWindow,
                    window == self.window {
-                    do {
-                        try self.refreshFoldersContent()
-                        try redirectToCurrentFolder()
-                    } catch {
-                        alertToast(error)
-                    }
-                    folderUrlBeforeResignKey = nil
+                    scheduleFoldersRefresh()
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { notification in
@@ -74,28 +70,68 @@ struct LocalFoldersProvider<Content: View>: View {
 #elseif os(iOS)
             .watch(value: scenePhase) { newValue in
                 if newValue == .active {
-                    do {
-                        try self.refreshFoldersContent()
-                        try redirectToCurrentFolder()
-                    } catch {
-                        alertToast(error)
-                    }
+                    scheduleFoldersRefresh()
                 }
             }
 #endif
+            .onDisappear {
+                refreshTask?.cancel()
+            }
     }
 
-    @MainActor
-    private func refreshFoldersContent() throws {
-        for i in 0..<folders.count {
-            if let change = try folders[i].refreshResolvedLocation(context: viewContext),
-               let folderUrlBeforeResignKey {
-                self.folderUrlBeforeResignKey = folderUrlBeforeResignKey.rebased(
-                    from: change.oldURL,
-                    to: change.newURL
-                ) ?? folderUrlBeforeResignKey
+    private func scheduleFoldersRefresh() {
+        refreshGeneration &+= 1
+        let generation = refreshGeneration
+        let folderIDs = folders.map(\.objectID)
+        let previousURL = folderUrlBeforeResignKey
+
+        refreshTask?.cancel()
+        refreshTask = Task { @MainActor in
+            do {
+                try await Task.sleep(nanoseconds: 100_000_000)
+                let rebasedURL = try await Self.refreshFoldersContent(
+                    folderIDs: folderIDs,
+                    previousURL: previousURL
+                )
+                try Task.checkCancellation()
+                guard generation == refreshGeneration else { return }
+                folderUrlBeforeResignKey = rebasedURL
+                try redirectToCurrentFolder()
+                folderUrlBeforeResignKey = nil
+            } catch is CancellationError {
+                return
+            } catch {
+                guard generation == refreshGeneration else { return }
+                alertToast(error)
             }
-            try folders[i].refreshChildren(context: viewContext)
+        }
+    }
+
+    private static func refreshFoldersContent(
+        folderIDs: [NSManagedObjectID],
+        previousURL: URL?
+    ) async throws -> URL? {
+        let context = PersistenceController.shared.newTaskContext()
+        return try await context.perform {
+            var rebasedURL = previousURL
+            for folderID in folderIDs {
+                try Task.checkCancellation()
+                guard let folder = try context.existingObject(with: folderID) as? LocalFolder else {
+                    continue
+                }
+                if let change = try folder.refreshResolvedLocation(context: context),
+                   let currentURL = rebasedURL {
+                    rebasedURL = currentURL.rebased(
+                        from: change.oldURL,
+                        to: change.newURL
+                    ) ?? currentURL
+                }
+                // Refresh one level per root on activation. Expanded rows load
+                // their own immediate children, so a focus event does not need
+                // to walk an arbitrarily deep directory tree.
+                try folder.refreshChildren(context: context, recursively: false)
+            }
+            return rebasedURL
         }
     }
 

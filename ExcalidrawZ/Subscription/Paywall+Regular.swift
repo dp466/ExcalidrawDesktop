@@ -9,52 +9,12 @@ import SwiftUI
 
 import ChocofordUI
 import LLMKit
-import Shimmer
 import SFSafeSymbols
 
 extension Paywall {
     @ViewBuilder
     func regularContent() -> some View {
-        ZStack {
-            lagacyView()
-                .offset(x: route == .plans ? 0 : -100)
-
-            if route == .donation {
-#if APP_STORE
-                let isAppStore = true
-#else
-                let isAppStore = false
-#endif
-                SupportChocofordView(isAppStore: isAppStore)
-                    .contentPadding(40)
-                    .bindingSupportHistoryPresentedValue($isDonationHistoryPresented)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.top, horizontalSizeClass == .compact ? 30 : 0)
-                    .overlay(alignment: .topLeading) {
-                        if !isDonationHistoryPresented {
-                            Button {
-                                route = .plans
-                            } label: {
-                                Label(
-                                    .localizable(.navigationButtonBack),
-                                    systemSymbol: .chevronLeft
-                                )
-                            }
-                            .buttonStyle(.text)
-                            .padding(40)
-                        }
-                    }
-                    .animation(.default, value: isDonationHistoryPresented)
-                    .background {
-                        Color.windowBackgroundColor
-                            .ignoresSafeArea()
-                    }
-                    .compositingGroup()
-                    .transition(.move(edge: .trailing))
-                    .zIndex(1)
-            }
-        }
-        .animation(.easeOut(duration: 0.3), value: route)
+        lagacyView()
 #if os(macOS)
         .frame(width: horizontalSizeClass == .compact ? 630 : 1040)
 #endif
@@ -172,21 +132,6 @@ extension Paywall {
                             restorePurchasesButton()
 #endif
                             privacyPolicyButton()
-
-                            Button {
-                                route = .donation
-                            } label: {
-                                HStack {
-                                    Text(.localizable(.paywallButtonDonation))
-                                    Image(systemSymbol: .chevronRight2)
-                                }
-                                .foregroundStyle(.primary)
-                                .shimmering(
-                                    animation: Animation.linear(duration: 1).delay(2).repeatForever(autoreverses: false),
-                                    gradient: Gradient(colors: [.white, .white.opacity(0.3), .white])
-                                )
-                            }
-                            .buttonStyle(.borderless)
                         }
                         .font(.footnote)
 

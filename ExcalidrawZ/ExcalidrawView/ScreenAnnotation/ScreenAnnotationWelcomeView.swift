@@ -60,7 +60,7 @@ struct ScreenAnnotationWelcomeView: View {
                 )
                 .labelStyle(.iconOnly)
             }
-            .modernButtonStyle(style: .glass, size: .extraLarge, shape: .circle)
+            .editorChromeButtonStyle(style: .glass, size: .extraLarge, shape: .circle)
 
             Spacer()
         }
@@ -126,7 +126,7 @@ struct ScreenAnnotationWelcomeView: View {
             )
                 .frame(maxWidth: .infinity)
         }
-        .modernButtonStyle(
+        .editorChromeButtonStyle(
             style: .glassProminent,
             size: .extraLarge,
             shape: .modern

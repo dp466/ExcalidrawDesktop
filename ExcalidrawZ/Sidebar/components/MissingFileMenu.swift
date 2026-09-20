@@ -349,7 +349,7 @@ struct CheckpointRecoverySheet: View {
                         dismiss()
                     }
                     .keyboardShortcut(.cancelAction)
-                    .modernButtonStyle(style: .glass, shape: .modern)
+                    .editorChromeButtonStyle(style: .glass, shape: .modern)
 
                     Spacer()
 
@@ -400,7 +400,7 @@ struct CheckpointRecoverySheet: View {
         }
         .keyboardShortcut(.defaultAction)
         .disabled(selectedCheckpoint == nil)
-        .modernButtonStyle(style: .glassProminent, shape: .modern)
+        .editorChromeButtonStyle(style: .glassProminent, shape: .modern)
     }
     
     private func recoverFromCheckpoint(file: FileState.ActiveFile, checkpoint: FileCheckpoint) async {

@@ -219,6 +219,25 @@ struct ExcalidrawFile: Codable, Hashable, Identifiable, Sendable {
             self.id = id
         }
     }
+
+    /// JSON parsing can be substantial for image-heavy drawings. Keep it off
+    /// the UI actor; the caller still validates the active file before publishing.
+    static func decodeForOpening(data: Data, id: String) async throws -> ExcalidrawFile {
+        try Task.checkCancellation()
+        let task = Task.detached(priority: .userInitiated) {
+            try Task.checkCancellation()
+            let file = try ExcalidrawFile(data: data, id: id)
+            try Task.checkCancellation()
+            return file
+        }
+        return try await withTaskCancellationHandler {
+            let file = try await task.value
+            try Task.checkCancellation()
+            return file
+        } onCancel: {
+            task.cancel()
+        }
+    }
     
     func contentWithoutFiles() throws -> Data {
         guard let content,

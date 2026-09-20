@@ -31,10 +31,6 @@ struct Paywall: View {
     @State var maxCreditTier: MaxCreditTier = .standard
     @State var presentedMCPFeatureHelpID: String?
     
-    enum Route: Hashable {
-        case plans, donation
-    }
-    
     enum BillingPeriod: String, CaseIterable, Identifiable {
         case monthly
         case yearly
@@ -48,9 +44,6 @@ struct Paywall: View {
             }
         }
     }
-    
-    @State var route: Route = .plans
-    @State var isDonationHistoryPresented = false
     
     var displayedPlans: [SubscriptionItem] {
         store.plans

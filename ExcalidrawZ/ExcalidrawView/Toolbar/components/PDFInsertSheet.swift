@@ -123,7 +123,7 @@ struct PDFInsertSheet: View {
                             } label: {
                                 Text(.localizable(.insertPDFSheetButtonChange))
                             }
-                            .modernButtonStyle(style: .glass, shape: .modern)
+                            .editorChromeButtonStyle(style: .glass, shape: .modern)
                         }
                         .padding(12)
                         .background(Color.gray.opacity(0.1))
@@ -139,7 +139,7 @@ struct PDFInsertSheet: View {
                             }
                             .frame(maxWidth: .infinity)
                         }
-                        .modernButtonStyle(style: .glassProminent, size: .regular, shape: .capsule)
+                        .editorChromeButtonStyle(style: .glassProminent, size: .regular, shape: .capsule)
                         .controlSize(.large)
                     }
                 }
@@ -204,7 +204,7 @@ struct PDFInsertSheet: View {
                             }
                             .labelsHidden()
                             .pickerStyle(.segmented)
-                            .modernButtonStyle(style: .glass, shape: .capsule)
+                            .editorChromeButtonStyle(style: .glass, shape: .capsule)
                         }
                         
                         // Items per line
@@ -355,7 +355,7 @@ struct PDFInsertSheet: View {
             } label: {
                 Text(.localizable(.generalButtonCancel))
             }
-            .modernButtonStyle(style: .glass, shape: .modern)
+            .editorChromeButtonStyle(style: .glass, shape: .modern)
         }
         ToolbarItem(placement: .confirmationAction) {
             Button {
@@ -363,7 +363,7 @@ struct PDFInsertSheet: View {
             } label: {
                 Text(.localizable(.insertPDFSheetButtonInsert))
             }
-            .modernButtonStyle(style: .glassProminent, shape: .modern)
+            .editorChromeButtonStyle(style: .glassProminent, shape: .modern)
             .disabled(pdfData == nil || isLoading)
         }
     }
@@ -383,7 +383,7 @@ struct PDFInsertSheet: View {
             } label: {
                 Text(.localizable(.insertPDFSheetButtonInsert))
             }
-            .modernButtonStyle(style: .glassProminent)
+            .editorChromeButtonStyle(style: .glassProminent)
             .disabled(pdfData == nil || isLoading)
         }
     }

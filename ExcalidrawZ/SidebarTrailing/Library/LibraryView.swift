@@ -320,10 +320,10 @@ struct LibraryView: View {
                 if #available(macOS 26.0, iOS 26.0, *) {
                     Capsule()
                         .fill(.clear)
-                        .glassEffect(.regular.interactive(), in: Capsule())
+                        .editorChromeGlassEffect(.regular.interactive(), in: Capsule())
                 } else {
                     Capsule()
-                        .fill(.ultraThinMaterial)
+                        .fill(editorChromeSurface(material: .ultraThin))
                 }
             }
             .overlay {
@@ -383,7 +383,7 @@ struct LibraryView: View {
             }
             VStack(spacing: 8) {
                 importButton()
-                    .modernButtonStyle(size: .large, shape: .modern)
+                    .editorChromeButtonStyle(size: .large, shape: .modern)
                 Link(destination: URL(string: "https://libraries.excalidraw.com")!) {
                     Text(.localizable(.librariesNoItemsGoToExcalidrawLibraries))
                         .font(.callout)

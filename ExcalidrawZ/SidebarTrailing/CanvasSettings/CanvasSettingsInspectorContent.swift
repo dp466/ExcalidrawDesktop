@@ -147,7 +147,7 @@ struct CanvasSettingsInspectorContent: View {
         }
         .pickerStyle(.segmented)
         .labelsHidden()
-        .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
+        .editorChromeButtonStyle(style: .glass, size: .regular, shape: .capsule)
     }
 
     @ViewBuilder

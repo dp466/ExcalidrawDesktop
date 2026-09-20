@@ -33,19 +33,30 @@ struct ExcalidrawMCPLLMCoreToolAdapter: Sendable {
         normalizeArguments: @escaping ArgumentNormalizer = { $0 },
         mutationCheckpointDescription: String? = nil
     ) {
+        let resolvedName = exposedName ?? tool.name
         self.tool = tool
-        self.exposedName = exposedName ?? tool.name
+        self.exposedName = resolvedName
         self.title = title ?? tool.displayName
         self.description = description ?? ExcalidrawMCPOptimizedResources.description(
-            named: exposedName ?? tool.name
+            named: resolvedName,
+            fallback: tool.description
         )
-        self.schemaOverride = schemaOverride ?? ExcalidrawMCPOptimizedResources.schema(
-            named: exposedName ?? tool.name
-        )
+        self.schemaOverride = schemaOverride
+            ?? ExcalidrawMCPOptimizedResources.schemaIfAvailable(named: resolvedName)
+            ?? Self.resolvedSchema(from: tool.inputSchema)
+            ?? ExcalidrawMCPOptimizedResources.fallbackSchema(named: resolvedName)
         self.annotations = annotations
         self.contextProvider = contextProvider
         self.normalizeArguments = normalizeArguments
         self.mutationCheckpointDescription = mutationCheckpointDescription
+    }
+
+    private static func resolvedSchema(from inputSchema: ToolInputSchema) -> MCPJSONValue? {
+        guard let resolved = try? inputSchema.resolve(),
+              let data = try? JSONEncoder().encode(resolved) else {
+            return nil
+        }
+        return try? MCPJSONValue.parse(from: data)
     }
 
     var mcpTool: ExcalidrawMCPTool {
@@ -71,7 +82,7 @@ struct ExcalidrawMCPLLMCoreToolAdapter: Sendable {
                 let checkpointed = try await ExcalidrawMCPAppBridge.shared.optimizedMutationWithCheckpoints(
                     description: mutationCheckpointDescription
                 ) {
-                    let result = try await tool.execute(input, context: try await contextProvider())
+                    let result = try await executeLocalMCPTool(input: input)
                     return Self.mcpResult(from: result)
                 }
                 return Self.mcpResultWithCheckpointSummary(
@@ -82,13 +93,20 @@ struct ExcalidrawMCPLLMCoreToolAdapter: Sendable {
                 )
             }
 
-            let result = try await tool.execute(input, context: try await contextProvider())
+            let result = try await executeLocalMCPTool(input: input)
             return Self.mcpResult(from: result)
         } catch {
             return ExcalidrawMCPToolResult(
                 text: error.localizedDescription,
                 isError: true
             )
+        }
+    }
+
+    private func executeLocalMCPTool(input: String) async throws -> ToolResult {
+        let context = try await contextProvider()
+        return try await AIChatToolExecutionGate.withLocalMCPExecution {
+            try await tool.execute(input, context: context)
         }
     }
 

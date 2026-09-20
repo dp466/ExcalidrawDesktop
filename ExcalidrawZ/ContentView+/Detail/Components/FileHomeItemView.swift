@@ -104,7 +104,11 @@ struct FileHomeItemView: View {
 
     @State private var isHovered = false
 
+#if os(macOS)
+    static let roundedCornerRadius: CGFloat = 8
+#else
     static let roundedCornerRadius: CGFloat = 12
+#endif
 
     var config = Config()
 
@@ -138,6 +142,10 @@ struct FileHomeItemView: View {
 #endif
             .background {
                 if config.style == .card {
+#if os(macOS)
+                    RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
+                        .fill(NavigationShellTheme.surface(for: colorScheme))
+#else
                     if #available(macOS 26.0, iOS 26.0, *) {
                         RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
                             .fill(
@@ -145,7 +153,7 @@ struct FileHomeItemView: View {
                                 ? AnyShapeStyle(HierarchicalShapeStyle.secondary)
                                 : AnyShapeStyle(Color.clear)
                             )
-                            .glassEffect(.clear, in: .rect(cornerRadius: 12))
+                            .editorChromeGlassEffect(.clear, in: .rect(cornerRadius: 12))
                             .shadow(
                                 color: colorScheme == .light
                                 ? Color.gray.opacity(0.33)
@@ -166,8 +174,23 @@ struct FileHomeItemView: View {
                                 : 0
                             )
                     }
+#endif
                 }
             }
+#if os(macOS)
+            .overlay {
+                if config.style == .card {
+                    RoundedRectangle(cornerRadius: Self.roundedCornerRadius)
+                        .strokeBorder(
+                            isHovered
+                            ? NavigationShellTheme.primary(for: colorScheme)
+                            : NavigationShellTheme.border(for: colorScheme),
+                            lineWidth: 1
+                        )
+                        .allowsHitTesting(false)
+                }
+            }
+#endif
             .contentShape(Rectangle())
 #if os(macOS)
             .simultaneousGesture(TapGesture(count: 2).onEnded {
@@ -463,7 +486,7 @@ private struct FileHomeItemContentView: View {
         // Costing too much performance
 //        .background {
 //            if style == .card {
-//                Rectangle().fill(.ultraThinMaterial)
+//                Rectangle().fill(editorChromeSurface(material: .ultraThin))
 //            }
 //        }
     }

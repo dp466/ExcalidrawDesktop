@@ -174,7 +174,7 @@ struct ExcalidrawEditor: View {
         guard !usesCompactIOSAIChatSurfaces else { return false }
         return UIDevice.current.userInterfaceIdiom == .pad
 #elseif os(macOS)
-        true
+        false
 #else
         false
 #endif
@@ -220,10 +220,21 @@ struct ExcalidrawEditor: View {
                     onDocumentLoadFinished: { fileID in
                         documentLoadCompletion = ExcalidrawDocumentLoadCompletion(fileID: fileID)
                         revealLoadedFileAfterRender(fileID: fileID)
+                    },
+                    onPersistSnapshot: { file in
+                        guard activeFile?.id == file.id, !isLoadingFile,
+                              lockedContentState.activeFileLockState != .locked,
+                              !isCloudStorageConflictBlockingEditor else {
+                            throw CancellationError()
+                        }
+                        try await fileState.persistAutosave(file)
+                        guard activeFile?.id == file.id else { return }
+                        applyExcalidrawFile(file, alreadyPersisted: true)
                     }
                 ) { error in
                     alertToast(error)
                 }
+
                 .preferredColorScheme(appPreference.excalidrawAppearance.colorScheme)
                 .excalidrawEditorOverlays(
                     loadingState: $canvasLoadingState,
@@ -501,7 +512,9 @@ struct ExcalidrawEditor: View {
 
     var body: some View {
         editorWithDocumentLifecycle
+#if os(iOS)
         .modifier(ExcalidrawEditorToolbarModifier())
+#endif
         .onReceive(NotificationCenter.default.publisher(for: .pencilInteractionModeDidChange)) { notification in
             guard let mode = notification.object as? ToolState.PencilInteractionMode else { return }
             Task {
@@ -713,7 +726,7 @@ struct ExcalidrawEditor: View {
             switch activeFile {
                 case .file(let file):
                     let content = try await file.loadContent(applyingLocalViewport: true)
-                    let parsedFile = try? ExcalidrawFile(data: content, id: activeFile.id)
+                    let parsedFile = try await ExcalidrawFile.decodeForOpening(data: content, id: activeFile.id)
                     await MainActor.run {
                         guard self.activeFile?.id == activeFile.id else { return }
                         self.excalidrawFile = parsedFile
@@ -721,7 +734,7 @@ struct ExcalidrawEditor: View {
                     
                 case .localFile(let url):
                     let data = try await FileSyncCoordinator.shared.openFile(url)
-                    let file = try ExcalidrawFile(data: data, id: activeFile.id)
+                    let file = try await ExcalidrawFile.decodeForOpening(data: data, id: activeFile.id)
                     await MainActor.run {
                         guard self.activeFile?.id == activeFile.id else { return }
                         self.excalidrawFile = file
@@ -729,7 +742,7 @@ struct ExcalidrawEditor: View {
 
                 case .temporaryFile(let url):
                     let data = try await fileState.readTemporaryFileContent(at: url)
-                    let file = try ExcalidrawFile(data: data, id: activeFile.id)
+                    let file = try await ExcalidrawFile.decodeForOpening(data: data, id: activeFile.id)
                     await MainActor.run {
                         guard self.activeFile?.id == activeFile.id else { return }
                         self.excalidrawFile = file
@@ -746,6 +759,9 @@ struct ExcalidrawEditor: View {
                         self.excalidrawFile = nil
                     }
             }
+        } catch is CancellationError {
+            // A superseded open must not reset the next document's load state.
+            return
         } catch EncryptedContentError.contentLocked(_, _) {
             await MainActor.run {
                 guard self.activeFile?.id == activeFile.id else { return }
@@ -1160,7 +1176,7 @@ struct ExcalidrawEditor: View {
         )
     }
 
-    private func applyExcalidrawFile(_ file: ExcalidrawFile?) {
+    private func applyExcalidrawFile(_ file: ExcalidrawFile?, alreadyPersisted: Bool = false) {
         guard let file else { return }
 
         if let currentFile = excalidrawFile {
@@ -1170,7 +1186,7 @@ struct ExcalidrawEditor: View {
             }
         }
 
-        let persistenceResult = persistCanvasUpdate(file)
+        let persistenceResult: CanvasUpdatePersistenceResult = alreadyPersisted ? .accepted : persistCanvasUpdate(file)
         guard persistenceResult.shouldUpdateEditorState else { return }
 
         if persistenceResult == .accepted {

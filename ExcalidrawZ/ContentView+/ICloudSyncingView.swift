@@ -31,7 +31,7 @@ struct ICloudSyncingView: View {
                     } label: {
                         Text(localizable: .settingsICloudToggleDisable)
                     }
-                    .modernButtonStyle(style: .glass, shape: .capsule)
+                    .editorChromeButtonStyle(style: .glass, shape: .capsule)
                     .padding(.top, 10)
                 }
             }

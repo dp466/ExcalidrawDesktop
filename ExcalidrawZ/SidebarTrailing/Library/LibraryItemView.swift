@@ -306,7 +306,7 @@ private struct EditLibraryItemSheet: View {
                 } label: {
                     Text("Cancel")
                 }
-                .modernButtonStyle(style: .glass, shape: .capsule)
+                .editorChromeButtonStyle(style: .glass, shape: .capsule)
                 
                 Button {
                     onSave()
@@ -315,7 +315,7 @@ private struct EditLibraryItemSheet: View {
                     Text("Save")
                 }
                 .keyboardShortcut(.defaultAction)
-                .modernButtonStyle(style: .glassProminent, shape: .capsule)
+                .editorChromeButtonStyle(style: .glassProminent, shape: .capsule)
             }
         }
         .padding(20)
@@ -405,7 +405,7 @@ struct LibraryItemContentView: View {
 //        .apply { content in
 //            if #available(macOS 26.0, iOS 26.0, *) {
 //                content
-//                    .glassEffect(
+//                    .editorChromeGlassEffect(
 //                        .clear,
 //                        in: RoundedRectangle(cornerRadius: 20)
 //                    )

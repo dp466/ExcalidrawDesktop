@@ -84,7 +84,7 @@ struct CloudStorageFolderPicker: View {
                 } label: {
                     Image(systemName: "xmark")
                 }
-                .modernButtonStyle(style: .glass, size: .large, shape: .circle)
+                .editorChromeButtonStyle(style: .glass, size: .large, shape: .circle)
 
                 if model.path.count > 1 {
                     Button {
@@ -93,7 +93,7 @@ struct CloudStorageFolderPicker: View {
                     } label: {
                         Image(systemName: "chevron.left")
                     }
-                    .modernButtonStyle(style: .glass, size: .large, shape: .circle)
+                    .editorChromeButtonStyle(style: .glass, size: .large, shape: .circle)
                     .disabled(model.isLoading)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 }
@@ -108,7 +108,7 @@ struct CloudStorageFolderPicker: View {
                     onSelect(folder)
                     dismiss()
                 }
-                .modernButtonStyle(style: .glassProminent, size: .large, shape: .modern)
+                .editorChromeButtonStyle(style: .glassProminent, size: .large, shape: .modern)
                 .disabled(model.currentFolder == nil || model.isLoading)
             }
             .padding(.horizontal, 12)
@@ -186,7 +186,7 @@ struct CloudStorageFolderPicker: View {
             Button(String(localizable: .generalButtonRetry)) {
                 Task { await model.start() }
             }
-            .modernButtonStyle(style: .glass, size: .regular, shape: .modern)
+            .editorChromeButtonStyle(style: .glass, size: .regular, shape: .modern)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -261,7 +261,7 @@ struct CloudStorageFolderPicker: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(.regularMaterial)
+        .background(editorChromeSurface())
     }
 
     private var folderTransition: AnyTransition {

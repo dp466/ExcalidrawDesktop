@@ -177,8 +177,12 @@ struct AISettingsView: View {
     @MainActor
     var aiEnabledBinding: Binding<Bool> {
         Binding(
-            get: { prefs.isAIEnabled },
+            get: { AIChatAvailability.isAvailable && prefs.isAIEnabled },
             set: { isEnabled in
+                guard AIChatAvailability.isAvailable else {
+                    prefs.isAIEnabled = false
+                    return
+                }
                 if isEnabled {
                     if !prefs.isAIEnabled {
                         isPresentingAIEnableConsent = true

@@ -373,6 +373,21 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
         }
     }
 
+    func schedulePersistentAppStateSnapshot(fileID: String) {
+        snapshotCoordinator.schedulePersistentAppStateSnapshot(fileID: fileID)
+    }
+
+    func persistCurrentAppStateSnapshot(fileID: String) async throws {
+        guard let core, currentLoadedFileID == fileID else { throw CancellationError() }
+        let snapshot = try await core.getCurrentFileSnapshot()
+        let state = await MainActor.run { (core.parent?.file?.id, core.parent?.type, core.parent?.savingType) }
+        guard state.0 == fileID, currentLoadedFileID == fileID else { throw CancellationError() }
+        try await applyCanvasFileData(
+            Self.makeFileData(from: snapshot), currentFileID: fileID,
+            type: state.1, savingType: state.2, markProgrammaticCommit: false
+        )
+    }
+
     func flushPendingDirtySnapshot(
         reason: String,
         force: Bool = false,
@@ -387,30 +402,18 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
         )
     }
 
-    @MainActor
-    func flushPendingDirtySnapshotInBackground(
-        reason: String,
-        expectedFileID: String,
-        target: FileState.CapturedCanvasSaveTarget
-    ) async {
-        await snapshotCoordinator.flushPendingDirtySnapshotInBackground(
-            reason: reason,
-            expectedFileID: expectedFileID,
-            target: target
-        )
-    }
-
+    @discardableResult
     func flushPendingDirtySnapshotToCapturedTarget(
         reason: String,
         expectedFileID: String,
         target: FileState.CapturedCanvasSaveTarget,
-        forceCurrentAppState: Bool = false
-    ) async {
+        forceCurrentSnapshot: Bool = false
+    ) async -> Bool {
         await snapshotCoordinator.flushPendingDirtySnapshotToCapturedTarget(
             reason: reason,
             expectedFileID: expectedFileID,
             target: target,
-            forceCurrentAppState: forceCurrentAppState
+            forceCurrentSnapshot: forceCurrentSnapshot
         )
     }
 
@@ -487,6 +490,20 @@ final class ExcalidrawDocumentSyncController: @unchecked Sendable {
                         data: fileDataForPersistence
                     )
                 }.value
+
+                // Normal editors acknowledge only after the captured destination
+                // has been atomically written. Never infer success from a binding setter.
+                let persistSnapshot = await MainActor.run { core.parent?.onPersistSnapshot }
+                if let persistSnapshot, let currentFileID {
+                    var file = ExcalidrawFile()
+                    file.id = currentFileID
+                    file.apply(preparedUpdate)
+                    if markProgrammaticCommit {
+                        await core.parent?.fileState.noteProgrammaticCanvasMutation(fileID: currentFileID)
+                    }
+                    try await persistSnapshot(file)
+                    return
+                }
 
                 await MainActor.run {
                     guard type == .collaboration || core.parent?.file?.id == currentFileID else {

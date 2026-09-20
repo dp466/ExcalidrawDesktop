@@ -125,6 +125,8 @@ struct CollaborationFileMenu: View {
 }
 
 struct CollaborationFileMenuItems: View {
+    @Environment(\.dismissFlatFileMenu) private var dismissFlatFileMenu
+
     
     @EnvironmentObject private var fileState: FileState
 
@@ -135,7 +137,7 @@ struct CollaborationFileMenuItems: View {
     var onDelete: () -> Void
     
     var body: some View {
-        Button {
+        FileActionButton {
             fileState.setActiveFile(.collaborationFile(file))
         } label: {
             if #available(macOS 13.0, *) {
@@ -153,7 +155,7 @@ struct CollaborationFileMenuItems: View {
         
         
         if let roomID = file.roomID {
-            Button {
+            FileActionButton {
                 copyRoomShareLink(roomID: roomID, filename: file.name)
             } label: {
                 Label(
@@ -162,7 +164,7 @@ struct CollaborationFileMenuItems: View {
                 )
             }
         }
-        Button {
+        FileActionButton {
             onArchiveFile(file)
         } label: {
             Label(
@@ -172,7 +174,7 @@ struct CollaborationFileMenuItems: View {
         }
         
         if fileState.collaboratingFiles.contains(file) {
-            Button {
+            FileActionButton {
                 fileState.collaboratingFiles.removeAll(where: {$0 == file})
                 fileState.collaboratingFilesState[file] = nil
                 if fileState.currentActiveFile == .collaborationFile(file) {
@@ -188,7 +190,7 @@ struct CollaborationFileMenuItems: View {
 
         Divider()
 
-        Button(role: .destructive) {
+        FileActionButton(role: .destructive) {
             onDelete()
         } label: {
             Label(.localizable(.generalButtonDelete), systemSymbol: .trash)

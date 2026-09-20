@@ -77,10 +77,10 @@ private struct MathInlineCircleButtonBackground: View {
                 if #available(macOS 26.0, iOS 26.0, *) {
                     Circle()
                         .fill(.clear)
-                        .glassEffect(.regular.interactive(), in: Circle())
+                        .editorChromeGlassEffect(.regular.interactive(), in: Circle())
                 } else {
                     Circle()
-                        .fill(.ultraThinMaterial)
+                        .fill(editorChromeSurface(material: .ultraThin))
                 }
             }
             .overlay {
@@ -100,10 +100,10 @@ private struct MathInlineCapsuleButtonBackground: View {
                 if #available(macOS 26.0, iOS 26.0, *) {
                     Capsule()
                         .fill(.clear)
-                        .glassEffect(.regular.interactive(), in: Capsule())
+                        .editorChromeGlassEffect(.regular.interactive(), in: Capsule())
                 } else {
                     Capsule()
-                        .fill(.ultraThinMaterial)
+                        .fill(editorChromeSurface(material: .ultraThin))
                 }
             }
             .overlay {
@@ -132,10 +132,10 @@ struct MathAIDynamicEditorBackground: View {
                 if #available(macOS 26.0, iOS 26.0, *) {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .fill(.clear)
-                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                        .editorChromeGlassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
                 } else {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(.ultraThinMaterial)
+                        .fill(editorChromeSurface(material: .ultraThin))
                 }
 
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)

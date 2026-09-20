@@ -44,7 +44,7 @@ struct BackupLockedPreviewView: View {
                         Label(.localizable(.settingsBackupsUnlockPreviewButton), systemSymbol: unlockSystemSymbol)
                     }
                 }
-                .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
+                .editorChromeButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
                 .disabled(isUnlocking || !systemUnlockAvailability.isAvailable)
                 .help(systemUnlockAvailability.buttonTitle)
 

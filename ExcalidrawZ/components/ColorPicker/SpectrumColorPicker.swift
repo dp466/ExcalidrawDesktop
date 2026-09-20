@@ -229,7 +229,7 @@ struct SpectrumColorPicker: View {
             } label: {
                 Image(systemName: "eyedropper")
             }
-            .modernButtonStyle(style: .glass, size: .small, shape: .circle)
+            .editorChromeButtonStyle(style: .glass, size: .small, shape: .circle)
 #endif
 
             Button {
@@ -237,7 +237,7 @@ struct SpectrumColorPicker: View {
             } label: {
                 Image(systemName: "checkmark")
             }
-            .modernButtonStyle(style: .glass, size: .small, shape: .circle)
+            .editorChromeButtonStyle(style: .glass, size: .small, shape: .circle)
             .disabled(parsedHexInput == nil)
         }
     }

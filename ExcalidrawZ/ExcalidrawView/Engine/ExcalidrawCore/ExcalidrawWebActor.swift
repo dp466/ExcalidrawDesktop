@@ -119,6 +119,14 @@ struct LoadImageResult {
 }
 
 actor ExcalidrawWebActor {
+    static let fileLoadScript = """
+    if (!isBase64) {
+      return await window.excalidrawZHelper.loadFileString(payload, id, requestID);
+    }
+    const bytes = Uint8Array.from(atob(payload), character => character.charCodeAt(0));
+    return await window.excalidrawZHelper.loadFileBuffer(bytes, id, requestID);
+    """
+
     let logger = Logger(label: "ExcalidrawWebActor")
 
     weak var excalidrawCoordinator: ExcalidrawCore?
@@ -141,19 +149,20 @@ actor ExcalidrawWebActor {
         data: Data
     ) async throws -> LoadFileResult {
         let webView = webView
-        let targetSummary = loadFileDataSummary(data)
 
-        var buffer = [UInt8].init(repeating: 0, count: data.count)
-        data.copyBytes(to: &buffer, count: data.count)
-        let buf = buffer
-        // `loadFileBuffer` is async on the JS side. `callAsyncJavaScript` wraps the
+        // Pass data through WebKit's argument channel, never as a decimal array
+        // literal: a 53 MB drawing previously became 232 MB of JavaScript source.
+        let text = String(data: data, encoding: .utf8)
+        let payload = text ?? data.base64EncodedString()
+        // The load helpers are async on the JS side. `callAsyncJavaScript` wraps the
         // body in an async function, awaits the inner Promise, and only then resolves
         // the Swift `await` — so the caller knows Excalidraw has actually applied the
         // new scene by the time this returns.
         do {
             let raw = try await webView.callAsyncJavaScript(
-                "return await window.excalidrawZHelper.loadFileBuffer(\(buf), id, requestID);",
-                arguments: ["id": id, "requestID": requestID],
+                Self.fileLoadScript,
+                arguments: ["id": id, "requestID": requestID, "payload": payload,
+                            "isBase64": text == nil],
                 contentWorld: .page
             )
             guard let result = LoadFileResult(fromJS: raw),
@@ -169,6 +178,7 @@ actor ExcalidrawWebActor {
             )
             return result
         } catch {
+            let targetSummary = loadFileDataSummary(data)
             logFileLoad(
                 self.logger,
                 "File load failed id=\(id) requestID=\(requestID) target=\(targetSummary) error=\(String(describing: error))",

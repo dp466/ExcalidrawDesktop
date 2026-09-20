@@ -26,6 +26,16 @@ struct ExportButtonStyle: PrimitiveButtonStyle {
                 .frame(width: size, height: size)
                 .background {
                     ZStack {
+#if os(macOS)
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(isEnabled && (isHovered || isPressed)
+                                  ? NavigationShellTheme.hover(for: colorScheme)
+                                  : NavigationShellTheme.surface(for: colorScheme))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .strokeBorder(NavigationShellTheme.border(for: colorScheme), lineWidth: 1)
+                            }
+#else
                         if #available(macOS 26.0, iOS 26.0, *) {
                             let roundedRectangle = RoundedRectangle(cornerRadius: 20)
 
@@ -35,7 +45,7 @@ struct ExportButtonStyle: PrimitiveButtonStyle {
                             if isEnabled {
                                 roundedRectangle
                                     .fill(.clear)
-                                    .glassEffect(
+                                    .editorChromeGlassEffect(
                                         Glass.regular
                                             .tint(Color.accentColor.opacity(isHovered ? 0.14 : 0.08))
                                             .interactive(),
@@ -52,7 +62,7 @@ struct ExportButtonStyle: PrimitiveButtonStyle {
                             } else {
                                 roundedRectangle
                                     .fill(.clear)
-                                    .glassEffect(
+                                    .editorChromeGlassEffect(
                                         Glass.clear,
                                         in: roundedRectangle
                                     )
@@ -62,15 +72,16 @@ struct ExportButtonStyle: PrimitiveButtonStyle {
                                 .fill(
                                     isEnabled ?
                                     (
-                                        isPressed ? AnyShapeStyle(Color.gray.opacity(0.4)) : AnyShapeStyle(isHovered ? .ultraThickMaterial : .regularMaterial)
+                                        isPressed ? AnyShapeStyle(Color.gray.opacity(0.4)) : AnyShapeStyle(isHovered ? editorChromeSurface(material: .ultraThick) : editorChromeSurface())
                                     ) : AnyShapeStyle(Color.clear)
                                 )
                             
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(.separator, lineWidth: 0.5)
                         }
+#endif
                     }
-                    .animation(.default, value: isHovered)
+                    .animation(.easeOut(duration: 0.1), value: isHovered)
                 }
                 .contentShape(Rectangle())
                 .onHover { isHovered = $0 }

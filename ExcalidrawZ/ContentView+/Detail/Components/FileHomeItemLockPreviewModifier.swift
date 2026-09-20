@@ -140,7 +140,7 @@ struct LockedFilePreviewPlaceholder: View {
                 .fill(baseColor)
 
             Rectangle()
-                .fill(.ultraThickMaterial)
+                .fill(editorChromeSurface(material: .ultraThick))
 
             LinearGradient(
                 colors: [
@@ -192,7 +192,7 @@ struct UnlockedFileCoverBadge: View {
             .frame(width: badgeSize, height: badgeSize)
             .background {
                 Circle()
-                    .fill(.regularMaterial)
+                    .fill(editorChromeSurface())
             }
             .overlay {
                 Circle()

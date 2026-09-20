@@ -41,7 +41,8 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
     func body(content: Content) -> some View {
         ZStack(alignment: .center) {
             content
-                .opacity(isLoadingOverlayPresented ? 0 : 1)
+                // Keep WebKit renderable beneath the loading cover. Hiding it
+                // can suspend the animation frame awaited by file loading.
                 .opacity(hasFile ? 1 : 0)
                 .allowsHitTesting(!isLoadingOverlayPresented)
                 .watch(value: loadingState, initial: true) { _, newVal in
@@ -97,21 +98,37 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
         VStack(spacing: 8) {
             ProgressView()
                 .progressViewStyle(.circular)
+#if os(macOS)
+                .tint(NavigationShellTheme.primary(for: colorScheme))
+#endif
             Text(.localizable(.webViewLoadingText))
                 .font(.callout)
+#if os(macOS)
+                .foregroundStyle(NavigationShellTheme.primary(for: colorScheme))
+#else
                 .foregroundStyle(.secondary)
+#endif
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
         .background {
+#if os(macOS)
+            RoundedRectangle(cornerRadius: 8)
+                .fill(NavigationShellTheme.selection(for: colorScheme))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(NavigationShellTheme.primary(for: colorScheme), lineWidth: 1)
+                }
+#else
             if #available(macOS 26.0, iOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(.clear)
-                    .glassEffect(.clear, in: .rect(cornerRadius: 16))
+                    .editorChromeGlassEffect(.clear, in: .rect(cornerRadius: 16))
             } else {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(.regularMaterial)
+                    .fill(editorChromeSurface())
             }
+#endif
         }
     }
 
@@ -119,7 +136,11 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
         VStack(spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.title2)
+#if os(macOS)
+                .foregroundStyle(NavigationShellTheme.primary(for: colorScheme))
+#else
                 .foregroundStyle(.orange)
+#endif
 
             Text(error.localizedDescription)
                 .font(.callout)
@@ -135,20 +156,33 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
             } label: {
                 Label(.localizable(.generalButtonRetry), systemSymbol: .arrowClockwise)
             }
-            .modernButtonStyle(style: .glassProminent, shape: .capsule)
+#if os(macOS)
+            .buttonStyle(NavigationShellButtonStyle(accent: true, bordered: true))
+#else
+            .editorChromeButtonStyle(style: .glassProminent, shape: .capsule)
+#endif
         }
         .frame(maxWidth: 320)
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
         .background {
+#if os(macOS)
+            RoundedRectangle(cornerRadius: 8)
+                .fill(NavigationShellTheme.selection(for: colorScheme))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(NavigationShellTheme.primary(for: colorScheme), lineWidth: 1)
+                }
+#else
             if #available(macOS 26.0, iOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(.clear)
-                    .glassEffect(.clear, in: .rect(cornerRadius: 16))
+                    .editorChromeGlassEffect(.clear, in: .rect(cornerRadius: 16))
             } else {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(.regularMaterial)
+                    .fill(editorChromeSurface())
             }
+#endif
         }
     }
 
@@ -336,7 +370,7 @@ struct ExcalidrawEditorOverlayModifier: ViewModifier {
                 } label: {
                     Text(.localizable(.deletedFileRecoverAlertButtonRecover))
                 }
-                .modernButtonStyle(style: .glassProminent)
+                .editorChromeButtonStyle(style: .glassProminent)
             } message: {
                 Text(.localizable(.deletedFileRecoverAlertMessage))
             }

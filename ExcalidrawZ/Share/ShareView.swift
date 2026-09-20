@@ -186,7 +186,7 @@ struct ShareView: View {
             }
             .padding(40)
 #if os(macOS)
-            .bindWindow($window)
+            .bindAppWindow($window)
             .frame(height: preferredSheetHeight)
             .onAppear {
                 resizeSheetWindow(animated: false)
@@ -201,7 +201,7 @@ struct ShareView: View {
                     Label(.localizable(.generalButtonClose), systemSymbol: .xmark)
                         .labelStyle(.iconOnly)
                 }
-                .modernButtonStyle(style: .glass, size: .large, shape: .modernCircle)
+                .editorChromeButtonStyle(style: .glass, size: .large, shape: .modernCircle)
                 .padding(24)
             }
             .toolbar(.hidden, for: .windowToolbar)
@@ -415,7 +415,7 @@ struct ShareViewLagacy: View {
                 Label(.localizable(.generalButtonClose), systemSymbol: .xmark)
                     .labelStyle(.iconOnly)
             }
-            .modernButtonStyle(style: .glass, size: .large, shape: .modernCircle)
+            .editorChromeButtonStyle(style: .glass, size: .large, shape: .modernCircle)
         }
     }
     

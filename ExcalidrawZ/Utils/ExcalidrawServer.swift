@@ -34,11 +34,21 @@ struct ExcalidrawServerLogger: Logging {
 }
 
 class ExcalidrawServer {
-    #if DEBUG
-    let server = HTTPServer(port: 8486, logger: ExcalidrawServerLogger())
-    #else
-    let server = HTTPServer(port: 8487, logger: ExcalidrawServerLogger())
-    #endif
+    static var port: UInt16 {
+        if ExcalidrawFeaturePolicy.isLocalMacOSFork { return 8497 }
+#if DEBUG
+        return 8486
+#else
+        return 8487
+#endif
+    }
+    static var editorURL: URL {
+        URL(string: "http://127.0.0.1:\(port)/index.html")!
+    }
+    let server = HTTPServer(
+        address: try! .inet(ip4: "127.0.0.1", port: ExcalidrawServer.port),
+        logger: ExcalidrawServerLogger()
+    )
     init(autoStart: Bool = true) {
         if isPreview { return }
         if autoStart {

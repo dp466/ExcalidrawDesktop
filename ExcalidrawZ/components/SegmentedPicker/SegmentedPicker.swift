@@ -59,9 +59,9 @@ struct SegmentedPicker<Selection, Content>: View where Selection : Hashable, Con
                                 .fill(
                                     colorScheme == .dark
                                     ? AnyShapeStyle(Color.clear)
-                                    : AnyShapeStyle(Material.ultraThickMaterial)
+                                    : AnyShapeStyle(editorChromeSurface(material: .ultraThick))
                                 )
-                                .glassEffect(
+                                .editorChromeGlassEffect(
                                     .clear,
                                     in: .rect(cornerRadius: 10)
                                 )
@@ -221,11 +221,11 @@ internal struct SegmentedPickerView: View {
         .background {
             if #available(macOS 14.0, iOS 17.0, *) {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(.regularMaterial)
+                    .fill(editorChromeSurface())
                     .stroke(.separator, lineWidth: 0.5)
             } else {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(.regularMaterial)
+                    .fill(editorChromeSurface())
             }
         }
         .padding()

@@ -1,0 +1,1165 @@
+diff --git a/README.md b/README.md
+index 401c604d..f8b9ad13 100644
+--- a/README.md
++++ b/README.md
+@@ -262,11 +262,12 @@ Uses browser native PDF rendering with **zero external dependencies**.
+ ### File Load Completion
+ 
+ - Load Native files directly through `window.excalidrawZHelper.loadFileBuffer(buffer, fileId, requestId)` in `excalidraw-app/excalidrawZ/load+save.js` line 214-361. Successful calls return exactly `{ requestId, fileId, elementCount, durationMs }`; parsing, hydration, normalization, restore, supersede, and timeout failures reject the Promise.
++- Load UTF-8 Native documents through `window.excalidrawZHelper.loadFileString(dataString, fileId, requestId)` in `excalidraw-app/excalidrawZ/load+save.js` line 346-375 when the host can use WebKit's argument channel. It preserves the same identity and completion receipt while avoiding a source-expanded decimal byte array for large drawings; the one-argument form remains compatible.
+ - Keep concurrent load ownership in the request registry at `excalidraw-app/excalidrawZ/load+save.js` line 67-189. A new request marks the previous request as `superseded`; every asynchronous boundary races cancellation and verifies `isCurrent()` before the live scene can be mutated. The 30-second timeout remains a real failure.
+ - Do not use synthetic drop events, `DataTransfer`, a global pending request id, or `excalidrawz:fileLoadDone` for Native file loading. Promise settlement is the completion receipt, and `currentFileId` changes only after the current request has applied its scene.
+ - Add the private async `_api._excalidrawZ.applyFileScene()` bridge in `packages/excalidraw/components/App.tsx` line 514-520, line 824, and line 13414-13454. It atomically resets scene/store/history state, repairs fractional indices, replaces binary files, and captures the exact image-cache hydration Promise started by `syncActionResult()`. It resolves only after image loading/decoding and one final animation frame; physical file drops reuse and await the same method at line 13391.
+ - Await async scene application in `excalidraw-app/excalidrawZ/load+save.js` before updating `currentFileId` or resolving `loadFileBuffer()`. The public method signature and success result remain unchanged, while a superseding request can still reject an older load that is waiting for image hydration.
+-- Cover image hydration/final-paint completion in `packages/excalidraw/tests/excalidrawZFileLoad.test.tsx`, and cover file-identity timing plus superseded async application in `excalidraw-app/excalidrawZ/load+save.snapshot.test.js`.
++- Cover image hydration/final-paint completion in `packages/excalidraw/tests/excalidrawZFileLoad.test.tsx`, and cover buffer/string file-identity timing plus superseded async application in `excalidraw-app/excalidrawZ/load+save.snapshot.test.js`.
+ - Declare the Native `loadFileBuffer()` signature in `packages/excalidraw/global.d.ts` line 58-67. The private `_excalidrawZ` bridge is intentionally excluded from the public `ExcalidrawImperativeAPI` type.
+ 
+ ### ExcalidrawZ File AppState
+@@ -291,3 +292,15 @@ Uses browser native PDF rendering with **zero external dependencies**.
+ - Use `yarn preview:cloudflare` for a local built-assets preview and `yarn deploy:cloudflare` for a local build and deployment.
+ - For Cloudflare Git Builds, use repository root `/`, Node.js 20, build command `yarn build`, and deploy command `yarn wrangler deploy --config wrangler.jsonc`. Set the production branch to `ExcalidrawZ-core`; the repository default `master` branch does not contain ExcalidrawZ's deployment configuration.
+ - Before switching domains, allow the Cloudflare preview/custom domain in Firebase and external backend/WebSocket origin policies. Keeping the existing custom domain avoids Native host URL changes.
++
++## Local desktop fork
++
++- `packages/excalidraw/components/LayerUI.tsx:235` restores the web menu, toolbar, and library trigger.
++- `packages/common/src/editorInterface.ts:142` keeps desktop windows in the full property-panel layout above the phone breakpoint.
++- `excalidraw-app/excalidrawZ/camera.js:275` samples native camera updates while retaining the final value.
++- `excalidraw-app/excalidrawZ/message.js:47` avoids duplicate console bridge messages.
++- `excalidraw-app/App.tsx:398` disables cloud collaboration for the bundled local editor.
++- `excalidraw-app/excalidrawZ/camera.test.js:1` and `desktopControls.test.ts:1` cover sampling and desktop breakpoints.
++
++Build via the host repository's `script/build_release.sh`. The host records this
++editor's base revision plus `patches/editor.patch`; generated assets are not source.
+diff --git a/excalidraw-app/App.tsx b/excalidraw-app/App.tsx
+index 3f0f1650..576ef526 100644
+--- a/excalidraw-app/App.tsx
++++ b/excalidraw-app/App.tsx
+@@ -395,7 +395,7 @@ const ExcalidrawWrapper = () => {
+   const excalidrawAPI = useExcalidrawAPI();
+ 
+   const [errorMessage, setErrorMessage] = useState("");
+-  const isCollabDisabled = isRunningInIframe();
++  const isCollabDisabled = true; // Local desktop build has no collaboration backend.
+ 
+   const { editorTheme, appTheme, setAppTheme } = useHandleAppTheme();
+ 
+@@ -1055,8 +1055,7 @@ const ExcalidrawWrapper = () => {
+       (window as any).excalidrawZHelper._getCommonBounds = getCommonBounds;
+       (window as any).excalidrawZHelper._computeSearchMatches = computeSearchMatches;
+       (window as any).excalidrawZHelper.startWatchExcalidrawState?.();
+-      (window as any).excalidrawZHelper.startCameraTracking?.();
+-      (window as any).excalidrawZHelper.startElementsTracking?.();
++      // Native ignores onElementsChanged; document dirty tracking is separate.
+       (window as any).excalidrawZHelper.startCanvasPreferencesTracking?.();
+       // All bridges + trackers ready — now safe to tell the host the
+       // helper is fully initialized.
+@@ -1313,6 +1312,7 @@ const ExcalidrawWrapper = () => {
+       })}
+     >
+       <Excalidraw
++        aiEnabled={false}
+         viewportStatusFrame={viewportStatusFrame}
+         userToFollow={userToFollow}
+         onChange={onChange}
+@@ -1323,33 +1323,7 @@ const ExcalidrawWrapper = () => {
+         UIOptions={{
+           canvasActions: {
+             toggleTheme: true,
+-            export: {
+-              onExportToBackend,
+-              renderCustomUI: excalidrawAPI
+-                ? (elements, appState, files) => {
+-                    return (
+-                      <ExportToExcalidrawPlus
+-                        elements={elements}
+-                        appState={appState}
+-                        files={files}
+-                        name={excalidrawAPI.getName()}
+-                        onError={(error) => {
+-                          excalidrawAPI?.updateScene({
+-                            appState: {
+-                              errorMessage: error.message,
+-                            },
+-                          });
+-                        }}
+-                        onSuccess={() => {
+-                          excalidrawAPI.updateScene({
+-                            appState: { openDialog: null },
+-                          });
+-                        }}
+-                      />
+-                    );
+-                  }
+-                : undefined,
+-            },
++            export: {},
+           },
+         }}
+         langCode={langCode}
+@@ -1409,27 +1383,10 @@ const ExcalidrawWrapper = () => {
+         <OverwriteConfirmDialog>
+           <OverwriteConfirmDialog.Actions.ExportToImage />
+           <OverwriteConfirmDialog.Actions.SaveToDisk />
+-          {excalidrawAPI && (
+-            <OverwriteConfirmDialog.Action
+-              title={t("overwriteConfirm.action.excalidrawPlus.title")}
+-              actionLabel={t("overwriteConfirm.action.excalidrawPlus.button")}
+-              onClick={() => {
+-                exportToExcalidrawPlus(
+-                  excalidrawAPI.getSceneElements(),
+-                  excalidrawAPI.getAppState(),
+-                  excalidrawAPI.getFiles(),
+-                  excalidrawAPI.getName(),
+-                );
+-              }}
+-            >
+-              {t("overwriteConfirm.action.excalidrawPlus.description")}
+-            </OverwriteConfirmDialog.Action>
+-          )}
++
+         </OverwriteConfirmDialog>
+         <AppFooter onChange={() => excalidrawAPI?.refresh()} />
+-        {excalidrawAPI && <AIComponents excalidrawAPI={excalidrawAPI} />}
+ 
+-        <TTDDialogTrigger />
+         {isCollaborating && isOffline && (
+           <div className="alertalert--warning">
+             {t("alerts.collabOfflineWarning")}
+@@ -1614,32 +1571,6 @@ const ExcalidrawWrapper = () => {
+                 );
+               },
+             },
+-            ...(isExcalidrawPlusSignedUser
+-              ? [
+-                  {
+-                    ...ExcalidrawPlusAppCommand,
+-                    label: "Sign in / Go to Excalidraw+",
+-                  },
+-                ]
+-              : [ExcalidrawPlusCommand, ExcalidrawPlusAppCommand]),
+-
+-            {
+-              label: t("overwriteConfirm.action.excalidrawPlus.button"),
+-              category: DEFAULT_CATEGORIES.export,
+-              icon: exportToPlus,
+-              predicate: true,
+-              keywords: ["plus", "export", "save", "backup"],
+-              perform: () => {
+-                if (excalidrawAPI) {
+-                  exportToExcalidrawPlus(
+-                    excalidrawAPI.getSceneElements(),
+-                    excalidrawAPI.getAppState(),
+-                    excalidrawAPI.getFiles(),
+-                    excalidrawAPI.getName(),
+-                  );
+-                }
+-              },
+-            },
+             {
+               label: t("labels.installPWA"),
+               category: DEFAULT_CATEGORIES.app,
+@@ -1670,12 +1601,6 @@ const ExcalidrawWrapper = () => {
+ };
+ 
+ const ExcalidrawApp = () => {
+-  const isCloudExportWindow =
+-    window.location.pathname === "/excalidraw-plus-export";
+-  if (isCloudExportWindow) {
+-    return <ExcalidrawPlusIframeExport />;
+-  }
+-
+   return (
+     <TopErrorBoundary>
+       <Provider store={appJotaiStore}>
+diff --git a/excalidraw-app/components/AppMainMenu.tsx b/excalidraw-app/components/AppMainMenu.tsx
+index 8bfae2d5..bbb4d4a3 100644
+--- a/excalidraw-app/components/AppMainMenu.tsx
++++ b/excalidraw-app/components/AppMainMenu.tsx
+@@ -41,25 +41,6 @@ export const AppMainMenu: React.FC<{
+       <MainMenu.DefaultItems.Help />
+       <MainMenu.DefaultItems.ClearCanvas />
+       <MainMenu.Separator />
+-      <MainMenu.ItemLink
+-        icon={ExcalLogo}
+-        href={`${
+-          import.meta.env.VITE_APP_PLUS_LP
+-        }/plus?utm_source=excalidraw&utm_medium=app&utm_content=hamburger`}
+-        className=""
+-      >
+-        Excalidraw+
+-      </MainMenu.ItemLink>
+-      <MainMenu.DefaultItems.Socials />
+-      <MainMenu.ItemLink
+-        icon={loginIcon}
+-        href={`${import.meta.env.VITE_APP_PLUS_APP}${
+-          isExcalidrawPlusSignedUser ? "" : "/sign-up"
+-        }?utm_source=signin&utm_medium=app&utm_content=hamburger`}
+-        className="highlighted"
+-      >
+-        {isExcalidrawPlusSignedUser ? t("labels.signIn") : t("labels.signUp")}
+-      </MainMenu.ItemLink>
+       {isDevEnv() && (
+         <MainMenu.Item
+           icon={eyeIcon}
+diff --git a/excalidraw-app/excalidrawZ/camera.js b/excalidraw-app/excalidrawZ/camera.js
+index 30b19dd3..1e8a2788 100644
+--- a/excalidraw-app/excalidrawZ/camera.js
++++ b/excalidraw-app/excalidrawZ/camera.js
+@@ -278,29 +278,40 @@ export const onCameraChange = (callback) => {
+ };
+ 
+ /**
+- * Start broadcasting camera changes to the native client via sendMessage.
+- * Should be called once after excalidrawAPI is ready.
++ * Opt-in compatibility bridge for hosts that need camera notifications.
++ * ExcalidrawDesktop reads exact camera state on demand and does not start it.
+  * Deduplicates consecutive equal values to avoid spam from unrelated re-renders.
+  */
++let stopCameraTracking = null;
++
+ export const startCameraTracking = () => {
++  stopCameraTracking?.();
+   const api = getAPI();
+   if (!api) {
+     return;
+   }
+-  let lastX = null;
+-  let lastY = null;
+-  let lastZoom = null;
+-  api.onScrollChange((scrollX, scrollY, zoom) => {
+-    const z = zoom.value;
+-    if (scrollX === lastX && scrollY === lastY && z === lastZoom) {
+-      return;
+-    }
+-    lastX = scrollX;
+-    lastY = scrollY;
+-    lastZoom = z;
+-    sendMessage({
+-      event: "onCameraChanged",
+-      data: { scrollX, scrollY, zoom: z },
+-    });
++  let last = null;
++  let pending = null;
++  let timer = null;
++  const flush = () => {
++    timer = null;
++    if (!pending) return;
++    const camera = pending;
++    pending = null;
++    if (last && camera.scrollX === last.scrollX &&
++        camera.scrollY === last.scrollY && camera.zoom === last.zoom) return;
++    last = camera;
++    sendMessage({ event: "onCameraChanged", data: camera });
++  };
++  const unsubscribe = api.onScrollChange((scrollX, scrollY, zoom) => {
++    pending = { scrollX, scrollY, zoom: zoom.value };
++    // Native only needs a recent fallback; explicit getCamera reads stay exact.
++    if (timer === null) timer = setTimeout(flush, 100);
+   });
++  stopCameraTracking = () => {
++    if (timer !== null) clearTimeout(timer);
++    pending = null;
++    unsubscribe?.();
++  };
++  return stopCameraTracking;
+ };
+diff --git a/excalidraw-app/excalidrawZ/index.js b/excalidraw-app/excalidrawZ/index.js
+index 34b742c7..3561edf5 100644
+--- a/excalidraw-app/excalidrawZ/index.js
++++ b/excalidraw-app/excalidrawZ/index.js
+@@ -15,6 +15,7 @@ import {
+ import { sendMessage } from "./message";
+ import { toggleToolbarAction } from "./actions";
+ import { throttle } from "./_helpers";
++import { NativeStateChangeTracker } from "./stateChange";
+ import {
+   loadFileBuffer,
+   loadFileString,
+@@ -205,10 +206,9 @@ const WATCH_STATE_SLOW_MS = 100;
+ 
+ let watchStatePerfId = 0;
+ let watchStateRevision = 0;
+-let lastContentSignature = null;
+-let lastAppStateSignature = null;
+ let watchStateSuppressionDepth = 0;
+ let watchStateSuppressionGeneration = 0;
++const nativeStateChangeTracker = new NativeStateChangeTracker();
+ 
+ const getPerformanceNow = () =>
+   typeof performance !== "undefined" &&
+@@ -218,45 +218,6 @@ const getPerformanceNow = () =>
+ 
+ const roundDuration = (duration) => Math.round(duration * 10) / 10;
+ 
+-const getFileElementCount = (elements) =>
+-  elements.reduce((total, element) => total + (element?.fileId ? 1 : 0), 0);
+-
+-const getDeletedElementCount = (elements) =>
+-  elements.reduce((total, element) => total + (element?.isDeleted ? 1 : 0), 0);
+-
+-const getObjectKeyCount = (value) =>
+-  value && typeof value === "object" ? Object.keys(value).length : 0;
+-
+-const updateHash = (hash, value) => {
+-  const text = String(value ?? "");
+-  for (let i = 0; i < text.length; i++) {
+-    hash = (hash << 5) + hash + text.charCodeAt(i);
+-  }
+-  return hash >>> 0;
+-};
+-
+-const getContentSignature = (elements) => {
+-  let hash = updateHash(5381, elements.length);
+-  elements.forEach((element) => {
+-    hash = updateHash(hash, element?.id);
+-    hash = updateHash(hash, element?.version);
+-    hash = updateHash(hash, element?.versionNonce);
+-    hash = updateHash(hash, element?.isDeleted ? 1 : 0);
+-    hash = updateHash(hash, element?.index);
+-    hash = updateHash(hash, element?.fileId);
+-  });
+-  return `${elements.length}:${hash}`;
+-};
+-
+-const stringifyAppStateForSignature = (appState) => {
+-  try {
+-    return JSON.stringify(appState ?? {});
+-  } catch (error) {
+-    console.warn("[watchExcalidrawState] failed to stringify appState", error);
+-    return `unserializable:${Date.now()}`;
+-  }
+-};
+-
+ const getNextStateRevision = () => {
+   watchStateRevision += 1;
+   if (window.excalidrawZHelper) {
+@@ -265,11 +226,6 @@ const getNextStateRevision = () => {
+   return watchStateRevision;
+ };
+ 
+-const setWatchStateSignatures = (elements, appState) => {
+-  lastContentSignature = getContentSignature(elements);
+-  lastAppStateSignature = stringifyAppStateForSignature(appState);
+-};
+-
+ const resetWatchStateBaseline = () => {
+   const api = window.excalidrawZHelper?._api;
+   if (!api) {
+@@ -279,7 +235,11 @@ const resetWatchStateBaseline = () => {
+   const elements =
+     api.getSceneElementsIncludingDeleted?.() ?? api.getSceneElements?.() ?? [];
+   const appState = api.getAppState?.() ?? {};
+-  setWatchStateSignatures(elements, appState);
++  nativeStateChangeTracker.reset(
++    elements,
++    appState,
++    api._excalidrawZ?.getSceneNonce?.(),
++  );
+   return true;
+ };
+ 
+@@ -301,33 +261,20 @@ const beginStateChangeSuppression = () => {
+   };
+ };
+ 
+-const createStateChangedPayload = (elements, appState) => {
+-  const contentSignature = getContentSignature(elements);
+-  const appStateSignature = stringifyAppStateForSignature(appState);
+-  const contentDirty = contentSignature !== lastContentSignature;
+-  const appStateDirty = appStateSignature !== lastAppStateSignature;
+-
+-  if (!contentDirty && !appStateDirty) {
+-    return null;
+-  }
+-
+-  lastContentSignature = contentSignature;
+-  lastAppStateSignature = appStateSignature;
+-
+-  return {
+-    revision: getNextStateRevision(),
+-    changedAt: Date.now(),
+-    dirty: true,
+-    contentDirty,
+-    appStateDirty,
++const createStateChangedPayload = (elements, appState, sceneNonce) => {
++  const payload = nativeStateChangeTracker.createPayload(
++    elements,
+     appState,
+-    elementCount: elements.length,
+-    deletedElementCount: getDeletedElementCount(elements),
+-    fileElementCount: getFileElementCount(elements),
+-    appStateKeyCount: getObjectKeyCount(appState),
+-    appStateChars: appStateSignature.length,
+-    currentFileId: window.excalidrawZHelper?.currentFileId ?? null,
+-  };
++    sceneNonce,
++  );
++  return (
++    payload && {
++      ...payload,
++      revision: getNextStateRevision(),
++      changedAt: Date.now(),
++      currentFileId: window.excalidrawZHelper?.currentFileId ?? null,
++    }
++  );
+ };
+ 
+ const logWatchStatePerformance = (summary) => {
+@@ -340,9 +287,9 @@ const logWatchStatePerformance = (summary) => {
+ /**
+  * Watch scene/appState changes and broadcast a lightweight `onStateChanged`.
+  *
+- * The event sends the full appState, but intentionally avoids sending
+- * elements/files/dataString through the WebKit bridge on every edit. Hosts can
+- * pull full content on demand through `getCurrentFileSnapshot()` when
++ * The event sends only persistent preferences and viewport state. It avoids
++ * sending elements/files/dataString through the WebKit bridge on every edit.
++ * Hosts pull full content on demand through `getCurrentFileSnapshot()` when
+  * `contentDirty` is true.
+  *
+  * Event-driven (api.onChange) + 1s throttle:
+@@ -362,83 +309,77 @@ const startWatchExcalidrawState = () => {
+ 
+   resetWatchStateBaseline();
+ 
+-  const dispatch = throttle((elements, appState, suppressionGeneration) => {
+-    try {
+-      if (
+-        watchStateSuppressionDepth > 0 ||
+-        suppressionGeneration !== watchStateSuppressionGeneration
+-      ) {
+-        return;
+-      }
+-
+-      const perfId = ++watchStatePerfId;
+-      const totalStartedAt = getPerformanceNow();
+-
+-      const payloadStartedAt = getPerformanceNow();
+-      const payload = createStateChangedPayload(elements, appState);
+-      const payloadMs = getPerformanceNow() - payloadStartedAt;
+-      if (!payload) {
+-        return;
++  const dispatch = throttle(
++    (elements, appState, sceneNonce, suppressionGeneration) => {
++      try {
++        if (
++          watchStateSuppressionDepth > 0 ||
++          suppressionGeneration !== watchStateSuppressionGeneration
++        ) {
++          return;
++        }
++
++        const perfId = ++watchStatePerfId;
++        const totalStartedAt = getPerformanceNow();
++
++        const payloadStartedAt = getPerformanceNow();
++        const payload = createStateChangedPayload(
++          elements,
++          appState,
++          sceneNonce,
++        );
++        const payloadMs = getPerformanceNow() - payloadStartedAt;
++        if (!payload) {
++          return;
++        }
++
++        const sendStartedAt = getPerformanceNow();
++        sendMessage({
++          event: "onStateChanged",
++          data: {
++            data: payload,
++          },
++        });
++        const sendMessageMs = getPerformanceNow() - sendStartedAt;
++        const totalMs = getPerformanceNow() - totalStartedAt;
++
++        logWatchStatePerformance({
++          id: perfId,
++          totalMs: roundDuration(totalMs),
++          buildPayloadMs: roundDuration(payloadMs),
++          sendMessageMs: roundDuration(sendMessageMs),
++          revision: payload.revision,
++          contentDirty: payload.contentDirty,
++          appStateDirty: payload.appStateDirty,
++          persistentAppStateDirty: payload.persistentAppStateDirty,
++          viewportDirty: payload.viewportDirty,
++          elementCount: payload.elementCount,
++          deletedElementCount: payload.deletedElementCount,
++          fileElementCount: payload.fileElementCount,
++          appStateKeyCount: payload.appStateKeyCount,
++          appStateChars: payload.appStateChars,
++        });
++      } catch (error) {
++        console.error("[watchExcalidrawState]", error);
+       }
+-
+-      const sendStartedAt = getPerformanceNow();
+-      sendMessage({
+-        event: "onStateChanged",
+-        data: {
+-          data: payload,
+-        },
+-      });
+-      const sendMessageMs = getPerformanceNow() - sendStartedAt;
+-      const totalMs = getPerformanceNow() - totalStartedAt;
+-
+-      logWatchStatePerformance({
+-        id: perfId,
+-        totalMs: roundDuration(totalMs),
+-        buildPayloadMs: roundDuration(payloadMs),
+-        sendMessageMs: roundDuration(sendMessageMs),
+-        revision: payload.revision,
+-        contentDirty: payload.contentDirty,
+-        appStateDirty: payload.appStateDirty,
+-        elementCount: payload.elementCount,
+-        deletedElementCount: payload.deletedElementCount,
+-        fileElementCount: payload.fileElementCount,
+-        appStateKeyCount: payload.appStateKeyCount,
+-        appStateChars: payload.appStateChars,
+-      });
+-    } catch (error) {
+-      console.error("[watchExcalidrawState]", error);
+-    }
+-  }, 1000);
++    },
++    1000,
++  );
+ 
+   api.onChange((elements, appState) => {
+     if (watchStateSuppressionDepth > 0) {
+       return;
+     }
+ 
+-    dispatch(elements, appState, watchStateSuppressionGeneration);
++    dispatch(
++      elements,
++      appState,
++      api._excalidrawZ?.getSceneNonce?.(),
++      watchStateSuppressionGeneration,
++    );
+   });
+ };
+ 
+-const hideEls = () => {
+-  const targetNode = document.body;
+-  // Options for the observer (which mutations to observe)
+-  const config = { attributes: true, childList: true, subtree: true };
+-  // Callback function to execute when mutations are observed
+-  const callback = (mutationList) => {
+-    for (const mutation of mutationList) {
+-      // console.log(mutation);
+-      if (mutation.type === "childList") {
+-      }
+-    }
+-  };
+-
+-  // Create an observer instance linked to the callback function
+-  const observer = new MutationObserver(callback);
+-
+-  // Start observing the target node for configured mutations
+-  observer.observe(targetNode, config);
+-};
+-
+ const watchHistoryButtonState = () => {
+   const containerNode = document.querySelector(".excalidraw-container");
+   let undoButtonNode = null;
+@@ -489,7 +430,7 @@ const watchHistoryButtonState = () => {
+       event: "historyStateChanged",
+       data: {
+         type: "undo",
+-        disabled: newUndoButtonNode.disabled,
++        disabled: newUndoButtonNode?.disabled ?? true,
+       },
+     });
+     const newRedoButtonNode = document.querySelector(
+@@ -499,7 +440,7 @@ const watchHistoryButtonState = () => {
+       event: "historyStateChanged",
+       data: {
+         type: "redo",
+-        disabled: newRedoButtonNode.disabled,
++        disabled: newRedoButtonNode?.disabled ?? true,
+       },
+     });
+     if (newUndoButtonNode && newUndoButtonNode !== undoButtonNode) {
+@@ -543,7 +484,6 @@ const onDomReady = () => {
+   // DOM-level setup only. The "onload" message is deferred until the
+   // helper is fully initialized (excalidrawAPI bridged + trackers started),
+   // which is signalled by App.tsx via `notifyHelperReady()` below.
+-  hideEls();
+   observeContainerLoad(() => {
+     watchHistoryButtonState();
+   });
+diff --git a/excalidraw-app/excalidrawZ/load+save.js b/excalidraw-app/excalidrawZ/load+save.js
+index c142bb66..1a7d8594 100644
+--- a/excalidraw-app/excalidrawZ/load+save.js
++++ b/excalidraw-app/excalidrawZ/load+save.js
+@@ -345,18 +345,24 @@ export const loadFileBuffer = async (buffer, fileId, requestId) =>
+ 
+ /**
+  * @param {string} dataString
++ * @param {string | undefined} [fileId]
++ * @param {string} [requestId]
+  * @returns {Promise<{
+  *   requestId: string,
+- *   fileId: undefined,
++ *   fileId: string | undefined,
+  *   elementCount: number,
+  *   durationMs: number,
+  * }>}
+  */
+-export const loadFileString = async (dataString) =>
++export const loadFileString = async (
++  dataString,
++  fileId = undefined,
++  requestId = createLoadRequestId(),
++) =>
+   loadSerializedFile({
+     source: "loadFileString",
+-    fileId: undefined,
+-    requestId: createLoadRequestId(),
++    fileId,
++    requestId,
+     readSerializedData: () => ({ dataString }),
+   });
+ 
+diff --git a/excalidraw-app/excalidrawZ/load+save.snapshot.test.js b/excalidraw-app/excalidrawZ/load+save.snapshot.test.js
+index c7c49e55..6d7b900e 100644
+--- a/excalidraw-app/excalidrawZ/load+save.snapshot.test.js
++++ b/excalidraw-app/excalidrawZ/load+save.snapshot.test.js
+@@ -5,6 +5,7 @@ import * as indexDB from "./indexdb+";
+ import {
+   getCurrentFileSnapshot,
+   loadFileBuffer,
++  loadFileString,
+   requestCurrentFileSaveStream,
+ } from "./load+save";
+ 
+@@ -224,6 +225,44 @@ describe("loadFileBuffer completion", () => {
+     expect(window.excalidrawZHelper.currentFileId).toBe("next-file");
+   });
+ 
++  it("preserves caller identity and completion timing for string loads", async () => {
++    mockFileRestore();
++
++    let resolveApplication;
++    const application = new Promise((resolve) => {
++      resolveApplication = resolve;
++    });
++    const applyFileScene = vi.fn(() => application);
++    window.excalidrawZHelper = {
++      currentFileId: "previous-file",
++      _beginStateChangeSuppression: vi.fn(() => vi.fn()),
++      _api: {
++        getAppState: () => ({}),
++        getSceneElementsIncludingDeleted: () => [],
++        _excalidrawZ: { applyFileScene },
++      },
++    };
++
++    const loadPromise = loadFileString(
++      JSON.stringify({ marker: "é漢字" }),
++      "string-file",
++      "string-request",
++    );
++
++    await vi.waitFor(() => {
++      expect(applyFileScene).toHaveBeenCalledTimes(1);
++    });
++    expect(window.excalidrawZHelper.currentFileId).toBe("previous-file");
++
++    resolveApplication({ elementCount: 1 });
++    await expect(loadPromise).resolves.toMatchObject({
++      requestId: "string-request",
++      fileId: "string-file",
++      elementCount: 1,
++    });
++    expect(window.excalidrawZHelper.currentFileId).toBe("string-file");
++  });
++
+   it("does not let superseded async scene application finish the old load", async () => {
+     mockFileRestore();
+ 
+diff --git a/excalidraw-app/excalidrawZ/message.js b/excalidraw-app/excalidrawZ/message.js
+index 41f3bc00..f8d80929 100644
+--- a/excalidraw-app/excalidrawZ/message.js
++++ b/excalidraw-app/excalidrawZ/message.js
+@@ -54,7 +54,6 @@ export const sendMessage = ({ event, data }) => {
+     return false;
+   }
+ 
+-  console.info("sendMessage", { event, data });
+   try {
+     messageHandler.postMessage({
+       event,
+diff --git a/excalidraw-app/index.html b/excalidraw-app/index.html
+index a87350da..120cb4ee 100644
+--- a/excalidraw-app/index.html
++++ b/excalidraw-app/index.html
+@@ -94,24 +94,6 @@
+ 
+     <!------------------------------------------------------------------------->
+     <% if (typeof PROD != 'undefined' && PROD == true) { %>
+-    <script>
+-      // Redirect Excalidraw+ users which have auto-redirect enabled.
+-      //
+-      // Redirect only the bare root path, so link/room/library urls are not
+-      // redirected.
+-      //
+-      // Putting into index.html for best performance (can't redirect on server
+-      // due to location.hash checks).
+-      if (
+-        window.location.pathname === "/" &&
+-        !window.location.hash &&
+-        !window.location.search &&
+-        // if its present redirect
+-        document.cookie.includes("excplus-autoredirect=true")
+-      ) {
+-        window.location.href = "https://app.excalidraw.com";
+-      }
+-    </script>
+ 
+     <!-- Following placeholder is replaced during the build step -->
+     <!-- PLACEHOLDER:EXCALIDRAW_APP_FONTS -->
+diff --git a/packages/common/src/editorInterface.ts b/packages/common/src/editorInterface.ts
+index d18b7a7d..10f76cea 100644
+--- a/packages/common/src/editorInterface.ts
++++ b/packages/common/src/editorInterface.ts
+@@ -142,7 +142,7 @@ export const getFormFactor = (
+     return "phone";
+   }
+ 
+-  if (isTabletBreakpoint(editorWidth, editorHeight)) {
++  if (isMobileOrTablet() && isTabletBreakpoint(editorWidth, editorHeight)) {
+     return "tablet";
+   }
+ 
+diff --git a/packages/excalidraw/components/App.tsx b/packages/excalidraw/components/App.tsx
+index 55c349d6..290f0ef3 100644
+--- a/packages/excalidraw/components/App.tsx
++++ b/packages/excalidraw/components/App.tsx
+@@ -516,6 +516,7 @@ type ExcalidrawZImperativeAPI = ExcalidrawImperativeAPI & {
+     ) => Promise<{
+       elementCount: number;
+     }>;
++    getSceneNonce: () => number | undefined;
+   };
+ };
+ 
+@@ -835,6 +836,7 @@ class App extends React.Component<AppProps, AppState> {
+       // Kept out of the public ExcalidrawImperativeAPI surface.
+       _excalidrawZ: {
+         applyFileScene: this.applyExcalidrawZFileScene,
++        getSceneNonce: () => this.scene.getSceneNonce(),
+       },
+     };
+     return api;
+diff --git a/packages/excalidraw/components/LayerUI.tsx b/packages/excalidraw/components/LayerUI.tsx
+index e0680d1a..a1581172 100644
+--- a/packages/excalidraw/components/LayerUI.tsx
++++ b/packages/excalidraw/components/LayerUI.tsx
+@@ -232,7 +232,7 @@ const LayerUI = ({
+   };
+ 
+   const renderCanvasActions = () => (
+-    <div style={{ position: "relative", display: "none" }}>
++    <div style={{ position: "relative" }}>
+       <div className="excalidraw-ui-top-left">
+         {renderTopLeftUI?.(false, appState)}
+         <tunnels.MainMenuTunnel.Out />
+@@ -348,7 +348,7 @@ const LayerUI = ({
+             appState.openDialog?.name !== "elementLinkSelector" && (
+               <Section heading="shapes" className="shapes-section">
+                 {(heading: React.ReactNode) => (
+-                  <div style={{ position: "relative", display: "none" }}>
++                  <div style={{ position: "relative" }}>
+                     {renderWelcomeScreen && (
+                       <tunnels.WelcomeScreenToolbarHintTunnel.Out />
+                     )}
+@@ -403,7 +403,7 @@ const LayerUI = ({
+               },
+             )}
+           >
+-            <div style={{ display: "none" }}>
++            <div>
+               {defaultUIEnabled && appState.collaborators.size > 0 && (
+                 <UserList
+                   collaborators={appState.collaborators}
+diff --git a/packages/excalidraw/components/footer/Footer.tsx b/packages/excalidraw/components/footer/Footer.tsx
+index daae0c38..469444dd 100644
+--- a/packages/excalidraw/components/footer/Footer.tsx
++++ b/packages/excalidraw/components/footer/Footer.tsx
+@@ -72,7 +72,6 @@ const Footer = ({
+               "transition-right": appState.zenModeEnabled,
+             },
+           )}
+-          style={{ display: "none" }}
+         >
+           <div style={{ position: "relative" }}>
+             {renderWelcomeScreen && <WelcomeScreenHelpHintTunnel.Out />}
+diff --git a/excalidraw-app/excalidrawZ/camera.test.js b/excalidraw-app/excalidrawZ/camera.test.js
+new file mode 100644
+index 00000000..bc5b2da9
+--- /dev/null
++++ b/excalidraw-app/excalidrawZ/camera.test.js
+@@ -0,0 +1,44 @@
++import { startCameraTracking } from "./camera";
++
++describe("native camera sampling", () => {
++  let callback;
++  let stop;
++  let postMessage;
++  beforeEach(() => {
++    vi.useFakeTimers();
++    postMessage = vi.fn();
++    window.webkit = { messageHandlers: { excalidrawZ: { postMessage } } };
++    window.excalidrawZHelper = { _api: { onScrollChange: vi.fn((cb) => {
++      callback = cb;
++      return vi.fn();
++    }) } };
++    stop = startCameraTracking();
++  });
++  afterEach(() => {
++    stop();
++    vi.useRealTimers();
++    delete window.webkit;
++    delete window.excalidrawZHelper;
++  });
++  it("coalesces rapid updates and delivers the final camera", () => {
++    for (let i = 0; i < 120; i++) {
++      callback(i, i * 2, { value: 1.5 });
++      vi.advanceTimersByTime(8);
++    }
++    vi.advanceTimersByTime(100);
++    expect(postMessage.mock.calls.length).toBeLessThanOrEqual(10);
++    expect(postMessage).toHaveBeenLastCalledWith({ event: "onCameraChanged",
++      data: { scrollX: 119, scrollY: 238, zoom: 1.5 } });
++  });
++  it("does not deliver duplicates or pending updates after stop", () => {
++    callback(10, 20, { value: 1 });
++    vi.advanceTimersByTime(100);
++    callback(10, 20, { value: 1 });
++    vi.advanceTimersByTime(100);
++    expect(postMessage).toHaveBeenCalledTimes(1);
++    callback(30, 40, { value: 2 });
++    stop();
++    vi.advanceTimersByTime(100);
++    expect(postMessage).toHaveBeenCalledTimes(1);
++  });
++});
+diff --git a/excalidraw-app/excalidrawZ/desktopControls.test.ts b/excalidraw-app/excalidrawZ/desktopControls.test.ts
+new file mode 100644
+index 00000000..9e2354da
+--- /dev/null
++++ b/excalidraw-app/excalidrawZ/desktopControls.test.ts
+@@ -0,0 +1,13 @@
++import { deriveStylesPanelMode, getFormFactor } from "@excalidraw/common";
++
++it("retains desktop controls in a medium desktop window", () => {
++  expect(getFormFactor(900, 700)).toBe("desktop");
++  expect(deriveStylesPanelMode({
++    formFactor: getFormFactor(900, 700), desktopUIMode: "full",
++    userAgent: { isMobileDevice: false, platform: "other" },
++    isTouchScreen: false, canFitSidebar: false, isLandscape: true,
++  })).toBe("full");
++});
++it("retains the mobile fallback for genuinely narrow windows", () => {
++  expect(getFormFactor(500, 700)).toBe("phone");
++});
+diff --git a/excalidraw-app/excalidrawZ/stateChange.js b/excalidraw-app/excalidrawZ/stateChange.js
+new file mode 100644
+index 00000000..c12bb82a
+--- /dev/null
++++ b/excalidraw-app/excalidrawZ/stateChange.js
+@@ -0,0 +1,166 @@
++const PERSISTENT_APP_STATE_KEYS = [
++  "viewBackgroundColor",
++  "gridSize",
++  "gridStep",
++  "gridModeEnabled",
++  "zenModeEnabled",
++  "viewModeEnabled",
++  "objectsSnapModeEnabled",
++  "isMidpointSnappingEnabled",
++  "bindingPreference",
++  "preferredSelectionTool",
++  "boxSelectionMode",
++  "stats",
++  "currentItemStrokeWidthKey",
++  "currentItemStrokeColor",
++  "currentItemBackgroundColor",
++  "currentItemStrokeStyle",
++  "currentItemFillStyle",
++  "currentItemRoughness",
++  "currentItemOpacity",
++  "currentItemFontFamily",
++  "currentItemFontSize",
++  "currentItemTextAlign",
++  "currentItemRoundness",
++  "currentItemArrowType",
++  "currentItemStartArrowhead",
++  "currentItemEndArrowhead",
++  "currentItemStrokeVariability",
++];
++
++const VIEWPORT_APP_STATE_KEYS = ["scrollX", "scrollY", "zoom"];
++
++const copyAppStateKeys = (appState, keys) => {
++  const selected = {};
++  for (const key of keys) {
++    if (Object.prototype.hasOwnProperty.call(appState ?? {}, key)) {
++      selected[key] = appState[key];
++    }
++  }
++  return selected;
++};
++
++const stringifyForSignature = (value) => {
++  try {
++    return JSON.stringify(value ?? {});
++  } catch (error) {
++    console.warn("[watchExcalidrawState] failed to stringify appState", error);
++    return `unserializable:${Date.now()}`;
++  }
++};
++
++const updateHash = (hash, value) => {
++  const text = String(value ?? "");
++  for (let i = 0; i < text.length; i++) {
++    hash = (hash << 5) + hash + text.charCodeAt(i);
++  }
++  return hash >>> 0;
++};
++
++const getContentSummary = (elements) => {
++  let hash = updateHash(5381, elements.length);
++  let deletedElementCount = 0;
++  let fileElementCount = 0;
++
++  for (const element of elements) {
++    hash = updateHash(hash, element?.id);
++    hash = updateHash(hash, element?.version);
++    hash = updateHash(hash, element?.versionNonce);
++    hash = updateHash(hash, element?.isDeleted ? 1 : 0);
++    hash = updateHash(hash, element?.index);
++    hash = updateHash(hash, element?.fileId);
++    deletedElementCount += element?.isDeleted ? 1 : 0;
++    fileElementCount += element?.fileId ? 1 : 0;
++  }
++
++  return {
++    signature: `${elements.length}:${hash}`,
++    deletedElementCount,
++    fileElementCount,
++  };
++};
++
++const readAppState = (appState) => {
++  const persistentAppState = copyAppStateKeys(
++    appState,
++    PERSISTENT_APP_STATE_KEYS,
++  );
++  const viewportAppState = copyAppStateKeys(appState, VIEWPORT_APP_STATE_KEYS);
++  return {
++    persistentAppState,
++    viewportAppState,
++    persistentSignature: stringifyForSignature(persistentAppState),
++    viewportSignature: stringifyForSignature(viewportAppState),
++  };
++};
++
++/**
++ * Tracks the native bridge subset of Excalidraw state. Scene nonce is the
++ * authoritative content invalidation signal because elements may mutate in
++ * place while retaining the same array identity.
++ */
++export class NativeStateChangeTracker {
++  lastSceneNonce = undefined;
++  lastContentSignature = null;
++  lastPersistentAppStateSignature = null;
++  lastViewportSignature = null;
++
++  reset(elements, appState, sceneNonce) {
++    const content = getContentSummary(elements);
++    const selectedAppState = readAppState(appState);
++    this.lastSceneNonce = sceneNonce;
++    this.lastContentSignature = content.signature;
++    this.lastPersistentAppStateSignature = selectedAppState.persistentSignature;
++    this.lastViewportSignature = selectedAppState.viewportSignature;
++  }
++
++  createPayload(elements, appState, sceneNonce) {
++    const selectedAppState = readAppState(appState);
++    const persistentAppStateDirty =
++      selectedAppState.persistentSignature !==
++      this.lastPersistentAppStateSignature;
++    const viewportDirty =
++      selectedAppState.viewportSignature !== this.lastViewportSignature;
++
++    // Old editor builds do not expose a nonce. Preserve the full signature
++    // fallback in that case rather than risking a missed content edit.
++    const mustInspectContent =
++      sceneNonce === undefined || sceneNonce !== this.lastSceneNonce;
++    let contentDirty = false;
++    let contentSummary = null;
++    if (mustInspectContent) {
++      contentSummary = getContentSummary(elements);
++      contentDirty = contentSummary.signature !== this.lastContentSignature;
++      this.lastContentSignature = contentSummary.signature;
++      this.lastSceneNonce = sceneNonce;
++    }
++
++    if (!contentDirty && !persistentAppStateDirty && !viewportDirty) {
++      return null;
++    }
++
++    this.lastPersistentAppStateSignature = selectedAppState.persistentSignature;
++    this.lastViewportSignature = selectedAppState.viewportSignature;
++
++    return {
++      dirty: true,
++      contentDirty,
++      appStateDirty: persistentAppStateDirty || viewportDirty,
++      persistentAppStateDirty,
++      viewportDirty,
++      appState: {
++        ...selectedAppState.persistentAppState,
++        ...selectedAppState.viewportAppState,
++      },
++      elementCount: elements.length,
++      deletedElementCount: contentSummary?.deletedElementCount ?? null,
++      fileElementCount: contentSummary?.fileElementCount ?? null,
++      appStateKeyCount:
++        Object.keys(selectedAppState.persistentAppState).length +
++        Object.keys(selectedAppState.viewportAppState).length,
++      appStateChars:
++        selectedAppState.persistentSignature.length +
++        selectedAppState.viewportSignature.length,
++    };
++  }
++}
+diff --git a/excalidraw-app/excalidrawZ/stateChange.test.js b/excalidraw-app/excalidrawZ/stateChange.test.js
+new file mode 100644
+index 00000000..9cb1fd9f
+--- /dev/null
++++ b/excalidraw-app/excalidrawZ/stateChange.test.js
+@@ -0,0 +1,118 @@
++import { NativeStateChangeTracker } from "./stateChange";
++
++const appState = (overrides = {}) => ({
++  viewBackgroundColor: "#ffffff",
++  currentItemStrokeColor: "#1b1b1f",
++  scrollX: 0,
++  scrollY: 0,
++  zoom: { value: 1 },
++  selectedElementIds: {},
++  ...overrides,
++});
++
++const rectangle = {
++  id: "rect",
++  version: 1,
++  versionNonce: 10,
++  index: "a0",
++  isDeleted: false,
++};
++
++describe("native state change tracking", () => {
++  it("classifies pan as viewport-only without scanning a stable scene", () => {
++    const elements = [rectangle];
++    const tracker = new NativeStateChangeTracker();
++    tracker.reset(elements, appState(), 1);
++
++    const payload = tracker.createPayload(
++      elements,
++      appState({ scrollX: 120, scrollY: -30 }),
++      1,
++    );
++
++    expect(payload).toMatchObject({
++      contentDirty: false,
++      appStateDirty: true,
++      persistentAppStateDirty: false,
++      viewportDirty: true,
++      deletedElementCount: null,
++      fileElementCount: null,
++    });
++    expect(payload.appState).not.toHaveProperty("selectedElementIds");
++  });
++
++  it("detects an in-place content edit using the scene nonce", () => {
++    const elements = [{ ...rectangle }];
++    const tracker = new NativeStateChangeTracker();
++    tracker.reset(elements, appState(), 10);
++
++    elements[0].version += 1;
++    elements[0].versionNonce += 1;
++    const payload = tracker.createPayload(elements, appState(), 11);
++
++    expect(payload).toMatchObject({
++      contentDirty: true,
++      persistentAppStateDirty: false,
++      viewportDirty: false,
++    });
++  });
++
++  it("classifies drawing defaults as persistent preferences", () => {
++    const tracker = new NativeStateChangeTracker();
++    tracker.reset([rectangle], appState(), 1);
++
++    const payload = tracker.createPayload(
++      [rectangle],
++      appState({ currentItemStrokeColor: "#e03131" }),
++      1,
++    );
++
++    expect(payload).toMatchObject({
++      contentDirty: false,
++      persistentAppStateDirty: true,
++      viewportDirty: false,
++    });
++  });
++
++  it("detects undo and loaded-image mutations on the same array", () => {
++    const elements = [{ ...rectangle }];
++    const tracker = new NativeStateChangeTracker();
++    tracker.reset(elements, appState(), 20);
++
++    elements[0].version = 2;
++    elements[0].versionNonce = 20;
++    expect(tracker.createPayload(elements, appState(), 21)?.contentDirty).toBe(
++      true,
++    );
++
++    elements[0].version = 3;
++    elements[0].versionNonce = 30;
++    elements[0].fileId = "image-file";
++    expect(tracker.createPayload(elements, appState(), 22)).toMatchObject({
++      contentDirty: true,
++      fileElementCount: 1,
++    });
++  });
++
++  it("resets the baseline across a suppressed load or file switch", () => {
++    const tracker = new NativeStateChangeTracker();
++    tracker.reset([rectangle], appState(), 1);
++
++    const loaded = [{ ...rectangle, id: "loaded", version: 7 }];
++    const loadedState = appState({ scrollX: 800, viewBackgroundColor: "#eee" });
++    tracker.reset(loaded, loadedState, 2);
++
++    expect(tracker.createPayload(loaded, loadedState, 2)).toBeNull();
++  });
++
++  it("falls back to content signatures when the host lacks a scene nonce", () => {
++    const elements = [{ ...rectangle }];
++    const tracker = new NativeStateChangeTracker();
++    tracker.reset(elements, appState(), undefined);
++    elements[0].version += 1;
++
++    expect(
++      tracker.createPayload(elements, appState(), undefined)?.contentDirty,
++    ).toBe(true);
++  });
++});

@@ -138,10 +138,10 @@ extension MathInputSheetView {
                     if #available(macOS 26.0, iOS 26.0, *) {
                         Capsule()
                             .fill(.clear)
-                            .glassEffect(.regular, in: Capsule())
+                            .editorChromeGlassEffect(.regular, in: Capsule())
                     } else {
                         Capsule()
-                            .fill(.ultraThinMaterial)
+                            .fill(editorChromeSurface(material: .ultraThin))
                     }
                 }
                 .overlay {

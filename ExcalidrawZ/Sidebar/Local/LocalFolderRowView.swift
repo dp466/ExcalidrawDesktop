@@ -14,6 +14,7 @@ struct LocalFolderRowView: View {
     @AppStorage("FolderStructureStyle") var folderStructStyle: FolderStructureStyle = .disclosureGroup
 
     @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.alertToast) private var alertToast
     @EnvironmentObject private var fileState: FileState
     @EnvironmentObject private var localFolderState: LocalFolderState
@@ -86,7 +87,7 @@ struct LocalFolderRowView: View {
     private var folderLabel: some View {
         HStack(spacing: 6) {
             Image(systemSymbol: .folderFill)
-                .foregroundStyle(Color(red: 12/255.0, green: 157/255.0, blue: 229/255.0))
+                .foregroundStyle(NavigationShellTheme.primary(for: colorScheme))
             Text(folder.url?.lastPathComponent ?? String(localizable: .generalUnknown))
             Spacer(minLength: 0)
             LocalFolderAvailabilityIndicator(folder: folder)

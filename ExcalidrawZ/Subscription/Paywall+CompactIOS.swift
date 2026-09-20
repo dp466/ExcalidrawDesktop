@@ -9,7 +9,6 @@ import SwiftUI
 
 import ChocofordUI
 import LLMKit
-import Shimmer
 import SFSafeSymbols
 
 #if os(iOS)
@@ -18,16 +17,7 @@ extension Paywall {
     @ViewBuilder
     func compactIOSContent() -> some View {
         NavigationStack {
-            ZStack {
-                if route == .plans {
-                    compactIOSPlansLayout()
-                        .transition(.move(edge: .leading).combined(with: .opacity))
-                } else {
-                    compactIOSDonationLayout()
-                        .transition(.move(edge: .trailing).combined(with: .opacity))
-                        .zIndex(1)
-                }
-            }
+            compactIOSPlansLayout()
             .toolbar {
                 compactIOSToolbarContent()
             }
@@ -36,7 +26,6 @@ extension Paywall {
                 PaywallAuroraBackground(colorScheme: colorScheme)
                     .ignoresSafeArea()
             }
-            .animation(.easeOut(duration: 0.3), value: route)
             .onAppear {
                 isPresented = true
             }
@@ -97,53 +86,21 @@ extension Paywall {
         .scrollIndicators(.hidden)
     }
 
-    @ViewBuilder
-    func compactIOSDonationLayout() -> some View {
-#if APP_STORE
-        let isAppStore = true
-#else
-        let isAppStore = false
-#endif
-        SupportChocofordView(isAppStore: isAppStore)
-            .contentPadding(16)
-            .bindingSupportHistoryPresentedValue($isDonationHistoryPresented)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .animation(.default, value: isDonationHistoryPresented)
-    }
-
     @ToolbarContentBuilder
     func compactIOSToolbarContent() -> some ToolbarContent {
-        if route == .plans {
-            ToolbarItem(placement: .cancellationAction) {
-                Button {
-                    dismiss()
-                } label: {
-                    Label(.localizable(.generalButtonClose), systemSymbol: .xmark)
-                }
-                .labelStyle(.iconOnly)
-                .keyboardShortcut(.cancelAction)
+        ToolbarItem(placement: .cancellationAction) {
+            Button {
+                dismiss()
+            } label: {
+                Label(.localizable(.generalButtonClose), systemSymbol: .xmark)
             }
+            .labelStyle(.iconOnly)
+            .keyboardShortcut(.cancelAction)
+        }
 
-            ToolbarItem(placement: .bottomBar) {
-                purchaseButton()
-                    .frame(maxWidth: .infinity)
-            }
-
-            ToolbarItem(placement: .automatic) {
-                compactIOSDonationButton()
-            }
-        } else if !isDonationHistoryPresented {
-            ToolbarItem(placement: .cancellationAction) {
-                Button {
-                    route = .plans
-                } label: {
-                    Label(
-                        .localizable(.navigationButtonBack),
-                        systemSymbol: .chevronLeft
-                    )
-                }
-                .labelStyle(.iconOnly)
-            }
+        ToolbarItem(placement: .bottomBar) {
+            purchaseButton()
+                .frame(maxWidth: .infinity)
         }
     }
 
@@ -199,26 +156,6 @@ extension Paywall {
         .padding(.top, 4)
     }
 
-    @ViewBuilder
-    func compactIOSDonationButton() -> some View {
-        Button {
-            route = .donation
-        } label: {
-            HStack(spacing: 4) {
-                Text(.localizable(.paywallButtonDonation))
-                Image(systemSymbol: .chevronRight2)
-                    .font(.caption2.weight(.semibold))
-            }
-            .font(.subheadline.weight(.medium))
-            .foregroundStyle(.primary)
-            .padding(.horizontal, 6)
-            .shimmering(
-                animation: Animation.linear(duration: 1).delay(2).repeatForever(autoreverses: false),
-                gradient: Gradient(colors: [.white, .white.opacity(0.3), .white])
-            )
-        }
-        .buttonStyle(.borderless)
-    }
 }
 
 #endif

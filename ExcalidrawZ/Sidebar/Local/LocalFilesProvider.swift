@@ -60,6 +60,8 @@ struct LocalFilesProvider<Content: View>: View {
     @State private var updateFlags: [URL : Date] = [:]
     @State private var sortValues: [URL: ExcalidrawFileSortProvider.Values] = [:]
     @State private var didLoadInitialCache = false
+    @State private var refreshGeneration = 0
+    @State private var refreshTask: Task<Void, Never>?
     
 #if canImport(AppKit)
     @State private var window: NSWindow?
@@ -69,12 +71,15 @@ struct LocalFilesProvider<Content: View>: View {
     
     var body: some View {
         content(files, updateFlags)
-            .bindWindow($window)
+            .bindAppWindow($window)
             .onAppear {
                 loadCachedFilesIfNeeded()
             }
             .task(id: folderContentsLoadID) {
                 getFolderContents()
+            }
+            .onDisappear {
+                refreshTask?.cancel()
             }
 #if os(macOS)
             .onReceive(
@@ -104,8 +109,8 @@ struct LocalFilesProvider<Content: View>: View {
                 }
             }
 #endif
-            .watch(value: sortField) { newValue in
-                sortFiles(field: newValue)
+            .watch(value: sortField) { _ in
+                getFolderContents()
             }
             .onReceive(localFolderState.itemCreatedPublisher) { path in
                 handleItemCreated(path: path)
@@ -123,7 +128,7 @@ struct LocalFilesProvider<Content: View>: View {
                 handleItemsMoved(mapping)
             }
             .onReceive(localFolderState.refreshFilesPublisher) { _ in
-                getFolderContents()
+                getFolderContents(debounceNanoseconds: 150_000_000)
             }
             .onReceive(
                 NotificationCenter.default.publisher(for: .localFolderAvailabilityDidChange)
@@ -156,81 +161,67 @@ struct LocalFilesProvider<Content: View>: View {
         self.updateFlags = cachedFiles.map { [$0: Date()] }.merged()
     }
     
-    private func getFolderContents() {
-        // wait a liitle
-        DispatchQueue.main.async {
-            do {
-                try folder.withSecurityScopedURL { folderURL in
-                    guard let contents = try LocalFolder.materializedDirectoryContents(
-                        at: folderURL,
-                        includingPropertiesForKeys: [
-                            .nameKey,
-                            .contentModificationDateKey,
-                            .creationDateKey,
-                            .ubiquitousItemDownloadingStatusKey,
-                            .isUbiquitousItemKey
-                        ],
-                        options: [.skipsSubdirectoryDescendants]
-                    ) else { return }
-                    var files = contents
-                        .filter({
-                            $0.pathExtension == "excalidraw"
-                            || ($0.pathExtension == "svg" && $0.deletingPathExtension().pathExtension == "excalidraw")
-                            || ($0.pathExtension == "png" && $0.deletingPathExtension().pathExtension == "excalidraw")
-                        })
-                        // Include files even if they are not downloaded (iCloud Drive files)
-                        .filter({ url in
-                            // Check if file exists locally or if it's an iCloud file (even if not downloaded)
-                            if FileManager.default.fileExists(at: url) {
-                                return true
-                            }
-                            
-                            // For iCloud files that are not downloaded, we still want to include them
-                            let resourceValues = try? url.resourceValues(forKeys: [.isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey])
-                            if let isUbiquitous = resourceValues?.isUbiquitousItem, isUbiquitous {
-                                return true // Include iCloud files regardless of download status
-                            }
-                            
-                            return false
-                        })
+    private func getFolderContents(debounceNanoseconds: UInt64 = 0) {
+        refreshGeneration &+= 1
+        let generation = refreshGeneration
+        let requestedFolderID = folderContentsLoadID
+        let requestedCacheKey = folderCacheKey
+        let sortFieldRawValue = sortField.rawValue
+        let activeURL: URL?
+        if case .localFile(let url) = fileState.currentActiveFile {
+            activeURL = url
+        } else {
+            activeURL = nil
+        }
+        let folderObjectID = folder.objectID
 
-                    // File Provider-backed folders may return a URL instance
-                    // that differs from the one used to create and open the
-                    // file even though both identify the same path. Keep the
-                    // active URL as the list identity so sidebar selection,
-                    // cover keys, and editor saves stay attached to one file.
-                    if case .localFile(let activeURL) = fileState.currentActiveFile {
-                        files = files.map { listedURL in
-                            listedURL.hasSameFileSystemPath(as: activeURL)
-                                ? activeURL
-                                : listedURL
-                        }
-                    }
-                    self.sortValues = Dictionary(
-                        uniqueKeysWithValues: files.map { file in
-                            let values = try? file.resourceValues(
-                                forKeys: [.contentModificationDateKey, .creationDateKey]
-                            )
-                            return (
-                                file,
-                                ExcalidrawFileSortProvider.Values(
-                                    name: file.deletingPathExtension().lastPathComponent,
-                                    updatedAt: values?.contentModificationDate,
-                                    createdAt: values?.creationDate
-                                )
-                            )
-                        }
-                    )
-                    withAnimation {
-                        self.files = files
-                        self.sortFiles(field: self.sortField)
-                        LocalFilesProviderCache.setFiles(self.files, for: folderCacheKey)
-                    }
-                    self.updateFlags = files.map {
-                        [$0 : Date()]
-                    }.merged()
+        refreshTask?.cancel()
+        refreshTask = Task { @MainActor in
+            do {
+                if debounceNanoseconds > 0 {
+                    try await Task.sleep(nanoseconds: debounceNanoseconds)
                 }
+                let refreshStartedAt = Date()
+                let context = PersistenceController.shared.newTaskContext()
+                let snapshot = try await context.perform { () throws -> LocalFolderContentsLoader.Snapshot? in
+                    try Task.checkCancellation()
+                    guard let backgroundFolder = try context.existingObject(
+                        with: folderObjectID
+                    ) as? LocalFolder else { return nil }
+                    return try backgroundFolder.withSecurityScopedURL { folderURL in
+                        try LocalFolderContentsLoader.load(
+                            at: folderURL,
+                            activeURL: activeURL,
+                            sortFieldRawValue: sortFieldRawValue
+                        )
+                    }
+                }
+                try Task.checkCancellation()
+                guard generation == refreshGeneration,
+                      requestedFolderID == folderContentsLoadID,
+                      let snapshot else { return }
+
+                localFilesProviderLogger.debug(
+                    "Refreshed \(snapshot.files.count) local files in \(Date().timeIntervalSince(refreshStartedAt)) seconds"
+                )
+
+                sortValues = snapshot.metadata.mapValues { metadata in
+                    ExcalidrawFileSortProvider.Values(
+                        name: metadata.name,
+                        updatedAt: metadata.updatedAt,
+                        createdAt: metadata.createdAt
+                    )
+                }
+                withAnimation {
+                    files = snapshot.files
+                    LocalFilesProviderCache.setFiles(snapshot.files, for: requestedCacheKey)
+                }
+                let refreshedAt = Date()
+                updateFlags = Dictionary(uniqueKeysWithValues: snapshot.files.map { ($0, refreshedAt) })
+            } catch is CancellationError {
+                return
             } catch {
+                guard generation == refreshGeneration else { return }
                 alertToast(error)
             }
         }
@@ -248,22 +239,9 @@ struct LocalFilesProvider<Content: View>: View {
 
     private func handleItemCreated(path: String) {
         let fileURL = URL(fileURLWithPath: path)
-        guard isDirectChildOfCurrentFolder(fileURL) else { return }
-
-        if !files.contains(where: { $0.hasSameFileSystemPath(as: fileURL) }) {
-            let values = try? fileURL.resourceValues(
-                forKeys: [.contentModificationDateKey, .creationDateKey]
-            )
-            sortValues[fileURL] = ExcalidrawFileSortProvider.Values(
-                name: fileURL.deletingPathExtension().lastPathComponent,
-                updatedAt: values?.contentModificationDate,
-                createdAt: values?.creationDate
-            )
-            files.append(fileURL)
-            sortFiles(field: sortField)
-            updateFlags[fileURL] = Date()
-            LocalFilesProviderCache.setFiles(files, for: folderCacheKey)
-        }
+        guard LocalFolderContentsLoader.isSupportedFile(fileURL),
+              isDirectChildOfCurrentFolder(fileURL) else { return }
+        getFolderContents(debounceNanoseconds: 150_000_000)
     }
 
     private func isDirectChildOfCurrentFolder(_ fileURL: URL) -> Bool {
@@ -273,6 +251,8 @@ struct LocalFilesProvider<Content: View>: View {
     }
     
     private func handleItemRemoved(path: String) {
+        refreshGeneration &+= 1
+        refreshTask?.cancel()
         if case .localFile(let file) = fileState.currentActiveFile, file.filePath == path {
             let index = files.firstIndex(where: {$0.filePath == path}) ?? -1
             if index <= 0 {
@@ -312,11 +292,11 @@ struct LocalFilesProvider<Content: View>: View {
     private func handleItemUpdated(path: String) {
         guard let file = self.files.first(where: {$0.filePath == path}) else { return }
         self.updateFlags[file] = Date()
-        getFolderContents()
+        getFolderContents(debounceNanoseconds: 150_000_000)
     }
     
-    private func handleItemRenamed(path: String) {
-        getFolderContents()
+    private func handleItemRenamed(path _: String) {
+        getFolderContents(debounceNanoseconds: 150_000_000)
     }
 
     private func handleItemsMoved(_ mapping: [URL: URL]) {
@@ -328,7 +308,7 @@ struct LocalFilesProvider<Content: View>: View {
         guard shouldRefresh else {
             return
         }
-        getFolderContents()
+        getFolderContents(debounceNanoseconds: 150_000_000)
     }
 }
 

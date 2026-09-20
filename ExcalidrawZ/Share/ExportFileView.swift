@@ -197,7 +197,7 @@ struct ExportFileView: View {
             
             Spacer()
         }
-        .modernButtonStyle(style: .glass, shape: .modern)
+        .editorChromeButtonStyle(style: .glass, shape: .modern)
         .fileExporter(
             isPresented: $showFileExporter,
             document: fileDocument,

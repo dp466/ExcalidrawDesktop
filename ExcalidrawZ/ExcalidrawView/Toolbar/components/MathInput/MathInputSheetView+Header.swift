@@ -56,7 +56,7 @@ extension MathInputSheetView {
             Image(systemSymbol: .xmark)
                 .font(.system(size: 16, weight: .semibold))
         }
-        .modernButtonStyle(style: .glass, size: .extraLarge, shape: .circle)
+        .editorChromeButtonStyle(style: .glass, size: .extraLarge, shape: .circle)
         .foregroundStyle(.secondary)
         .help(String(localizable: .generalButtonCancel))
     }
@@ -77,7 +77,7 @@ extension MathInputSheetView {
             commitButtonLabel
         }
         .lineLimit(1)
-        .modernButtonStyle(style: .glassProminent, size: .extraLarge, shape: .capsule)
+        .editorChromeButtonStyle(style: .glassProminent, size: .extraLarge, shape: .capsule)
         .keyboardShortcut(.defaultAction)
         .disabled(svgContent == nil)
     }
@@ -102,7 +102,7 @@ extension MathInputSheetView {
             Image(systemSymbol: .sidebarRight)
                 .font(.system(size: 16, weight: .semibold))
         }
-        .modernButtonStyle(style: .glass, size: .extraLarge, shape: .circle)
+        .editorChromeButtonStyle(style: .glass, size: .extraLarge, shape: .circle)
         .foregroundStyle(isInspectorPresented ? Color.accentColor : Color.secondary)
         .help(String(localizable: .toolbarLatexMathTemplatesHelp))
     }
@@ -168,7 +168,7 @@ extension MathInputSheetView {
             .minimumScaleFactor(0.82)
             .frame(width: 86, height: 30)
         }
-        .modernButtonStyle(
+        .editorChromeButtonStyle(
             style: isSelected ? .glassProminent : .glass,
             size: .small,
             shape: .capsule
@@ -180,10 +180,10 @@ extension MathInputSheetView {
         if #available(macOS 26.0, iOS 26.0, *) {
             Capsule()
                 .fill(.clear)
-                .glassEffect(.regular, in: Capsule())
+                .editorChromeGlassEffect(.regular, in: Capsule())
         } else {
             Capsule()
-                .fill(.regularMaterial)
+                .fill(editorChromeSurface())
                 .overlay {
                     Capsule()
                         .strokeBorder(Color.primary.opacity(0.10))

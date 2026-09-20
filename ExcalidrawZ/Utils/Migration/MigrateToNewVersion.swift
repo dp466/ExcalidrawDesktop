@@ -88,12 +88,12 @@ fileprivate struct MigrateToNewVersionSheetView: View {
                     .background {
                         if #available(macOS 14.0, *) {
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(.thinMaterial)
+                                .fill(editorChromeSurface(material: .thin))
                                 .stroke(.separator, lineWidth: 0.5)
                         } else {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 12)
-                                    .fill(.thinMaterial)
+                                    .fill(editorChromeSurface(material: .thin))
                                 
                                 RoundedRectangle(cornerRadius: 12)
                                     .stroke(.separator, lineWidth: 0.5)
@@ -132,12 +132,12 @@ fileprivate struct MigrateToNewVersionSheetView: View {
                         ZStack {
                             if #available(macOS 14.0, *) {
                                 RoundedRectangle(cornerRadius: 12)
-                                    .fill(.thinMaterial)
+                                    .fill(editorChromeSurface(material: .thin))
                                     .stroke(.separator, lineWidth: 0.5)
                             } else {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 12)
-                                        .fill(.thinMaterial)
+                                        .fill(editorChromeSurface(material: .thin))
                                     
                                     RoundedRectangle(cornerRadius: 12)
                                         .stroke(.separator, lineWidth: 0.5)
@@ -176,7 +176,7 @@ fileprivate struct MigrateToNewVersionSheetView: View {
         .padding()
         .frame(width: 600, height: 500)
         .modifier(MigrateToNewVersionSheetBackgroundModifier())
-        .bindWindow($window)
+        .bindAppWindow($window)
         .onAppear {
             window?.backgroundColor = .clear
         }

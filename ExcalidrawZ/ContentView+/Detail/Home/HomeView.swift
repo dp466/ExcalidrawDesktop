@@ -65,7 +65,7 @@ struct HomeView: View {
                             RoundedRectangle(cornerRadius: 16)
                                 .fill(Color.textBackgroundColor)
                                 .stroke(Color.separatorColor, lineWidth: 0.5)
-                                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
+                                .editorChromeGlassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
                         } else {
                             RoundedRectangle(cornerRadius: 16)
                                 .fill(Color.textBackgroundColor)
@@ -124,7 +124,7 @@ struct HomeView: View {
                                     if #available(macOS 26.0, iOS 26.0, *) {
                                         RoundedRectangle(cornerRadius: 16)
                                             .fill(Color.textBackgroundColor)
-                                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
+                                            .editorChromeGlassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
                                     } else {
                                         RoundedRectangle(cornerRadius: 16)
                                             .fill(Color.textBackgroundColor)
@@ -162,6 +162,9 @@ struct HomeView: View {
 }
 
 struct RecentlyFilesProvider: View {
+#if os(macOS)
+    @Environment(\.desktopRecentDrawings) private var desktopRecentDrawings
+#endif
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var localFolderState: LocalFolderState
@@ -307,6 +310,9 @@ struct RecentlyFilesProvider: View {
         }
         guard nextFiles.count != recentlyFiles.count else { return }
         recentlyFiles = nextFiles
+#if os(macOS)
+        desktopRecentDrawings?.files = nextFiles
+#endif
         lastRecentlyFilesKey = nextFiles.map(presentationKey)
     }
     
@@ -367,6 +373,9 @@ struct RecentlyFilesProvider: View {
         if recentlyFilesKey != lastRecentlyFilesKey {
             lastRecentlyFilesKey = recentlyFilesKey
             self.recentlyFiles = recentlyFiles
+#if os(macOS)
+            desktopRecentDrawings?.files = recentlyFiles
+#endif
         }
 
         let coverPriorityKey = CoverPriorityKey(

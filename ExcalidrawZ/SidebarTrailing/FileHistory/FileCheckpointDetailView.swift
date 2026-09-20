@@ -64,7 +64,7 @@ struct FileCheckpointDetailView<Checkpoint: FileCheckpointRepresentable>: View {
                                 .foregroundStyle(.red)
                         }
                         .buttonBorderShape(.circle)
-                        .buttonStyle(.glass)
+                        .editorChromeButtonStyle(style: .glass)
                         
                         Button { @MainActor in
                             restoreCheckpoint()
@@ -72,7 +72,7 @@ struct FileCheckpointDetailView<Checkpoint: FileCheckpointRepresentable>: View {
                             Text(.localizable(.checkpointButtonRestore))
                         }
                         .buttonBorderShape(.capsule)
-                        .buttonStyle(.glassProminent)
+                        .editorChromeButtonStyle(style: .glassProminent)
                     }
                     .controlSize(.extraLarge)
                 } else {

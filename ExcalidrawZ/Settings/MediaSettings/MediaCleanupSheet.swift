@@ -94,7 +94,7 @@ struct MediaCleanupSheet: View {
                     Text(localizable: .generalButtonDelete)
                 }
             }
-            .modernButtonStyle(style: .glassProminent, size: .regular, shape: .capsule)
+            .editorChromeButtonStyle(style: .glassProminent, size: .regular, shape: .capsule)
             .disabled((selectedCandidates.isEmpty && selectedTrashedFiles.isEmpty) || isCleaning)
 
             Button {
@@ -102,7 +102,7 @@ struct MediaCleanupSheet: View {
             } label: {
                 Image(systemSymbol: .xmark)
             }
-            .modernButtonStyle(style: .glass, size: .regular, shape: .circle)
+            .editorChromeButtonStyle(style: .glass, size: .regular, shape: .circle)
             .disabled(isCleaning)
             .accessibilityLabel(Text(localizable: .generalButtonClose))
         }

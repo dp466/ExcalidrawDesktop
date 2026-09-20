@@ -7,18 +7,12 @@
 
 import SwiftUI
 
-import ChocofordUI
-
 struct AboutView: View {
     var body: some View {
         if #available(macOS 13.0, *) {
             Form {
                 content()
-#if APP_STORE
-                AboutChocofordView(isAppStore: true)
-#else
-                AboutChocofordView(isAppStore: false)
-#endif
+                developerSection()
             }
             .formStyle(.grouped)
         } else {
@@ -31,29 +25,18 @@ struct AboutView: View {
                         .padding()
                         .background {
                             RoundedRectangle(cornerRadius: 8)
-                                .fill(.regularMaterial)
+                                .fill(editorChromeSurface())
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(.gray.opacity(0.7))
                         }
-#if APP_STORE
-                        AboutChocofordView(isAppStore: true)
+                        developerSection()
                             .padding()
                             .background {
                                 RoundedRectangle(cornerRadius: 8)
-                                    .fill(.regularMaterial)
+                                    .fill(editorChromeSurface())
                                 RoundedRectangle(cornerRadius: 8)
                                     .stroke(.gray.opacity(0.7))
                             }
-#else
-                        AboutChocofordView(isAppStore: false)
-                            .padding()
-                            .background {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(.regularMaterial)
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(.gray.opacity(0.7))
-                            }
-#endif
                     }
                     .padding()
                 }
@@ -90,31 +73,32 @@ struct AboutView: View {
                 Spacer(minLength: 0)
             }
             .padding(.bottom)
-        } footer: {
-            HStack {
-                WithAsyncValue(isChinaAppStore) { isChina, error in
-                    if isChina == true {
-                        Link(destination: URL(string: "https://beian.miit.gov.cn/")!) {
-                            Text("粤ICP备2023139330号-5A")
-                        }
-                        .hoverCursor(.link)
-                    }
-                }
+        }
+    }
 
-                Spacer()
+    @ViewBuilder
+    private func developerSection() -> some View {
+        Section {
+            Link(destination: URL(string: "https://github.com/dp466")!) {
+                HStack(spacing: 10) {
+                    Image("github-mark")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
 
-                HStack(spacing: 6) {
-                    if let privacyPolicy = URL(string: "https://excalidrawz.chocoford.com/privacy/") {
-                        Link(.localizable(.generalButtonPrivacyPolicy), destination: privacyPolicy)
-                            .hoverCursor(.link)
-                    }
-                    Text("·")
-                    if let termsOfUse = URL(string: "https://excalidrawz.chocoford.com/terms/") {
-                        Link(.localizable(.generalButtonTermsOfUse), destination: termsOfUse)
-                            .hoverCursor(.link)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("dp466")
+                            .font(.headline)
+                        Text("github.com/dp466")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
+            .buttonStyle(.plain)
+        } header: {
+            Text("Developer")
         }
     }
     

@@ -45,6 +45,9 @@ struct ContentView: View {
     @StateObject private var layoutState = LayoutState()
     @StateObject private var shareFileState = ShareFileState()
     @StateObject private var canvasPreferencesState = CanvasPreferencesState()
+#if os(macOS)
+    @StateObject private var desktopRecentDrawings = DesktopRecentDrawingsSnapshot()
+#endif
 
 #if canImport(AppKit)
     @State private var window: NSWindow?
@@ -85,9 +88,12 @@ struct ContentView: View {
             .environmentObject(layoutState)
             .environmentObject(shareFileState)
             .environmentObject(canvasPreferencesState)
+#if os(macOS)
+            .environment(\.desktopRecentDrawings, desktopRecentDrawings)
+#endif
             .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
             .swiftyAlert(logs: true)
-            .bindWindow($window)
+            .bindAppWindow($window)
 #if os(macOS)
             .sheet(isPresented: applicationTerminationSheetBinding) {
                 ApplicationTerminationSheet(
@@ -128,6 +134,11 @@ struct ContentView: View {
             .modifier(LockedContentEventModifier(fileState: fileState))
             .modifier(ActiveFileAvailabilityModifier(fileState: fileState))
             .watch(value: fileState.currentActiveFile) { newValue in
+#if os(macOS)
+                if let file = newValue, !fileState.currentActiveFileIsInTrash {
+                    desktopRecentDrawings.recordVisit(file)
+                }
+#endif
                 // Going back to Home: nothing to inspect, so collapse the panel.
                 if newValue == nil, layoutState.isInspectorPresented {
                     layoutState.isInspectorPresented = false
@@ -313,7 +324,7 @@ private struct ApplicationTerminationSheet: View {
 
                 Button(.localizable(.generalButtonCancel), action: cancelAction)
                     .keyboardShortcut(.cancelAction)
-                    .modernButtonStyle(
+                    .editorChromeButtonStyle(
                         style: .glass,
                         size: .regular,
                         shape: .capsule
@@ -325,7 +336,7 @@ private struct ApplicationTerminationSheet: View {
                     action: forceQuitAction
                 )
                 .disabled(forceQuitDelayRemaining > 0)
-                .modernButtonStyle(
+                .editorChromeButtonStyle(
                     style: .glassProminent,
                     size: .regular,
                     shape: .capsule

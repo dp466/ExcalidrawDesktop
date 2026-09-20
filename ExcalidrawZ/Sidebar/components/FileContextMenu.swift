@@ -178,7 +178,7 @@ struct FileMenu: View {
 
     var body: some View {
         FileMenuProvider(file: file, fileState: fileState) { triggers in
-            Menu {
+            FileActionSubmenu {
                 FileMenuItems(
                     file: file,
                     fileState: fileState
@@ -196,6 +196,8 @@ struct FileMenu: View {
 }
 
 struct FileMenuItems: View {
+    @Environment(\.dismissFlatFileMenu) private var dismissFlatFileMenu
+
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) private var alertToast
@@ -249,7 +251,7 @@ struct FileMenuItems: View {
             if !isInEditMode,
                let file = firstFile,
                fileState.currentActiveFile != .file(file) {
-                Button {
+                FileActionButton {
                     if let file = firstFile {
                         fileState.setActiveFile(.file(file))
                     }
@@ -262,7 +264,7 @@ struct FileMenuItems: View {
                 .disabled(!isSingleFile)
             }
             // Rename - only for single file
-            Button {
+            FileActionButton {
                 onToggleRename()
             } label: {
                 Label(
@@ -273,7 +275,7 @@ struct FileMenuItems: View {
             .disabled(!isSingleFile)
 
             // Duplicate - works for single and multiple files
-            Button {
+            FileActionButton {
                 Task {
                     await duplicateFile()
                 }
@@ -295,6 +297,7 @@ struct FileMenuItems: View {
 
             // Copy file link - only for single file
             SensoryFeedbackButton {
+                dismissFlatFileMenu()
                 if let firstFile {
                     try copyEntityURLToClipboard(objectID: firstFile.objectID)
                     copySensoryFeedbackFlag.toggle()
@@ -314,7 +317,7 @@ struct FileMenuItems: View {
             Divider()
             
             // Delete - works for single and multiple files
-            Button(role: .destructive) {
+            FileActionButton(role: .destructive) {
                 Task {
                     await deleteFile()
                 }
@@ -334,7 +337,7 @@ struct FileMenuItems: View {
             
         } else if let firstFile, firstFile.inTrash {
             // Recover - works for single and multiple files
-            Button {
+            FileActionButton {
                 let fileIDs = files.map { $0.objectID }
                 Task.detached {
                     let context = PersistenceController.shared.container.newBackgroundContext()
@@ -360,7 +363,7 @@ struct FileMenuItems: View {
             }
 
             // Permanently delete - works for single and multiple files
-            Button(role: .destructive) {
+            FileActionButton(role: .destructive) {
                 onTogglePermanentlyDelete()
             } label: {
                 Label {
@@ -381,7 +384,7 @@ struct FileMenuItems: View {
     @ViewBuilder
     private func moveFileMenu() -> some View {
         if let sourceGroup = firstFile?.group {
-            Menu {
+            FileActionSubmenu {
                 let groups: [Group] = topLevelGroups
                     .filter{ $0.groupType != .trash }
                     .sorted { a, b in

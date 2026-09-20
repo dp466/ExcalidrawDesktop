@@ -96,15 +96,15 @@ struct MoveToGroupMenu<Group: ExcalidrawGroup>: View {
         )
         
         if childrenGroups.isEmpty, canMoveToGroup {
-            Button {
+            FileActionButton {
                 self.onMove(group.objectID)
             } label: {
                 Text(group.name ?? String(localizable: .generalUnknown))
             }
         } else if canMoveToGroup || !filteredChildren.isEmpty {
-            Menu {
+            FileActionSubmenu {
                 if canMoveToGroup {
-                    Button {
+                    FileActionButton {
                         self.onMove(group.objectID)
                     } label: {
                         Text(localizable: .sidebarFileRowContextMenuMoveToGroup(group.name ?? String(localizable: .generalUnknown)))

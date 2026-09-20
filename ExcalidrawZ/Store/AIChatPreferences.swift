@@ -94,7 +94,11 @@ final class AIChatPreferences: ObservableObject {
 
     private init() {
         let defaults = UserDefaults.standard
-        self.isAIEnabled = defaults.object(forKey: Self.isAIEnabledDefaultsKey) as? Bool ?? false
+        let storedAIEnabled = defaults.object(forKey: Self.isAIEnabledDefaultsKey) as? Bool ?? false
+        self.isAIEnabled = AIChatAvailability.isAvailable && storedAIEnabled
+        if storedAIEnabled && !AIChatAvailability.isAvailable {
+            defaults.set(false, forKey: Self.isAIEnabledDefaultsKey)
+        }
 
         if let raw = defaults.string(forKey: defaultTierKey),
            let tier = ExcalidrawModelTier(rawValue: raw) {

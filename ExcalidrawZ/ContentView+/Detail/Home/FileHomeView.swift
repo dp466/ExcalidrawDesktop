@@ -97,6 +97,14 @@ struct FileHomeContainer: View {
                 content
                     .readHeight($contentHeight)
 
+#if os(macOS)
+                if config.isPlaceholderPresented {
+                    Text(localizable: .homeNoFilesPlaceholder)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, minHeight: 140)
+                }
+#else
                 Color.clear
                     .frame(height: max(0, scrollViewHeight - contentHeight))
                     .overlay(alignment: .top) {
@@ -157,6 +165,7 @@ struct FileHomeContainer: View {
                             }
                         }
                     }
+#endif
             }
             .padding(.bottom, 30)
             .background {
@@ -360,7 +369,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                         if #available(iOS 26.0, *) {
                             Capsule()
                                 .fill(.background)
-                                .glassEffect(in: Capsule())
+                                .editorChromeGlassEffect(in: Capsule())
                         } else {
                             Capsule()
                                 .fill(.background)
@@ -419,7 +428,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                         } label: {
                             Image(systemSymbol: .checkmark)
                         }
-                        .modernButtonStyle(style: .glassProminent, shape: .circle)
+                        .editorChromeButtonStyle(style: .glassProminent, shape: .circle)
                     } else {
                         actionsMenu()
                     }
@@ -527,7 +536,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
             }
         }
 #if os(iOS)
-        .modernButtonStyle(style: .glass, shape: .circle)
+        .editorChromeButtonStyle(style: .glass, shape: .circle)
         .labelStyle(.iconOnly)
         .frame(minWidth: 12, minHeight: 12)
 #elseif os(macOS)
@@ -556,7 +565,7 @@ struct FileHomeView<HomeGroup: ExcalidrawGroup>: View {
                 Spacer()
             }
 #if os(iOS)
-            .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
+            .editorChromeButtonStyle(style: .glass, size: .regular, shape: .capsule)
 #else
             .modifier(FileHomeQuickActionButtonStyleModifier())
 #endif
@@ -683,15 +692,19 @@ private extension FileState.ActiveFile {
 struct FileHomeQuickActionButtonStyleModifier: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
+#if os(macOS)
+        content.buttonStyle(NavigationShellButtonStyle(bordered: true))
+#else
         if #available(macOS 26.0, iOS 26.0, *) {
             content
-                .buttonStyle(.glass)
+                .editorChromeButtonStyle(style: .glass)
                 .buttonBorderShape(.capsule)
                 .controlSize(.regular)
         } else {
             content
-                .modernButtonStyle(shape: .capsule)
+                .editorChromeButtonStyle(shape: .capsule)
         }
+#endif
     }
 }
 

@@ -1,0 +1,9 @@
+interface:
+  display_name: "Excalibur Image Creator"
+  short_description: "Turn product photos into flat Excalidraw-style PNGs."
+  icon_small: "./assets/icon.png"
+  icon_large: "./assets/icon.png"
+  brand_color: "#6965DB"
+  default_prompt: "Use $excalibur-image-creator to turn the attached product photo into a front-facing, Excalidraw-style transparent PNG. Preserve the product's visible terminals and identity, without adding cables or annotations."
+policy:
+  allow_implicit_invocation: true

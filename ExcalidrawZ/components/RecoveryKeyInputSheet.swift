@@ -180,7 +180,7 @@ struct RecoveryKeyInputSheet: View {
                 dismiss()
             }
             .keyboardShortcut(.cancelAction)
-            .modernButtonStyle(style: .glass, size: .large, shape: .capsule)
+            .editorChromeButtonStyle(style: .glass, size: .large, shape: .capsule)
             .disabled(isWorking)
 
             Button {
@@ -196,7 +196,7 @@ struct RecoveryKeyInputSheet: View {
                 }
             }
             .keyboardShortcut(.defaultAction)
-            .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
+            .editorChromeButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
             .disabled(primaryButtonDisabled)
         }
     }

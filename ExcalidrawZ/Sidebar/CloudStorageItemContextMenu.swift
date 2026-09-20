@@ -145,6 +145,9 @@ struct CloudStorageFileActionsModifier: ViewModifier {
     enum Presentation {
         case contextMenu
         case fileMenu
+#if os(macOS)
+        case flatMenu(Binding<Bool>)
+#endif
     }
 
     init(
@@ -177,6 +180,12 @@ struct CloudStorageFileActionsModifier: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         switch presentation {
+#if os(macOS)
+            case .flatMenu(let isPresented):
+                withPresentations(
+                    DesktopDrawingMenuSurface(isPresented: isPresented) { fileActionItems }
+                )
+#endif
             case .contextMenu:
                 withPresentations(
                     content.contextMenu {
@@ -197,7 +206,7 @@ struct CloudStorageFileActionsModifier: ViewModifier {
     @ViewBuilder
     private var fileActionItems: some View {
         if !isCurrentFile {
-            Button {
+            FileActionButton {
                 open()
             } label: {
                 Label(.localizable(.generalButtonOpen), systemSymbol: .arrowUpRightSquare)
@@ -205,7 +214,7 @@ struct CloudStorageFileActionsModifier: ViewModifier {
         }
 
         if case .conflict = documentStore.syncState(for: reference) {
-            Button {
+            FileActionButton {
                 isConflictResolutionPresented = true
             } label: {
                 Label(
@@ -220,7 +229,7 @@ struct CloudStorageFileActionsModifier: ViewModifier {
 
         if selectedReferences.count == 1,
            selectedReferencesAllow(.rename) {
-            Button {
+            FileActionButton {
                 isRenamePresented = true
             } label: {
                 Label(.localizable(.sidebarFileRowContextMenuRename), systemSymbol: .pencil)
@@ -228,7 +237,7 @@ struct CloudStorageFileActionsModifier: ViewModifier {
         }
 
         if selectedReferencesAllow(.download) {
-            Button {
+            FileActionButton {
                 duplicateSelectedFiles()
             } label: {
                 Label {
@@ -249,7 +258,7 @@ struct CloudStorageFileActionsModifier: ViewModifier {
 
         Divider()
 
-        Button {
+        FileActionButton {
             revealInProvider()
         } label: {
             Label(
@@ -262,7 +271,7 @@ struct CloudStorageFileActionsModifier: ViewModifier {
             )
         }
 
-        Button {
+        FileActionButton {
             copyRemoteLink()
         } label: {
             Label(.localizable(.cloudStorageContextMenuCopyLink), systemImage: "link")
@@ -271,7 +280,7 @@ struct CloudStorageFileActionsModifier: ViewModifier {
         if selectedReferencesAllow(.delete) {
             Divider()
 
-            Button(role: .destructive) {
+            FileActionButton(role: .destructive) {
                 isDeletePresented = true
             } label: {
                 Label(.localizable(.sidebarFileRowContextMenuDelete), systemSymbol: .trash)

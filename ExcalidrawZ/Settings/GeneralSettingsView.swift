@@ -33,6 +33,9 @@ struct GeneralSettingsView: View {
 #endif
     @EnvironmentObject var appPreference: AppPreference
     
+#if os(macOS) && !APP_STORE
+    @AppStorage(ExperimentalEditorRefresh.defaultsKey) private var experimentalHighRefresh = false
+#endif
     @AppStorage("DisableCloudSync") var isICloudDisabled: Bool = false
     
     @AppStorage("FolderStructureStyle") var folderStructStyle: FolderStructureStyle = .disclosureGroup
@@ -72,7 +75,40 @@ struct GeneralSettingsView: View {
             }
         }
 
+#if os(macOS) && !APP_STORE
+        Section("Editor performance") {
+            Toggle("High refresh rate (experimental)", isOn: $experimentalHighRefresh)
+                .disabled(!ExperimentalEditorRefresh.isAvailable && !experimentalHighRefresh)
+            Text("Allow smoother drawing and panning on high-refresh displays. Off by default. Restart the app after changing this setting.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("May increase battery use and may stop working after a macOS update. Frame rate depends on your display and drawing complexity.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            if !ExperimentalEditorRefresh.isAvailable {
+                Text("Unavailable on this version of macOS. Normal rendering will be used.")
+                    .foregroundStyle(.secondary)
+            } else if experimentalHighRefresh != ExperimentalEditorRefresh.requestedAtLaunch {
+                Text("Restart the app to apply this change.")
+                    .foregroundStyle(NavigationShellTheme.primary(for: colorScheme))
+            }
+        }
+#endif
 #if os(macOS)
+        Section("Autosave") {
+            Text("Changes save after a short pause, or about every five seconds during continuous drawing. Nothing is written while idle.")
+            Button("Open Recovery Copies…") {
+                Task {
+                    do {
+                        let directory = try await LocalAutosaveRecoveryStore.shared.recoveryDirectory()
+                        NSWorkspace.shared.open(directory)
+                    } catch { alertToast(error) }
+                }
+            }
+            Text("Local files keep recent recovery copies with embedded images. Open a copy after a crash if needed. Library drawings use their existing file history and encryption.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
         Section {
             KeyboardShortcuts.Recorder(for: .toggleScreenAnnotation) {
                 Text(localizable: .screenAnnotationTitle)
@@ -191,6 +227,7 @@ struct GeneralSettingsView: View {
             Toggle(
                 .localizable(.settingsICloudToggleDisable),
                 isOn: Binding {
+                    ExcalidrawFeaturePolicy.isLocalMacOSFork ||
                     FileManager.default.ubiquityIdentityToken == nil ||
                     isICloudDisabled
                 } set: { disabled in
@@ -198,6 +235,7 @@ struct GeneralSettingsView: View {
                 }
             )
             .modifier(ToggleICloudSyncingModifier())
+            .disabled(ExcalidrawFeaturePolicy.isLocalMacOSFork)
         } header: {
             Text(localizable: .settingsICloudTitle)
         }

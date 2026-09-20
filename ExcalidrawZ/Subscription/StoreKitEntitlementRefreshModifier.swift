@@ -23,7 +23,7 @@ struct StoreKitEntitlementRefreshModifier: ViewModifier {
         content
 #if APP_STORE
 #if canImport(AppKit)
-            .bindWindow($window)
+            .bindAppWindow($window)
             .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
                 refresh(reason: .appBecameActive)
             }

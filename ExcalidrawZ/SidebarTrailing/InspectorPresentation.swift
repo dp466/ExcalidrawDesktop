@@ -265,7 +265,7 @@ struct InspectorPresentationModifier: ViewModifier {
                                 style: .continuous
                             )
                                 .fill(.background)
-                                .glassEffect(
+                                .editorChromeGlassEffect(
                                     .regular,
                                     in: RoundedRectangle(
                                         cornerRadius: floatingInspectorCornerRadius,
@@ -277,7 +277,7 @@ struct InspectorPresentationModifier: ViewModifier {
 #endif
                         } else {
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(.regularMaterial)
+                                .fill(editorChromeSurface())
                                 .shadow(radius: 4)
                         }
                     }
@@ -306,11 +306,15 @@ struct InspectorPresentationModifier: ViewModifier {
     }
 
     private var floatingInspectorCornerRadius: CGFloat {
+#if os(macOS)
+        return 8
+#else
         if #available(iOS 26.0, macOS 26.0, *) {
             24
         } else {
             12
         }
+#endif
     }
 
     @ViewBuilder

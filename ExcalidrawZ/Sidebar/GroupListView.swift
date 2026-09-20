@@ -12,6 +12,7 @@ import ChocofordEssentials
 import ChocofordUI
 
 struct GroupListView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) var alertToast
@@ -41,6 +42,9 @@ struct GroupListView: View {
     @ViewBuilder
     private var content: some View {
         VStack(alignment: .leading, spacing: 0) {
+#if os(macOS)
+            DesktopSidebarHeading()
+#endif
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(spacing: 0) {
@@ -63,7 +67,11 @@ struct GroupListView: View {
                                     )
                                 )
                                 .id("home")
+#if os(macOS)
+                                DesktopRecentDrawings()
+#endif
                                 
+#if os(iOS)
                                 Button {
                                     fileState.setActiveFile(nil)
                                     fileState.setActiveGroupIfNeeded(.collaboration)
@@ -91,6 +99,7 @@ struct GroupListView: View {
                                     )
                                 )
                                 
+#endif
                                 // Temporary
                                 if !fileState.temporaryFiles.isEmpty {
                                     TemporaryGroupRowView()
@@ -111,11 +120,15 @@ struct GroupListView: View {
 
                             LinkedStorageSidebarSection()
                         }
-                        .padding(8)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 10)
+#if os(iOS)
                         .readHeight($scrollViewContentHeight)
-                        
+#endif
+#if os(iOS)
                         Color.clear
                             .frame(height: max(0, scrollViewHeight - scrollViewContentHeight))
+#endif
                     }
                     .background {
                         Color.clear
@@ -130,7 +143,9 @@ struct GroupListView: View {
                             }
                     }
                 }
+#if os(iOS)
                 .readHeight($scrollViewHeight)
+#endif
                 .onReceive(NotificationCenter.default.publisher(for: .shouldExpandGroup)) { output in
                     guard let targetGroupID = output.object as? NSManagedObjectID else { return }
 #if os(iOS)
@@ -170,19 +185,37 @@ struct GroupListView: View {
 #endif
                 }
             }
-            Divider()
+            Rectangle()
+                .fill(NavigationShellTheme.border(for: colorScheme))
+                .frame(height: 1)
             
             contentToolbar()
                 .buttonStyle(.borderless)
-                .padding(8)
+#if os(macOS)
+            Label("Local workspace", systemImage: "externaldrive")
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
+#endif
         }
     }
     
     @ViewBuilder
     private func contentToolbar() -> some View {
         HStack {
+#if os(macOS)
+            if #available(macOS 14.0, *) {
+                SettingsLink {
+                    Label("Settings", systemImage: "gearshape")
+                }
+                .buttonStyle(NavigationShellButtonStyle())
+            } else {
+                SettingsViewButton()
+            }
+#else
             SettingsViewButton()
-
+#endif
             Spacer()
             
             if #available(macOS 13.0, *) {
@@ -193,9 +226,10 @@ struct GroupListView: View {
                     // .buttonStyle(.text(size: .small, square: true))
             }
         }
-        .padding(4)
-        .controlSize(.regular)
-        // .background(.ultraThickMaterial)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .controlSize(.small)
+        .foregroundStyle(.secondary)
     }
     
     @ViewBuilder
@@ -438,6 +472,7 @@ fileprivate struct ContentHeaderCreateButtonModifier: ViewModifier {
         HStack {
             Text(title)
                 .foregroundStyle(.secondary)
+                .textCase(.uppercase)
             
             Spacer()
             
@@ -472,7 +507,7 @@ fileprivate struct ContentHeaderCreateButtonModifier: ViewModifier {
                 }
             }
 #if os(macOS)
-            .controlSize(.large)
+            .controlSize(.small)
             .padding(.trailing, 2)
 #endif
             .labelStyle(.iconOnly)
@@ -480,7 +515,9 @@ fileprivate struct ContentHeaderCreateButtonModifier: ViewModifier {
             .opacity(isHovered ? 1 : 0.4)
         }
         .frame(maxWidth: .infinity)
-        .font(.callout.bold())
+        .font(.caption2.weight(.semibold))
+        .padding(.top, 14)
+        .padding(.bottom, 5)
         .animation(.smooth, value: isHovered)
 
     }

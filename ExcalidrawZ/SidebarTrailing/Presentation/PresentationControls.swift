@@ -32,7 +32,7 @@ struct PresentationControls: View {
                     Image(systemSymbol: .chevronLeft)
                 }
                 .disabled(selectedIndex == 0)
-                .modernButtonStyle(style: .glass, size: .regular, shape: .circle)
+                .editorChromeButtonStyle(style: .glass, size: .regular, shape: .circle)
 
                 Text("\(selectedIndex + 1) / \(slideCount)")
                     .font(.callout.monospacedDigit())
@@ -43,14 +43,14 @@ struct PresentationControls: View {
                     Image(systemSymbol: .chevronRight)
                 }
                 .disabled(selectedIndex == slideCount - 1)
-                .modernButtonStyle(style: .glass, size: .regular, shape: .circle)
+                .editorChromeButtonStyle(style: .glass, size: .regular, shape: .circle)
 
                 divider
 
                 Button(action: dismiss) {
                     Image(systemSymbol: .xmark)
                 }
-                .modernButtonStyle(style: .glass, size: .regular, shape: .circle)
+                .editorChromeButtonStyle(style: .glass, size: .regular, shape: .circle)
             }
             .padding(8)
             .background {
@@ -94,7 +94,7 @@ struct PresentationControls: View {
         if #available(macOS 26.0, iOS 26.0, *) {
             shape
                 .fill(.clear)
-                .glassEffect(
+                .editorChromeGlassEffect(
                     .regular.tint(Color.black.opacity(0.62)),
                     in: shape
                 )
@@ -106,7 +106,7 @@ struct PresentationControls: View {
                 }
         } else {
             shape
-                .fill(.regularMaterial)
+                .fill(editorChromeSurface())
                 .overlay {
                     shape.fill(Color.black.opacity(0.58))
                 }

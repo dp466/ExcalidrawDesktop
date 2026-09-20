@@ -25,7 +25,7 @@ struct PresentationWelcomeView: View {
                 Text(localizable: .presentationWelcomeButton)
                     .frame(maxWidth: .infinity)
             }
-            .modernButtonStyle(
+            .editorChromeButtonStyle(
                 style: .glassProminent,
                 size: .extraLarge,
                 shape: .modern

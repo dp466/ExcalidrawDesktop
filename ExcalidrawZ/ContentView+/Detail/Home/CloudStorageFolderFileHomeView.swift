@@ -81,7 +81,7 @@ struct CloudStorageFolderFileHomeView: View {
                 } label: {
                     Label(.localizable(.generalButtonDelete), systemSymbol: .trash)
                 }
-                .modernButtonStyle(style: .glassProminent, shape: .capsule)
+                .editorChromeButtonStyle(style: .glassProminent, shape: .capsule)
                 .padding(.bottom, 12)
             }
         }
@@ -173,7 +173,7 @@ struct CloudStorageFolderFileHomeView: View {
                     }
 #else
                     retryButton(errorMessage: errorMessage)
-                        .modernButtonStyle(style: .glass, shape: .circle)
+                        .editorChromeButtonStyle(style: .glass, shape: .circle)
 #endif
                 }
 
@@ -215,7 +215,7 @@ struct CloudStorageFolderFileHomeView: View {
             Spacer()
         }
 #if os(iOS)
-        .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
+        .editorChromeButtonStyle(style: .glass, size: .regular, shape: .capsule)
 #else
         .modifier(FileHomeQuickActionButtonStyleModifier())
 #endif
@@ -262,7 +262,7 @@ struct CloudStorageFolderFileHomeView: View {
         content
             .menuIndicator(.hidden)
 #if os(iOS)
-            .modernButtonStyle(style: .glass, shape: .circle)
+            .editorChromeButtonStyle(style: .glass, shape: .circle)
             .labelStyle(.iconOnly)
 #else
             .modifier(CloudStorageFileHomeAccessoryButtonModifier())

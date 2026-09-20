@@ -169,7 +169,7 @@ struct LocalFileMenu: View {
     
     var body: some View {
         LocalFileMenuProvider(file: file) { triggers in
-            Menu {
+            FileActionSubmenu {
                 LocalFileRowMenuItems(file: file) {
                     triggers.onToggleRename()
                 }
@@ -181,6 +181,8 @@ struct LocalFileMenu: View {
 }
 
 struct LocalFileRowMenuItems: View {
+    @Environment(\.dismissFlatFileMenu) private var dismissFlatFileMenu
+
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.alertToast) private var alertToast
@@ -250,7 +252,7 @@ struct LocalFileRowMenuItems: View {
             if !isInEditMode,
                let file = firstFile,
                fileState.currentActiveFile != .localFile(file) {
-                Button {
+                FileActionButton {
                     if let firstFile {
                         fileState.setActiveFile(.localFile(firstFile))
                     }
@@ -269,6 +271,7 @@ struct LocalFileRowMenuItems: View {
                         
                     } else if fileStatus?.iCloudStatus == .downloaded {
                         AsyncButton {
+                            dismissFlatFileMenu()
                             try await FileCoordinator.shared.evictLocalCopy(of: firstFile)
                         } label: {
                             Label(
@@ -278,6 +281,7 @@ struct LocalFileRowMenuItems: View {
                         }
                     } else if fileStatus?.iCloudStatus == .outdated {
                         AsyncButton {
+                            dismissFlatFileMenu()
                             try await FileCoordinator.shared.downloadFile(url: firstFile)
                         } label: {
                             Label(
@@ -292,7 +296,7 @@ struct LocalFileRowMenuItems: View {
         }
         
         // Rename
-        Button {
+        FileActionButton {
             onToggleRename()
         } label: {
             Label(
@@ -303,7 +307,7 @@ struct LocalFileRowMenuItems: View {
         .disabled(!isSingleFile)
 
 
-        Button {
+        FileActionButton {
             duplicateFile()
         } label: {
             Label {
@@ -322,7 +326,7 @@ struct LocalFileRowMenuItems: View {
         moveLocalFileMenu()
         
 #if os(macOS)
-        Button {
+        FileActionButton {
 #if canImport(AppKit)
             NSPasteboard.general.clearContents()
             if let firstFile {
@@ -335,11 +339,10 @@ struct LocalFileRowMenuItems: View {
 #endif
         } label: {
             Label(.localizable(.sidebarLocalFileRowContextMenuCopyPath), systemSymbol: .arrowRightDocOnClipboard)
-                .foregroundStyle(.red)
         }
         .disabled(!isSingleFile)
 
-        Button {
+        FileActionButton {
             let filesToReveal = Array(files)
             guard !filesToReveal.isEmpty else { return }
             NSWorkspace.shared.activateFileViewerSelecting(filesToReveal)
@@ -350,13 +353,12 @@ struct LocalFileRowMenuItems: View {
                 ),
                 systemSymbol: .docViewfinder
             )
-            .foregroundStyle(.red)
         }
 #endif
         Divider()
         
         // Delete
-        Button {
+        FileActionButton {
             moveToTrash()
         } label: {
             Label {
@@ -379,7 +381,7 @@ struct LocalFileRowMenuItems: View {
     private func moveLocalFileMenu() -> some View {
         if !files.isEmpty {
             let sourceFolder = sourceLocalFolder
-            Menu {
+            FileActionSubmenu {
                 ForEach(topLevelLocalFolders) { folder in
                     MoveToGroupMenu(
                         destination: folder,

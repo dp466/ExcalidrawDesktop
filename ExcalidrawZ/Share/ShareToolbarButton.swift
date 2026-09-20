@@ -79,7 +79,7 @@ struct ShareToolbarButton: View {
         .help(String(localizable: .export))
         .keyboardShortcut("s", modifiers: [.command, .shift])
         .disabled(isShareDisabled || isSharing)
-        .bindWindow($window)
+        .bindAppWindow($window)
         .onReceive(NotificationCenter.default.publisher(for: .toggleShare)) { notification in
             guard window?.isKeyWindow == true,
                   !isShareDisabled else { return }

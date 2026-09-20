@@ -177,7 +177,7 @@ struct ConflictResolutionSheetView: View {
                 Button("Try Again") {
                     loadVersions()
                 }
-                .modernButtonStyle(style: .glassProminent, shape: .modern)
+                .editorChromeButtonStyle(style: .glassProminent, shape: .modern)
             }
             .padding()
             Spacer()
@@ -212,13 +212,13 @@ struct ConflictResolutionSheetView: View {
             onCancelled()
             dismiss()
         }
-        .modernButtonStyle(style: .glass, shape: .modern)
+        .editorChromeButtonStyle(style: .glass, shape: .modern)
         .keyboardShortcut(.cancelAction)
 
         AsyncButton("Keep Selected Version") {
             try await resolveConflict()
         }
-        .modernButtonStyle(style: .glassProminent, shape: .modern)
+        .editorChromeButtonStyle(style: .glassProminent, shape: .modern)
         .disabled(selectedVersion == nil || isResolving)
     }
     

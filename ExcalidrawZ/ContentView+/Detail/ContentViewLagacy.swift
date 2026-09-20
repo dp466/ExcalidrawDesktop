@@ -23,7 +23,7 @@ struct ContentViewLagacy: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .background {
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(.regularMaterial)
+                                .fill(editorChromeSurface())
                                 .shadow(radius: 4)
                         }
                         .transition(.move(edge: .leading))

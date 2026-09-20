@@ -20,7 +20,11 @@ final class ScreenAnnotationWebRuntime: NSObject {
     override init() {
         super.init()
 
-        let configuration = WKWebViewConfiguration()
+        var configuration = WKWebViewConfiguration()
+        if ExperimentalEditorRefresh.requestedAtLaunch &&
+            !ExperimentalEditorRefresh.configure(configuration, enabled: true) {
+            configuration = WKWebViewConfiguration()
+        }
         configuration.websiteDataStore = .nonPersistent()
         configuration.userContentController.add(self, name: "excalidrawZ")
         configuration.userContentController.addUserScript(
@@ -132,11 +136,7 @@ final class ScreenAnnotationWebRuntime: NSObject {
     }
 
     private static func pageURL(generation: Int) -> URL {
-#if DEBUG
-        let baseURL = URL(string: "http://127.0.0.1:8486/index.html")!
-#else
-        let baseURL = URL(string: "http://127.0.0.1:8487/index.html")!
-#endif
+        let baseURL = ExcalidrawServer.editorURL
         var components = URLComponents(
             url: baseURL,
             resolvingAgainstBaseURL: false

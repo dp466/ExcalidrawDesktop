@@ -33,7 +33,7 @@ struct ElementPropertiesPanel: View {
                         .frame(width: 20, height: 20)
                 }
                 .help(control.title)
-                .modernButtonStyle(
+                .editorChromeButtonStyle(
                     style: presentedControl == control ? .glassProminent : .glass,
                     size: .regular,
                     shape: .circle
@@ -295,7 +295,7 @@ struct ElementPropertiesPanel: View {
                     label(value)
                         .frame(width: 28, height: 28)
                 }
-                .modernButtonStyle(
+                .editorChromeButtonStyle(
                     style: selectedValue == value ? .glassProminent : .glass,
                     size: .regular,
                     shape: .circle
@@ -648,7 +648,7 @@ struct ElementPropertiesPanel: View {
                         .scaleEffect(x: direction == .end ? -1 : 1)
                         .frame(width: 20, height: 20)
                 }
-                .modernButtonStyle(
+                .editorChromeButtonStyle(
                     style: selected == arrowhead
                         ? .glassProminent
                         : .glass,
@@ -665,9 +665,9 @@ struct ElementPropertiesPanel: View {
         if #available(macOS 26.0, iOS 26.0, *) {
             Capsule()
                 .fill(.clear)
-                .glassEffect(.regular, in: Capsule())
+                .editorChromeGlassEffect(.regular, in: Capsule())
         } else {
-            Capsule().fill(.regularMaterial)
+            Capsule().fill(editorChromeSurface())
         }
     }
 

@@ -273,7 +273,7 @@ struct LockedFileAccessSheet: View {
             iconFont: .body.weight(.semibold),
             normalColor: .primary
         )
-        .modernButtonStyle(style: .glass, size: .regular, shape: .circle)
+        .editorChromeButtonStyle(style: .glass, size: .regular, shape: .circle)
         .disabled(isHidden || generatedRecoveryKey == nil)
         .opacity(isHidden ? 0 : 1)
         .accessibilityHidden(isHidden)
@@ -287,7 +287,7 @@ struct LockedFileAccessSheet: View {
             Image(systemName: "square.and.arrow.down")
                 .frame(width: recoveryKeyControlHeight, height: recoveryKeyControlHeight)
         }
-        .modernButtonStyle(style: .glass, size: .regular, shape: .circle)
+        .editorChromeButtonStyle(style: .glass, size: .regular, shape: .circle)
         .disabled(isHidden || generatedRecoveryKey == nil)
         .opacity(isHidden ? 0 : 1)
         .accessibilityHidden(isHidden)
@@ -384,7 +384,7 @@ struct LockedFileAccessSheet: View {
                         systemImage: systemUnlockAvailability.systemImage
                     )
                 }
-                .modernButtonStyle(style: .glass, size: .large, shape: .capsule)
+                .editorChromeButtonStyle(style: .glass, size: .large, shape: .capsule)
                 .disabled(isWorking)
             }
 
@@ -442,7 +442,7 @@ struct LockedFileAccessSheet: View {
                 dismiss()
             }
             .keyboardShortcut(.cancelAction)
-            .modernButtonStyle(style: .glass, size: .large, shape: .capsule)
+            .editorChromeButtonStyle(style: .glass, size: .large, shape: .capsule)
             .disabled(isWorking)
 
             Button {
@@ -453,7 +453,7 @@ struct LockedFileAccessSheet: View {
                 Text(request.mode == .lock ? String(localizable: .lockFileTitle) : String(localizable: .lockedContentUnlockButton))
             }
             .keyboardShortcut(.defaultAction)
-            .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
+            .editorChromeButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
             .disabled(primaryButtonDisabled)
         }
     }
@@ -747,7 +747,7 @@ private struct LockHeaderIconChrome: ViewModifier {
                 .background {
                     Circle()
                         .fill(.clear)
-                        .glassEffect(
+                        .editorChromeGlassEffect(
                             Glass.regular.tint(tint.opacity(0.14)),
                             in: Circle()
                         )
@@ -776,7 +776,7 @@ private struct LockFeaturePanelChrome: ViewModifier {
                 .background {
                     shape
                         .fill(.clear)
-                        .glassEffect(
+                        .editorChromeGlassEffect(
                             Glass.regular.tint(tint.opacity(0.045)),
                             in: shape
                         )
@@ -787,7 +787,7 @@ private struct LockFeaturePanelChrome: ViewModifier {
                 }
         } else {
             content
-                .background(.regularMaterial, in: shape)
+                .background(editorChromeSurface(), in: shape)
                 .background(tint.opacity(0.035), in: shape)
                 .overlay {
                     shape

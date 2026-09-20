@@ -28,7 +28,11 @@ struct HomeFolderItemView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(height: 24)
+#if os(macOS)
+                .foregroundStyle(NavigationShellTheme.primary(for: colorScheme))
+#else
                 .foregroundStyle(Color(red: 12/255.0, green: 157/255.0, blue: 229/255.0))
+#endif
             
             VStack(alignment: .leading) {
                 Text(name)
@@ -63,6 +67,25 @@ struct HomeFolderItemView: View {
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
         .background {
+#if os(macOS)
+            RoundedRectangle(cornerRadius: 8)
+                .fill(
+                    isHighlighted
+                    ? NavigationShellTheme.selection(for: colorScheme)
+                    : isHovered
+                    ? NavigationShellTheme.hover(for: colorScheme)
+                    : NavigationShellTheme.surface(for: colorScheme)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(
+                            isSelected || isHovered
+                            ? NavigationShellTheme.primary(for: colorScheme)
+                            : NavigationShellTheme.border(for: colorScheme),
+                            lineWidth: 1
+                        )
+                }
+#else
             ZStack {
                 if #available(macOS 26.0, iOS 26.0, *) {
                     RoundedRectangle(cornerRadius: 12)
@@ -78,7 +101,7 @@ struct HomeFolderItemView: View {
                             ? AnyShapeStyle(Color.accentColor)
                             : AnyShapeStyle(SeparatorShapeStyle())
                         )
-                        .glassEffect(.clear, in: .rect(cornerRadius: 12))
+                        .editorChromeGlassEffect(.clear, in: .rect(cornerRadius: 12))
                         .shadow(
                             color: colorScheme == .light
                             ? Color.gray.opacity(0.33)
@@ -116,6 +139,7 @@ struct HomeFolderItemView: View {
                         )
                 }
             }
+#endif
         }
         .animation(.smooth(duration: 0.2), value: isHovered)
     }

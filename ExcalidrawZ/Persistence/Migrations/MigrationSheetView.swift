@@ -159,7 +159,7 @@ struct MigrationProgressSheet: View {
                         Text(buttonTitle)
                             .frame(maxWidth: .infinity)
                     }
-                    .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
+                    .editorChromeButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
                     .disabled(!isButtonEnabled)
                     .padding(.horizontal, sheetPadding)
                 }
@@ -251,7 +251,7 @@ struct MigrationProgressSheet: View {
         .padding(16)
         .background {
             RoundedRectangle(cornerRadius: 16)
-                .fill(.regularMaterial)
+                .fill(editorChromeSurface())
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color.orange, lineWidth: 2)
         }
@@ -288,7 +288,7 @@ struct MigrationProgressSheet: View {
                     .frame(maxWidth: .infinity)
             }
         }
-        .modernButtonStyle(style: .glass, size: .large, shape: .capsule)
+        .editorChromeButtonStyle(style: .glass, size: .large, shape: .capsule)
         .disabled(isArchiving)
         
         var isMigrating: Bool {
@@ -317,7 +317,7 @@ struct MigrationProgressSheet: View {
                 .opacity(0.5)
                 .popoverHelp(.localizable(.migrationDownloadTooltip))
         }
-        .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
+        .editorChromeButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
         .disabled(isArchiving)
     }
     
@@ -342,7 +342,7 @@ struct MigrationProgressSheet: View {
                     }
                 }
         }
-        .modernButtonStyle(style: .glass, size: .large, shape: .capsule)
+        .editorChromeButtonStyle(style: .glass, size: .large, shape: .capsule)
         .disabled(isMigrating)
         .alert(
             String(localizable: .migrationButtonSkipAndContinue),
@@ -376,7 +376,7 @@ struct MigrationProgressSheet: View {
                     }
                 }
         }
-        .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
+        .editorChromeButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
         .disabled(isMigrating)
     }
     
@@ -646,7 +646,7 @@ struct MigrationItemRow: View {
         if case .completedWithErrors = item.status {
             return AnyShapeStyle(Color.yellow.opacity(0.1))
         }
-        return AnyShapeStyle(Material.ultraThickMaterial)
+        return AnyShapeStyle(editorChromeSurface(material: .ultraThick))
     }
     
     private var borderColor: Color {

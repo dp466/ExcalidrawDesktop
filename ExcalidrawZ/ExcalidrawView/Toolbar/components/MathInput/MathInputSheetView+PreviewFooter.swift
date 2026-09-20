@@ -106,10 +106,10 @@ extension MathInputSheetView {
                 commitButtonLabel
                     .frame(minWidth: 112)
             }
-            .modernButtonStyle(style: .glassProminent)
+            .editorChromeButtonStyle(style: .glassProminent)
             .disabled(svgContent == nil)
         }
-        .modernButtonStyle(size: .large, shape: .modern)
+        .editorChromeButtonStyle(size: .large, shape: .modern)
         .padding(16)
     }
 }

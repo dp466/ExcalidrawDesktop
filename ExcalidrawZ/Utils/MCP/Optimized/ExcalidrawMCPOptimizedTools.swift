@@ -11,7 +11,12 @@ import LLMCore
 enum ExcalidrawMCPOptimizedContract {
     static let instructions = ExcalidrawMCPOptimizedResources.text(
         named: "ExcalidrawMCPOptimizedInstructions",
-        fallback: "Use read_me first. ExcalidrawZ MCP resources are unavailable in this build."
+        fallback: """
+        You are connected to the local ExcalidrawZ MCP server. Call read_me before editing.
+        Read the current file or view before changing it, use targeted operations, and respect
+        the app's file-access and locked-content boundaries. Use dry runs when a mutation tool
+        supports them. Local MCP access does not enable cloud AI services.
+        """
     )
 
     enum ToolName {
@@ -36,7 +41,17 @@ enum ExcalidrawMCPOptimizedContract {
 enum ExcalidrawMCPOptimizedRecall {
     static let guide = ExcalidrawMCPOptimizedResources.text(
         named: "ExcalidrawMCPOptimizedReadMe",
-        fallback: "ExcalidrawZ MCP guide resource is unavailable in this build."
+        fallback: """
+        # ExcalidrawZ local MCP
+
+        Use `get_app_context` and `get_current_file` to establish the active target. Use
+        `read_view` for the current scene and `read_file` for filtered element queries.
+        Prefer `adjust_elements` for focused changes and `replace_view` only when replacing
+        the complete element array. `insert_math` adds formulas and function plots. File tools
+        operate only on app-managed files or folders the user explicitly allowed in ExcalidrawZ.
+        Locked content remains unavailable. Mutation tools record app history checkpoints when
+        the current target supports them.
+        """
     )
 }
 

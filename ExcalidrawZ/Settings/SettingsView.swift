@@ -16,6 +16,7 @@ struct SettingsView: View {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerVerticalSizeClass) private var containerVerticalSizeClass
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
 
     /// App-level deep-link bus — see `SettingsRouter` for the rationale on
@@ -26,6 +27,10 @@ struct SettingsView: View {
 
     var body: some View {
         content()
+#if os(macOS)
+            .tint(NavigationShellTheme.primary(for: colorScheme))
+            .background(editorChromeSurface())
+#endif
             .task {
                 // Honor a pending deep-link first; fall back to default tab.
                 if let route = router.pendingRoute {
@@ -128,6 +133,7 @@ struct SettingsView: View {
             }
             .padding(10)
         }
+        .background(editorChromeSurface())
 #elseif os(iOS)
         List(selection: $selection) {
             Section {
@@ -260,6 +266,9 @@ extension SettingsView {
                 case .cloudStorage:
                     return .localizable(.cloudStorageConnectedAccounts)
                 case .ai:
+                    if ExcalidrawFeaturePolicy.isLocalMacOSFork {
+                        return .localizable(.settingsAIMCPTitle)
+                    }
                     // TODO: localize once a key is added.
                     return "AI"
 #if os(macOS)
@@ -293,6 +302,9 @@ extension SettingsView {
                 case .cloudStorage:
                     return .externaldriveConnectedToLineBelow
                 case .ai:
+                    if ExcalidrawFeaturePolicy.isLocalMacOSFork {
+                        return .link
+                    }
                     return .sparkles
 #if os(macOS)
                 case .fonts:

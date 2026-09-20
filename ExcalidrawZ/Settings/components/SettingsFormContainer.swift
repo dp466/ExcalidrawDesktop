@@ -28,6 +28,11 @@ struct SettingsFormContainer<Content: View>: View {
                 content
             }
             .formStyle(.grouped)
+#if os(macOS)
+            .scrollContentBackground(.hidden)
+            .background(editorChromeSurface())
+            .buttonStyle(NavigationShellButtonStyle(bordered: true))
+#endif
         } else {
             ScrollView {
                 VStack(alignment: legacyAlignment, spacing: legacySpacing) {

@@ -138,7 +138,7 @@ struct SearchInspectorContent: View {
         .padding(.vertical, searchFieldVerticalPadding)
         .background {
             Capsule()
-                .fill(.regularMaterial)
+                .fill(editorChromeSurface())
         }
     }
 

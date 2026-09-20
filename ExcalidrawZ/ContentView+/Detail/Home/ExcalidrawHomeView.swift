@@ -68,6 +68,9 @@ struct ExcalidrawHomeView: View {
                 )
                 .zIndex(fileHomeItemTransitionState.canShowItemContainerView ? 0 : 1)
         }
+#if os(macOS)
+            .modifier(ExcalidrawEditorToolbarModifier())
+#endif
             .overlay(alignment: .bottomTrailing) {
                 if fileHomeItemTransitionState.canShowItemContainerView {
                     SyncStatusPopover()
@@ -594,6 +597,8 @@ struct ExcalidrawHomeView: View {
 }
 
 private struct ActiveFileCloseSavingIndicator: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let isSaving: Bool
 
     @State private var isPresented = false
@@ -605,19 +610,34 @@ private struct ActiveFileCloseSavingIndicator: View {
                 HStack(spacing: 8) {
                     ProgressView()
                         .controlSize(.small)
+#if os(macOS)
+                        .tint(NavigationShellTheme.primary(for: colorScheme))
+#endif
                     Text(.localizable(.activeFileCloseSavingTitle))
                         .font(.callout.weight(.medium))
+#if os(macOS)
+                        .foregroundStyle(NavigationShellTheme.primary(for: colorScheme))
+#endif
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)
                 .background {
+#if os(macOS)
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(NavigationShellTheme.selection(for: colorScheme))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 6)
+                                .strokeBorder(NavigationShellTheme.primary(for: colorScheme), lineWidth: 1)
+                        }
+#else
                     if #available(iOS 26.0, macOS 26.0, *) {
                         Capsule()
-                            .glassEffect(in: Capsule())
+                            .editorChromeGlassEffect(in: Capsule())
                     } else {
                         Capsule()
-                            .fill(.ultraThinMaterial)
+                            .fill(editorChromeSurface(material: .ultraThin))
                     }
+#endif
                 }
                 .padding()
                 .transition(.move(edge: .top).combined(with: .opacity))

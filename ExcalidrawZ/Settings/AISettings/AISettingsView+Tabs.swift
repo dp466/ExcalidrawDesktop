@@ -170,7 +170,13 @@ extension AISettingsView {
 
     @ViewBuilder
     var selectedTabContent: some View {
-        if !prefs.isAIEnabled {
+        if !AIChatAvailability.isAvailable {
+            if canRunMCPServer {
+                mcpSettingsSection
+            } else {
+                informationSection
+            }
+        } else if !prefs.isAIEnabled {
             if selectedTab == .settings,
                preferredSettingsSection == .mcp {
                 mcpSettingsSection

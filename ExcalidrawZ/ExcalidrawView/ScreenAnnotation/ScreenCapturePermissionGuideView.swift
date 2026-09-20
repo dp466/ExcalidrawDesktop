@@ -40,7 +40,7 @@ struct ScreenCapturePermissionGuideView: View {
             Button(action: onClose) {
                 Image(systemName: "xmark")
             }
-            .modernButtonStyle(
+            .editorChromeButtonStyle(
                 style: .glass,
                 size: .small,
                 shape: .circle
@@ -70,9 +70,9 @@ struct ScreenCapturePermissionGuideView: View {
         if #available(macOS 26.0, *) {
             shape
                 .fill(.clear)
-                .glassEffect(.regular, in: shape)
+                .editorChromeGlassEffect(.regular, in: shape)
         } else {
-            shape.fill(.regularMaterial)
+            shape.fill(editorChromeSurface())
         }
     }
 }

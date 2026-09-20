@@ -24,7 +24,7 @@ struct SyncStatusIndicator: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background {
-                Capsule().fill(.regularMaterial)
+                Capsule().fill(editorChromeSurface())
             }
             .padding()
             .bindFileStatus(for: activeFile, status: $fileStatus)

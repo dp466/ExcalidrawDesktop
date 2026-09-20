@@ -13,6 +13,55 @@ extension Notification.Name {
     static let filePreviewDidUpdate = Notification.Name("FilePreviewDidUpdate")
 }
 
+/// CPU-heavy preview preparation that does not need WebKit or Core Data.
+/// Keeping it outside the main actor prevents large scene JSON from blocking
+/// file-browser interaction while the serial renderer is preparing a cover.
+enum FileCoverPreviewPreparation {
+    static func decode(
+        data: Data,
+        id: String?
+    ) async throws -> ExcalidrawFile {
+        try Task.checkCancellation()
+        let task = Task.detached(priority: .utility) {
+            try Task.checkCancellation()
+            let file = try ExcalidrawFile(data: data, id: id)
+            try Task.checkCancellation()
+            return file
+        }
+        return try await withTaskCancellationHandler {
+            let file = try await task.value
+            try Task.checkCancellation()
+            return file
+        } onCancel: {
+            task.cancel()
+        }
+    }
+
+    static func sceneData(
+        for file: ExcalidrawFile,
+        updatingContentFiles: Bool
+    ) async throws -> Data {
+        try Task.checkCancellation()
+        let task = Task.detached(priority: .utility) {
+            try Task.checkCancellation()
+            var exportFile = file
+            if updatingContentFiles, exportFile.content != nil {
+                try exportFile.updateContentFilesFromFiles()
+            }
+            let data = try exportFile.content ?? JSONEncoder().encode(exportFile)
+            try Task.checkCancellation()
+            return data
+        }
+        return try await withTaskCancellationHandler {
+            let data = try await task.value
+            try Task.checkCancellation()
+            return data
+        } onCancel: {
+            task.cancel()
+        }
+    }
+}
+
 @MainActor
 final class FileCoverCacheCoordinator: ObservableObject {
     static let shared = FileCoverCacheCoordinator()
@@ -610,6 +659,7 @@ final class FileCoverCacheCoordinator: ObservableObject {
         do {
             var excalidrawFile: ExcalidrawFile
             let mediaHydrationFileObjectID: NSManagedObjectID?
+            var requiresContentFilesUpdate = false
 
             switch job.source {
                 case .activeFile(let activeFile):
@@ -626,7 +676,10 @@ final class FileCoverCacheCoordinator: ObservableObject {
                                 }
                             }
                             let content = try await file.loadContent(applyingLocalViewport: true)
-                            excalidrawFile = try ExcalidrawFile(data: content, id: activeFile.id)
+                            excalidrawFile = try await FileCoverPreviewPreparation.decode(
+                                data: content,
+                                id: activeFile.id
+                            )
 
                         case .localFile(let url):
                             mediaHydrationFileObjectID = nil
@@ -636,7 +689,7 @@ final class FileCoverCacheCoordinator: ObservableObject {
                             mediaHydrationFileObjectID = nil
                             guard let fileState else { return .retry }
                             let content = try await fileState.readTemporaryFileContent(at: url)
-                            excalidrawFile = try ExcalidrawFile(
+                            excalidrawFile = try await FileCoverPreviewPreparation.decode(
                                 data: content,
                                 id: activeFile.id
                             )
@@ -644,7 +697,7 @@ final class FileCoverCacheCoordinator: ObservableObject {
                         case .collaborationFile(let collaborationFile):
                             mediaHydrationFileObjectID = nil
                             let content = try await collaborationFile.loadContent()
-                            excalidrawFile = try ExcalidrawFile(
+                            excalidrawFile = try await FileCoverPreviewPreparation.decode(
                                 data: content,
                                 id: collaborationFile.id?.uuidString
                             )
@@ -660,7 +713,7 @@ final class FileCoverCacheCoordinator: ObservableObject {
                                     to: content,
                                     fileID: activeFile.id
                                 )
-                            excalidrawFile = try ExcalidrawFile(
+                            excalidrawFile = try await FileCoverPreviewPreparation.decode(
                                 data: contentWithViewport,
                                 id: activeFile.id
                             )
@@ -669,6 +722,10 @@ final class FileCoverCacheCoordinator: ObservableObject {
                 case .excalidrawFile(let file):
                     mediaHydrationFileObjectID = nil
                     excalidrawFile = file
+                    // This source can be assembled independently of `content`.
+                    // Preserve the existing behavior of publishing its current
+                    // resource map into the scene before rendering.
+                    requiresContentFilesUpdate = true
 
                 case .checkpoint(let checkpointSource):
                     guard let context else {
@@ -680,14 +737,14 @@ final class FileCoverCacheCoordinator: ObservableObject {
                     if let checkpoint = object as? FileCheckpoint {
                         mediaHydrationFileObjectID = checkpoint.file?.objectID
                         let content = try await checkpoint.loadContent()
-                        excalidrawFile = try ExcalidrawFile(
+                        excalidrawFile = try await FileCoverPreviewPreparation.decode(
                             data: content,
                             id: checkpointSource.cacheID
                         )
                     } else if let checkpoint = object as? LocalFileCheckpoint,
                               let content = checkpoint.content {
                         mediaHydrationFileObjectID = nil
-                        excalidrawFile = try ExcalidrawFile(
+                        excalidrawFile = try await FileCoverPreviewPreparation.decode(
                             data: content,
                             id: checkpointSource.cacheID
                         )
@@ -696,10 +753,13 @@ final class FileCoverCacheCoordinator: ObservableObject {
                     }
             }
 
-            excalidrawFile = await hydrateMediaForPreview(
+            let hydratedPreview = await hydrateMediaForPreview(
                 excalidrawFile,
                 fileObjectID: mediaHydrationFileObjectID
             )
+            excalidrawFile = hydratedPreview.file
+            requiresContentFilesUpdate = requiresContentFilesUpdate
+                || hydratedPreview.didAddFiles
 
             guard !Task.isCancelled else { return .completed }
 
@@ -707,6 +767,7 @@ final class FileCoverCacheCoordinator: ObservableObject {
             do {
                 image = try await exportViewportPreview(
                     for: excalidrawFile,
+                    updatingContentFiles: requiresContentFilesUpdate,
                     colorScheme: job.colorScheme,
                     coordinator: coordinator
                 )
@@ -830,14 +891,15 @@ final class FileCoverCacheCoordinator: ObservableObject {
 
     private func exportViewportPreview(
         for excalidrawFile: ExcalidrawFile,
+        updatingContentFiles: Bool,
         colorScheme: ColorScheme,
         coordinator: ExcalidrawCanvasView.Coordinator
     ) async throws -> PlatformImage {
-        var exportFile = excalidrawFile
-        if exportFile.content != nil {
-            try exportFile.updateContentFilesFromFiles()
-        }
-        let sceneData = try exportFile.content ?? JSONEncoder().encode(exportFile)
+        let sceneData = try await FileCoverPreviewPreparation.sceneData(
+            for: excalidrawFile,
+            updatingContentFiles: updatingContentFiles
+        )
+        try Task.checkCancellation()
         return try await coordinator.exportViewportPreviewToPNG(
             sceneData: sceneData,
             colorScheme: colorScheme
@@ -867,6 +929,23 @@ final class FileCoverCacheCoordinator: ObservableObject {
 
     private func loadLocalFileForPreview(at url: URL) async throws -> ExcalidrawFile {
         try await LocalFolder.withSecurityScopedAccessToContainingFolder(for: url) {
+            if url.pathExtension.lowercased() == "excalidraw" {
+                // Coordinated reads also materialize iCloud files. Avoid reading
+                // the same bytes once to download and again on the main actor.
+                let data = try await FileCoordinator.shared.coordinatedRead(url: url) {
+                    try Data(contentsOf: $0, options: .uncached)
+                }
+                try Task.checkCancellation()
+                let id = await MainActor.run {
+                    let id = ExcalidrawFile.localFileURLIDMapping[url] ?? UUID().uuidString
+                    ExcalidrawFile.localFileURLIDMapping[url] = id
+                    return id
+                }
+                var file = try await FileCoverPreviewPreparation.decode(data: data, id: id)
+                file.name = url.deletingPathExtension().lastPathComponent
+                return file
+            }
+            // Embedded PNG/SVG scenes retain their format-specific decoder.
             try await FileCoordinator.shared.downloadFile(url: url)
             return try ExcalidrawFile(contentsOf: url)
         }
@@ -875,18 +954,18 @@ final class FileCoverCacheCoordinator: ObservableObject {
     private func hydrateMediaForPreview(
         _ excalidrawFile: ExcalidrawFile,
         fileObjectID: NSManagedObjectID?
-    ) async -> ExcalidrawFile {
+    ) async -> (file: ExcalidrawFile, didAddFiles: Bool) {
         guard let fileObjectID,
               excalidrawFile.files.isEmpty,
               excalidrawFile.elements.contains(where: \.isImageElement) else {
-            return excalidrawFile
+            return (excalidrawFile, false)
         }
 
         do {
             let resources = try await PersistenceController.shared
                 .mediaItemRepository
                 .getResourceFiles(forFile: fileObjectID)
-            guard !resources.isEmpty else { return excalidrawFile }
+            guard !resources.isEmpty else { return (excalidrawFile, false) }
 
             var hydratedFile = excalidrawFile
             let resourceFiles = Dictionary(
@@ -896,10 +975,10 @@ final class FileCoverCacheCoordinator: ObservableObject {
             hydratedFile.files = resourceFiles.merging(hydratedFile.files) { _, fileResource in
                 fileResource
             }
-            return hydratedFile
+            return (hydratedFile, true)
         } catch {
             logger.warning("Failed to hydrate media for preview \(excalidrawFile.id): \(error)")
-            return excalidrawFile
+            return (excalidrawFile, false)
         }
     }
 

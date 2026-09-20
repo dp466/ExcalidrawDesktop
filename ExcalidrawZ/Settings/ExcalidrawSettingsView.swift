@@ -204,7 +204,7 @@ struct ExcalidrawSettingsView: View {
                         }
                         .buttonStyle(.bordered)
                     }
-                    .modernButtonStyle(style: .glass, shape: .modern)
+                    .editorChromeButtonStyle(style: .glass, shape: .modern)
 
                     DrawingSettingsPanel(
                         settings: $editingSettings,
@@ -259,7 +259,7 @@ private struct ToolbarToolOrderDragPreview: View {
         )
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+        .background(editorChromeSurface(), in: RoundedRectangle(cornerRadius: 10))
     }
 }
 

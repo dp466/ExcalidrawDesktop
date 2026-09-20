@@ -20,11 +20,14 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @Environment(\.containerSize) private var containerSize
     @Environment(\.alertToast) private var alertToast
+    @Environment(\.searchExcalidrawAction) private var searchDrawings
     
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var layoutState: LayoutState
     @EnvironmentObject var fileState: FileState
+#if os(iOS)
     @EnvironmentObject var toolState: ToolState
+#endif
     @EnvironmentObject private var lockedContentState: LockedContentStateStore
     @ObservedObject private var aiChatPreferences = AIChatPreferences.shared
 
@@ -38,8 +41,9 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
     @State private var isPencilModeTipsPresented = false
 #endif
 #if os(macOS)
-    @State private var isMacOSToolPickerToolbarContentPresented = false
-    @State private var macOSToolPickerToolbarContentPresentationTask: Task<Void, Never>?
+    @State private var isDesktopMenuPresented = false
+    @State private var isDrawingMenuPresented = false
+    @FocusState private var isDrawingMenuButtonFocused: Bool
 #endif
 
     private var shouldFloatNavigationToolbarOverCanvas: Bool {
@@ -47,7 +51,7 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
         guard !usesCompactIOSBottomToolbar else { return false }
         return UIDevice.current.userInterfaceIdiom == .pad
 #elseif os(macOS)
-        true
+        false
 #else
         false
 #endif
@@ -65,7 +69,12 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
     }
 
     private var shouldHideNavigationToolbarBackground: Bool {
-        shouldFloatNavigationToolbarOverCanvas ||
+#if os(macOS)
+        // The editor stays mounted behind Home. Keep its toolbar from changing
+        // Home's titlebar geometry while the canvas is hidden.
+        if fileState.currentActiveFile == nil { return true }
+#endif
+        return shouldFloatNavigationToolbarOverCanvas ||
         (fileState.currentActiveGroup == .collaboration && fileState.currentActiveFile == nil)
     }
     
@@ -100,7 +109,78 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                 }
             }
         }
+#if os(macOS)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            DesktopNavigationHeader(isMenuPresented: $isDesktopMenuPresented) {
+                primaryActions()
+                    .labelStyle(.titleAndIcon)
+            } documentMenu: {
+                Button {
+                    isDesktopMenuPresented = false
+                    isDrawingMenuPresented.toggle()
+                } label: { fileMenuLabel() }
+                .focusable()
+                .focused($isDrawingMenuButtonFocused)
+                .modifier(DesktopMenuKeyboardActivation(isFocused: isDrawingMenuButtonFocused) {
+                    isDesktopMenuPresented = false
+                    isDrawingMenuPresented.toggle()
+                })
+                .accessibilityValue(isDrawingMenuPresented ? "Expanded" : "Collapsed")
+                .anchorPreference(key: DrawingMenuAnchorKey.self, value: .bounds) { $0 }
+            }
+        }
+        .background {
+            if fileState.currentActiveFile != nil {
+                Button("Find in drawing") {
+                    isDesktopMenuPresented = false
+                    if fileState.currentActiveFile == nil || fileState.isFinalizingActiveFileClose {
+                        searchDrawings()
+                    } else {
+                        layoutState.toggleInspector(.search)
+                    }
+                }
+                    .keyboardShortcut("f", modifiers: .command)
+                    .hidden().frame(width: 0, height: 0)
+            }
+        }
+        .watch(value: fileState.currentActiveFile?.id) { _ in
+            isDesktopMenuPresented = false
+            isDrawingMenuPresented = false
+        }
+        .onChange(of: isDesktopMenuPresented) { visible in
+            if visible { isDrawingMenuPresented = false }
+        }
+        .onChange(of: isDrawingMenuPresented) { visible in
+            if !visible { isDrawingMenuButtonFocused = true }
+        }
+        .overlayPreferenceValue(DrawingMenuAnchorKey.self) { anchor in
+            GeometryReader { geometry in
+            ZStack(alignment: .topLeading) {
+                if isDesktopMenuPresented || isDrawingMenuPresented {
+                    Color.black.opacity(0.001)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            isDesktopMenuPresented = false
+                            isDrawingMenuPresented = false
+                        }
+                    Button("Close app menu") {
+                        isDesktopMenuPresented = false
+                        isDrawingMenuPresented = false
+                    }
+                        .keyboardShortcut(.escape, modifiers: [])
+                        .hidden().frame(width: 0, height: 0)
+                }
+                DesktopAppMenu(isPresented: $isDesktopMenuPresented)
+                    .padding(.leading, 48).padding(.top, 48)
+                DesktopDrawingMenu(isPresented: $isDrawingMenuPresented)
+                    .offset(x: max(8, min(anchor.map { geometry[$0].minX } ?? 8, geometry.size.width - 272)),
+                            y: anchor.map { geometry[$0].maxY + 8 } ?? 48)
+            }
+            }
+        }
+#else
         .toolbar(content: toolbarContent)
+#endif
 #if os(iOS)
         .modifier(CompactExcalidrawBottomToolbarStateModifier())
 #endif
@@ -129,18 +209,7 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                 localFileUpdatedAt = nil
             }
         }
-#if os(macOS)
-        .watch(value: fileState.currentActiveFile?.id, initial: true) { previousActiveFileID, activeFileID in
-            updateMacOSToolPickerToolbarContentPresentation(
-                previousActiveFileID: previousActiveFileID,
-                activeFileID: activeFileID
-            )
-        }
-        .onDisappear {
-            macOSToolPickerToolbarContentPresentationTask?.cancel()
-            macOSToolPickerToolbarContentPresentationTask = nil
-        }
-#endif
+
 #if os(iOS)
         .modifier(
             HideToolbarModifier(
@@ -167,33 +236,15 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
         .sheet(isPresented: $isPencilModeTipsPresented) {
             PencilTipsSheetView()
         }
-#elseif os(macOS)
-        .apply { view in
-            if #available(macOS 15.0, *) {
-                view.toolbarBackgroundVisibility(
-                    shouldHideNavigationToolbarBackground ? .hidden : .visible,
-                    for: .windowToolbar
-                )
-            } else {
-                view.toolbarBackground(
-                    shouldHideNavigationToolbarBackground ? .hidden : .visible,
-                    for: .windowToolbar
-                )
-            }
-        }
 #endif
     }
     
+#if os(iOS)
     @ToolbarContentBuilder
     private func toolbarContent() -> some ToolbarContent {
-#if os(iOS)
         iOSToolbarContent()
-#elseif os(macOS)
-        macOSToolbarContent()
-#endif
     }
-    
-#if os(iOS)
+
     @ToolbarContentBuilder
     private func iOSToolbarContent() -> some ToolbarContent {
         ToolbarItemGroup(placement: .topBarLeading) {
@@ -220,18 +271,7 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
     }
 #endif
 
-#if os(macOS)
-    @ToolbarContentBuilder
-    private func macOSToolbarContent() -> some ToolbarContent {
-        ToolbarItemGroup(placement: .navigation) {
-            sharedNavigationToolbarContent()
-        }
-        if isMacOSToolPickerToolbarContentPresented {
-            macOSToolPickerToolbarContent()
-        }
-        sharedPrimaryActionToolbarContent()
-    }
-#endif
+
 
     @ViewBuilder
     private func sharedNavigationToolbarContent() -> some View {
@@ -260,87 +300,58 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
     }
 
 
-#if os(macOS)
-    @ToolbarContentBuilder
-    private func macOSToolPickerToolbarContent() -> some ToolbarContent {
-        ToolbarItemGroup(placement: .status) {
-            if #available(macOS 26.0, iOS 26.0, *) {
-                ExcalidrawToolbar()
-            } else if #available(macOS 13.0, iOS 16.0, *) {
-                ExcalidrawToolbar()
-                    .padding(.vertical, 2)
-            } else {
-                ExcalidrawToolbar()
-            }
-        }
-    }
-
-    private func updateMacOSToolPickerToolbarContentPresentation(
-        previousActiveFileID: String?,
-        activeFileID: String?
-    ) {
-        macOSToolPickerToolbarContentPresentationTask?.cancel()
-        macOSToolPickerToolbarContentPresentationTask = nil
-
-        guard let activeFileID else {
-            isMacOSToolPickerToolbarContentPresented = false
-            return
-        }
-
-        if previousActiveFileID != nil {
-            isMacOSToolPickerToolbarContentPresented = true
-            return
-        }
-
-        isMacOSToolPickerToolbarContentPresented = false
-        macOSToolPickerToolbarContentPresentationTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            guard !Task.isCancelled,
-                  fileState.currentActiveFile?.id == activeFileID else {
-                return
-            }
-            isMacOSToolPickerToolbarContentPresented = true
-            macOSToolPickerToolbarContentPresentationTask = nil
-        }
-    }
-#endif
 
     @ToolbarContentBuilder
     private func sharedPrimaryActionToolbarContent() -> some ToolbarContent {
-//        ToolbarItemGroup(placement: .confirmationAction) {
-        ToolbarItemGroup(placement: .primaryAction) {
-            if fileState.currentActiveFile != nil {
-#if os(iOS)
-                applePencilToggle()
-#endif
-                if case .file(let file) = fileState.currentActiveFile,
-                   !file.inTrash {
-                    switch lockedContentState.activeFileLockState {
-                        case .plaintext:
-                            lockedFileToolbarButton(file)
-                        case .temporarilyUnlocked:
-                            temporarilyUnlockedFileToolbarMenu(file)
-                        case .locked:
-                            EmptyView()
-                    }
-                }
-                ShareToolbarButton()
-                    .disabled(lockedContentState.activeFileLockState == .locked)
-            } else {
-                if lockedContentState.hasActiveUnlockSession {
-                    Button {
-                        Task { @MainActor in
-                            await relockUnlockedContent()
-                        }
-                    } label: {
-                        Label(.localizable(.lockedContentFileUnlockedToolbarTitle), systemImage: LockedContentSymbols.keyShield)
-                    }
-                    .help(String(localizable: .lockedContentLockFilesHelp))
-                }
+        ToolbarItemGroup(placement: .primaryAction) { primaryActions() }
+    }
 
-                if aiChatPreferences.isAIEnabled && AIChatAvailability.isAvailable {
-                    AICreditsToolbarButton()
+    @ViewBuilder
+    private func primaryActions() -> some View {
+#if os(macOS)
+        NewFileButton(usesFileHomeOpenTransition: fileState.currentActiveGroup != nil, receivesCommands: true)
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .labelStyle(.iconOnly)
+            .buttonStyle(NavigationShellButtonStyle())
+#endif
+        if fileState.currentActiveFile != nil {
+#if os(iOS)
+            applePencilToggle()
+#endif
+            if case .file(let file) = fileState.currentActiveFile,
+               !file.inTrash {
+                switch lockedContentState.activeFileLockState {
+                    case .plaintext:
+                        lockedFileToolbarButton(file)
+#if os(macOS)
+                            .labelStyle(.iconOnly)
+#endif
+                    case .temporarilyUnlocked:
+                        temporarilyUnlockedFileToolbarMenu(file)
+                    case .locked:
+                        EmptyView()
                 }
+            }
+            ShareToolbarButton()
+#if os(macOS)
+                .buttonStyle(NavigationShellButtonStyle(accent: true, bordered: true))
+#endif
+                .disabled(lockedContentState.activeFileLockState == .locked)
+        } else {
+            if lockedContentState.hasActiveUnlockSession {
+                Button {
+                    Task { @MainActor in
+                        await relockUnlockedContent()
+                    }
+                } label: {
+                    Label(.localizable(.lockedContentFileUnlockedToolbarTitle), systemImage: LockedContentSymbols.keyShield)
+                }
+                .help(String(localizable: .lockedContentLockFilesHelp))
+            }
+
+            if aiChatPreferences.isAIEnabled && AIChatAvailability.isAvailable {
+                AICreditsToolbarButton()
             }
         }
     }
@@ -673,7 +684,12 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
                             )
                 }
             }
+#if os(macOS)
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+#else
             .labelsHidden()
+#endif
             .controlSize(.small)
             .padding(.trailing, 8)
             .fixedSize()
@@ -682,12 +698,12 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
     
     @ViewBuilder
     private func fileMenuLabel() -> some View {
-#if os(iOS)
         Image(systemSymbol: .ellipsis)
             .font(.footnote)
-#endif
+            .accessibilityLabel("Drawing actions")
     }
     
+#if os(iOS)
     @ViewBuilder
     private func applePencilToggle() -> some View {
         if containerHorizontalSizeClass == .regular {
@@ -714,6 +730,7 @@ struct ExcalidrawEditorToolbarModifier: ViewModifier {
             }
         }
     }
+#endif
 }
 
 #if os(iOS)

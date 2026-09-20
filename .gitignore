@@ -114,3 +114,7 @@ Resources/scripts/**
 
 # Maintained as a separate private repository.
 /worker/
+
+# Reproducible editor checkout and generated staging directories
+/editor/
+/ExcalidrawZ/Resources/.editor-stage.*

@@ -106,7 +106,7 @@ struct BackupHomeView: View {
                         Label(.localizable(.backupButtonExport), systemSymbol: .squareAndArrowUp)
                     }
                 }
-                .modernButtonStyle(style: .glass, shape: .modern)
+                .editorChromeButtonStyle(style: .glass, shape: .modern)
                 .disabled(isExporting)
 
 #if DEBUG
@@ -115,7 +115,7 @@ struct BackupHomeView: View {
                 } label: {
                     Label(.localizable(.generalButtonRevealInFinder), systemSymbol: .docViewfinder)
                 }
-                .modernButtonStyle(style: .glass, shape: .modern)
+                .editorChromeButtonStyle(style: .glass, shape: .modern)
 #endif
 
                 Button(role: .destructive) {
@@ -123,7 +123,7 @@ struct BackupHomeView: View {
                 } label: {
                     Label(.localizable(.backupButtonDelete), systemSymbol: .trash)
                 }
-                .modernButtonStyle(style: .glass, shape: .modern)
+                .editorChromeButtonStyle(style: .glass, shape: .modern)
             }
         }
         .padding(20)
@@ -149,7 +149,7 @@ private struct BackupHeroIcon: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(.regularMaterial)
+                .fill(editorChromeSurface())
                 .overlay {
                     Circle()
                         .stroke(.separator.opacity(0.7), lineWidth: 1)
@@ -210,14 +210,14 @@ private struct BackupInfoRow: View {
         .background {
             if #available(macOS 26.0, iOS 26.0, *) {
                 Capsule()
-                    .fill(.regularMaterial)
+                    .fill(editorChromeSurface())
                     .overlay {
                         Capsule()
                             .stroke(.separator.opacity(0.65), lineWidth: 1)
                     }
             } else {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(.regularMaterial)
+                    .fill(editorChromeSurface())
                     .overlay {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .stroke(.separator.opacity(0.65), lineWidth: 1)
@@ -256,7 +256,7 @@ private struct BackupSummaryPill: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.regularMaterial)
+                .fill(editorChromeSurface())
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .stroke(.separator.opacity(0.65), lineWidth: 1)

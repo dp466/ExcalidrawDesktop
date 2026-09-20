@@ -1,5 +1,5 @@
 const originalConsole = console;
-const methods = ['log', 'debug', 'info', 'warn', 'error'];
+const methods = ['warn', 'error'];
 const maxConsoleArgLength = 500;
 const maxConsoleObjectKeys = 12;
 

@@ -74,7 +74,7 @@ struct ScreenAnnotationToolbar: View {
                     .frame(width: 20, height: 20)
                 }
                 .help(String(localizable: .toolbarButtonLockToolHelp))
-                .modernButtonStyle(
+                .editorChromeButtonStyle(
                     style: session.isToolLocked ? .glassProminent : .glass,
                     size: .large,
                     shape: .circle
@@ -155,7 +155,7 @@ struct ScreenAnnotationToolbar: View {
         }
         .help("Clear annotations")
         .disabled(isSaving || session.isClearingCanvas)
-        .modernButtonStyle(style: .glass, size: .large, shape: .circle)
+        .editorChromeButtonStyle(style: .glass, size: .large, shape: .circle)
     }
 
     private var freezeButton: some View {
@@ -179,7 +179,7 @@ struct ScreenAnnotationToolbar: View {
         }
         .help(session.isFrozen ? "Resume live screen" : "Freeze screen")
         .disabled(session.isCapturingBackground)
-        .modernButtonStyle(
+        .editorChromeButtonStyle(
             style: session.isFrozen ? .glassProminent : .glass,
             size: .large,
             shape: .circle
@@ -213,10 +213,10 @@ struct ScreenAnnotationToolbar: View {
             if #available(macOS 26.0, *) {
                 Capsule()
                     .fill(.clear)
-                    .glassEffect(.regular, in: Capsule())
+                    .editorChromeGlassEffect(.regular, in: Capsule())
             } else {
                 Capsule()
-                    .fill(.regularMaterial)
+                    .fill(editorChromeSurface())
             }
         }
         .shadow(color: .black.opacity(0.18), radius: 8, y: 4)
@@ -243,7 +243,7 @@ struct ScreenAnnotationToolbar: View {
         if #available(macOS 26.0, *) {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(.clear)
-                .glassEffect(
+                .editorChromeGlassEffect(
                     .regular,
                     in: RoundedRectangle(
                         cornerRadius: 20,
@@ -252,7 +252,7 @@ struct ScreenAnnotationToolbar: View {
                 )
         } else {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(.regularMaterial)
+                .fill(editorChromeSurface())
         }
     }
 

@@ -15,10 +15,10 @@ struct Secrets {
     let googleDriveClientID: String?
     
     private init() {
-        guard let url = Bundle.main.url(forResource: "Secrets", withExtension: "plist"),
+        guard let url = Bundle.main.url(forResource: "LocalServices", withExtension: "plist"),
               let data = try? Data(contentsOf: url),
               let dict = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else {
-            fatalError("Unable to load Secrets.plist.")
+            fatalError("Unable to load LocalServices.plist.")
         }
         
         let collabURL = URL(string: dict["COLLAB_URL"] as? String ?? "")!

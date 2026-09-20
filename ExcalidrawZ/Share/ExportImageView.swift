@@ -241,7 +241,7 @@ struct ExportImageView: View {
         .overlay {
             if loadingImage, image != nil, exportedImageData != nil {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(.regularMaterial.opacity(0.85))
+                    .fill(editorChromeSurface().opacity(0.85))
 
                 ProgressView()
             }
@@ -411,7 +411,7 @@ struct ExportImageView: View {
             }
             .labelsHidden()
             .pickerStyle(.segmented)
-            .modernButtonStyle(style: .glass, shape: .capsule)
+            .editorChromeButtonStyle(style: .glass, shape: .capsule)
             .frame(maxWidth: containerHorizontalSizeClass == .compact ? 180 : nil)
             .disabled(exportType != .png)
         }
@@ -422,7 +422,7 @@ struct ExportImageView: View {
         HStack {
             actionItems(url)
         }
-        .modernButtonStyle(size: .regular, shape: .modern)
+        .editorChromeButtonStyle(size: .regular, shape: .modern)
 #if os(macOS)
         .frame(height: macOSActionsSectionHeight)
 #endif
@@ -448,7 +448,7 @@ struct ExportImageView: View {
                 .padding(.vertical, 1)
         }
         .opacity(0.5)
-        .modernButtonStyle(size: .regular, shape: .modern)
+        .editorChromeButtonStyle(size: .regular, shape: .modern)
         .disabled(true)
 #if os(macOS)
         .frame(height: macOSActionsSectionHeight)
@@ -461,14 +461,14 @@ struct ExportImageView: View {
             VStack {
                 actionItems(url)
             }
-            .modernButtonStyle(style: .glass)
+            .editorChromeButtonStyle(style: .glass)
         } else {
             HStack {
                 Spacer()
                 HStack {
                     actionItems(url)
                 }
-                .modernButtonStyle(style: .glass)
+                .editorChromeButtonStyle(style: .glass)
             }
         }
     }
@@ -479,14 +479,14 @@ struct ExportImageView: View {
             VStack {
                 actionsPlaceholderItems
             }
-            .modernButtonStyle(style: .glass)
+            .editorChromeButtonStyle(style: .glass)
         } else {
             HStack {
                 Spacer()
                 HStack {
                     actionsPlaceholderItems
                 }
-                .modernButtonStyle(style: .glass)
+                .editorChromeButtonStyle(style: .glass)
             }
         }
     }

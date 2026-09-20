@@ -51,7 +51,7 @@ struct WhatsNewSheetViewModifier: ViewModifier {
             } content: {
                 sheetContent()
             }
-            .bindWindow($window)
+            .bindAppWindow($window)
             .watch(value: migrationState.phase) { newValue in
                 if newValue == .closed {
 #if DEBUG
@@ -199,7 +199,7 @@ struct WhatsNewView: View {
 #endif
             }
 #if os(macOS)
-            .bindWindow($window)
+            .bindAppWindow($window)
             .frame(width: 720, height: activeRoute == nil ? nil : sheetContentHeight)
             .frame(maxHeight: maximumSheetContentHeight)
             .clipped()
@@ -237,7 +237,7 @@ struct WhatsNewView: View {
                 if #available(macOS 26.0, iOS 26.0, *) {
                     dismissButton()
                         .buttonBorderShape(.circle)
-                        .buttonStyle(.glass)
+                        .editorChromeButtonStyle(style: .glass)
                         .controlSize(.extraLarge)
                 } else {
                     dismissButton()
@@ -494,7 +494,7 @@ struct WhatsNewView: View {
     @ViewBuilder
     private func communityLinks() -> some View {
         SwiftUI.Group {
-            Link(destination: URL(string: "https://github.com/chocoford/ExcalidrawZ")!) {
+            Link(destination: URL(string: "https://github.com/dp466/ExcalidrawDesktop")!) {
                 HStack {
                     Image("github-mark")
                         .renderingMode(.template)
@@ -510,16 +510,6 @@ struct WhatsNewView: View {
                 .foregroundStyle(.white)
             }
             
-            Link(destination: URL(string: "https://discord.gg/aCv6w4HxDg")!) {
-                HStack {
-                    Image("discord-mark-white")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 16)
-                    Text(.localizable(.generalButtonJoinDiscord))
-                }
-                .foregroundStyle(.white)
-            }
         }
         .buttonStyle(.plain)
         .padding(.vertical, 4)

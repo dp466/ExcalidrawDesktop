@@ -20,6 +20,7 @@ struct LinkedStorageSidebarSection: View {
         }
     }
 
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.alertToast) private var alertToast
     @Environment(\.containerHorizontalSizeClass) private var containerHorizontalSizeClass
     @AppStorage("ShowLinkedStorageEmptyPlaceholder") private var showEmptyPlaceholder = true
@@ -69,10 +70,10 @@ struct LinkedStorageSidebarSection: View {
                     emptyPlaceholder
                         .background {
                             ZStack {
-                                RoundedRectangle(cornerRadius: 20)
-                                    .fill(.regularMaterial)
-                                RoundedRectangle(cornerRadius: 20)
-                                    .stroke(.secondary, lineWidth: 0.5)
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(NavigationShellTheme.surface(for: colorScheme))
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(NavigationShellTheme.border(for: colorScheme), lineWidth: 1)
                             }
                         }
                         .padding(.vertical, 10)
@@ -107,6 +108,7 @@ struct LinkedStorageSidebarSection: View {
                 defaultValue: "Linked Storage"
             ))
                 .foregroundStyle(.secondary)
+                .textCase(.uppercase)
 
             Spacer()
 
@@ -128,12 +130,14 @@ struct LinkedStorageSidebarSection: View {
             .disabled(preparingProviderID != nil)
             .opacity(isHovered || isLoading ? 1 : 0.4)
 #if os(macOS)
-            .controlSize(.large)
+            .controlSize(.small)
             .padding(.trailing, 2)
 #endif
         }
         .frame(maxWidth: .infinity)
-        .font(.callout.bold())
+        .font(.caption2.weight(.semibold))
+        .padding(.top, 14)
+        .padding(.bottom, 5)
         .animation(.smooth, value: isHovered)
     }
 
@@ -178,7 +182,11 @@ struct LinkedStorageSidebarSection: View {
                     }
                 }
                 .font(.footnote)
-                .modernButtonStyle(style: .glassProminent, shape: .modern)
+#if os(macOS)
+                .buttonStyle(NavigationShellButtonStyle(accent: true, bordered: true))
+#else
+                .editorChromeButtonStyle(style: .glassProminent, shape: .modern)
+#endif
 
                 if containerHorizontalSizeClass == .compact {
                     Button {
@@ -190,7 +198,11 @@ struct LinkedStorageSidebarSection: View {
                         }
                     }
                     .font(.footnote)
-                    .modernButtonStyle(style: .glass, shape: .modern)
+#if os(macOS)
+                    .buttonStyle(NavigationShellButtonStyle(bordered: true))
+#else
+                    .editorChromeButtonStyle(style: .glass, shape: .modern)
+#endif
                 }
             }
         }
@@ -204,7 +216,7 @@ struct LinkedStorageSidebarSection: View {
                     Image(systemName: "xmark")
                         .foregroundStyle(.secondary)
                 }
-                .modernButtonStyle(style: .borderless)
+                .editorChromeButtonStyle(style: .borderless)
                 .padding()
             }
         }

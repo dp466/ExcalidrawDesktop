@@ -1,0 +1,39 @@
+diff --git a/Sources/UI/Components/Input/Buttons/FileExporterButton.swift b/Sources/UI/Components/Input/Buttons/FileExporterButton.swift
+index c164af4..ed33a36 100644
+--- a/Sources/UI/Components/Input/Buttons/FileExporterButton.swift
++++ b/Sources/UI/Components/Input/Buttons/FileExporterButton.swift
+@@ -28,7 +28,7 @@ public struct FileExporterButton: View {
+         self.allowMultiple = allowMultiple
+         self.onCompletion = onCompletion
+         self.onCancellation = onCancellation
+-        self.isImporterPresented = isImporterPresented
++        self._isImporterPresented = State(initialValue: isImporterPresented)
+         self.label = AnyView(label())
+     }
+     
+diff --git a/Sources/UI/Components/Input/Buttons/FileImporterButton.swift b/Sources/UI/Components/Input/Buttons/FileImporterButton.swift
+index a609ee5..6ec9457 100644
+--- a/Sources/UI/Components/Input/Buttons/FileImporterButton.swift
++++ b/Sources/UI/Components/Input/Buttons/FileImporterButton.swift
+@@ -27,7 +27,7 @@ public struct FileImporterButton: View {
+         self.allowMultiple = allowMultiple
+         self.onCompletion = onCompletion
+         self.onCancellation = onCancellation
+-        self.isImporterPresented = isImporterPresented
++        self._isImporterPresented = State(initialValue: isImporterPresented)
+         self.label = AnyView(label())
+     }
+     
+diff --git a/Sources/UI/Components/Input/Buttons/Styles/OutlinedButtonStyle.swift b/Sources/UI/Components/Input/Buttons/Styles/OutlinedButtonStyle.swift
+index a69b002..6403b38 100644
+--- a/Sources/UI/Components/Input/Buttons/Styles/OutlinedButtonStyle.swift
++++ b/Sources/UI/Components/Input/Buttons/Styles/OutlinedButtonStyle.swift
+@@ -55,7 +55,7 @@ public struct OutlinedButtonStyleView<V: View>: View {
+     
+     public init(hovering: Bool = false, isPressed: Bool, colors: ButtonColor, size: ButtonSize, block: Bool = false, square: Bool = false,
+                 @ViewBuilder content: @escaping () -> V) {
+-        self.hovering = hovering
++        self._hovering = State(initialValue: hovering)
+         self.isPressed = isPressed
+         self.colors = colors
+         self.size = size

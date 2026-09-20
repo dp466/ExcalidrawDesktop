@@ -30,9 +30,14 @@ struct ExcalidrawTrailingControls: View {
     }
 
     private var shouldShowControls: Bool {
+#if os(macOS)
+        // Desktop actions now live in the opaque app header and app menu.
+        false
+#else
         shouldShowInCurrentSizeClass &&
         fileState.currentActiveFile != nil &&
         !fileState.activeCollaborationFileIsLoading
+#endif
     }
 
     private var shouldShowInCurrentSizeClass: Bool {
@@ -185,13 +190,15 @@ struct ExcalidrawTrailingControls: View {
                     isDisabled: isDisabled(tab: .presentation)
                 )
 
-                InspectorTabButton(
-                    tab: .aiChat,
-                    icon: .sparkles,
-                    title: "AI Chat",
-                    isDisabled: isDisabled(tab: .aiChat),
-                    action: toggleAIChatPresentation
-                )
+                if AIChatAvailability.isAvailable {
+                    InspectorTabButton(
+                        tab: .aiChat,
+                        icon: .sparkles,
+                        title: "AI Chat",
+                        isDisabled: isDisabled(tab: .aiChat),
+                        action: toggleAIChatPresentation
+                    )
+                }
 
 #if DEBUG
 //                InspectorTabButton(
@@ -307,7 +314,7 @@ private struct InspectorTabButton: View {
                 .frame(width: iconFrame, height: iconFrame)
         }
         .labelStyle(.iconOnly)
-        .modernButtonStyle(
+        .editorChromeButtonStyle(
             style: isActive ? .glassProminent : .glass,
             size: buttonStyleSize,
             shape: .circle

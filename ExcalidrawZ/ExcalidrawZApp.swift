@@ -21,6 +21,13 @@ import Sparkle
 import LLMCore
 import LLMKit
 
+/// Hosted unit tests must not mount user documents or start background services.
+enum AppRuntime {
+    static let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        || ProcessInfo.processInfo.environment["XCTestBundlePath"] != nil
+        || NSClassFromString("XCTestCase") != nil
+}
+
 extension Notification.Name {
     static let shouldHandleImport = Notification.Name("ShouldHandleImport")
     static let didImportToExcalidrawZ = Notification.Name("DidImportToExcalidrawZ")
@@ -86,7 +93,8 @@ struct ExcalidrawZApp: App {
 #endif
             return stdoutHandler
         }
-        FeatureDiscoveryTips.configureIfAvailable()
+        if !AppRuntime.isRunningTests {
+            FeatureDiscoveryTips.configureIfAvailable()
         // Cloud storage synchronization follows the process lifecycle, not a
         // WindowGroup lifecycle. This also keeps queued offline work moving
         // while the app has no open windows on macOS.
@@ -94,12 +102,13 @@ struct ExcalidrawZApp: App {
 #if os(macOS)
         _ = ExcalidrawZMCPServerController.shared
 #endif
+        }
 
         // If you want to start the updater manually, pass false to startingUpdater and call .startUpdater() later
         // This is where you can also pass an updater delegate if you need one
 #if os(macOS) && !APP_STORE
         updaterController = SPUStandardUpdaterController(
-            startingUpdater: true,
+            startingUpdater: !AppRuntime.isRunningTests && !ExcalidrawFeaturePolicy.isLocalMacOSFork,
             updaterDelegate: nil,
             userDriverDelegate: nil
         )
@@ -128,7 +137,7 @@ struct ExcalidrawZApp: App {
         } else if dateString == nil {
             shouldRefreshSpotlightIndex = true
         }
-        if shouldRefreshSpotlightIndex {
+        if shouldRefreshSpotlightIndex && !AppRuntime.isRunningTests {
             let startupLogger = Logging.Logger(label: "ExcalidrawApp")
             Task {
                 do {
@@ -187,7 +196,7 @@ struct ExcalidrawZApp: App {
             streamPublishStrategy: .throttled(0.33)
         ))
 
-        if AIChatPreferences.shared.isAIEnabled {
+        if !AppRuntime.isRunningTests && AIChatPreferences.shared.isAIEnabled {
             Task {
                 await LLMServiceActivationCoordinator.shared.restoreIfAIEnabled(reason: .appLaunch)
             }
@@ -199,9 +208,11 @@ struct ExcalidrawZApp: App {
         // first — otherwise we'd see freshly-synced rows as orphaned
         // (their attachments arrive with the row but the GC runs before
         // the row is locally visible) and delete legitimate files.
-        Task.detached(priority: .background) {
-            try? await Task.sleep(for: .seconds(15))
-            await Self.runAttachmentGC()
+        if !AppRuntime.isRunningTests {
+            Task.detached(priority: .background) {
+                try? await Task.sleep(for: .seconds(15))
+                await Self.runAttachmentGC()
+            }
         }
 
     }
@@ -251,6 +262,9 @@ struct ExcalidrawZApp: App {
     
     var body: some Scene {
         WindowGroup {
+            if AppRuntime.isRunningTests {
+                Color.clear.frame(width: 1, height: 1)
+            } else {
             RootView()
                 .preferredColorScheme(appPrefernece.appearance.colorScheme)
                 .archiveFilesExporter(
@@ -275,6 +289,7 @@ struct ExcalidrawZApp: App {
 #endif
                     scheduleAIConversationCacheWarmupIfNeeded()
                 }
+            }
         }
         // prevent window being open by urls.
         .handlesExternalEvents(matching: ["*"])
@@ -328,9 +343,16 @@ struct ExcalidrawZApp: App {
             
             CommandGroup(after: .importExport) {
                 Button {
+                    // Capture the recipient before the panel becomes key. The
+                    // document window may not regain key status before runModal returns.
+                    guard let targetWindow = NSApplication.shared.keyWindow ?? NSApplication.shared.mainWindow else { return }
                     let panel = ExcalidrawOpenPanel.importPanel
                     if panel.runModal() == .OK {
-                        NotificationCenter.default.post(name: .shouldHandleImport, object: panel.urls)
+                        NotificationCenter.default.post(
+                            name: .shouldHandleImport,
+                            object: panel.urls,
+                            userInfo: ["targetWindowNumber": targetWindow.windowNumber]
+                        )
                     }
                 } label: {
                     Label(.localizable(.menubarButtonImport), systemSymbol: .squareAndArrowDown)

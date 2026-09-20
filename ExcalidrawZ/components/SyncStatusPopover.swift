@@ -73,10 +73,10 @@ struct SyncStatusPopover: View {
                 if #available(iOS 26.0, macOS 26.0, *) {
                     RoundedRectangle(cornerRadius: 24)
                         .fill(.background)
-                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24))
+                        .editorChromeGlassEffect(.regular, in: RoundedRectangle(cornerRadius: 24))
                 } else {
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(.regularMaterial)
+                        .fill(editorChromeSurface())
                         .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                 }
             }

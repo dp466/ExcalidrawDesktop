@@ -75,7 +75,7 @@ struct LibraryBrowserSheet: View {
                 } label: {
                     Label(.localizable(.libraryImportBrowserSheetButtonImportFromFile), systemSymbol: .squareAndArrowDown)
                 }
-                .modernButtonStyle(style: .glass, shape: .capsule)
+                .editorChromeButtonStyle(style: .glass, shape: .capsule)
             }
             Button {
                 dismiss()
@@ -83,7 +83,7 @@ struct LibraryBrowserSheet: View {
                 Text(localizable: .generalButtonDone)
             }
             .keyboardShortcut(.cancelAction)
-            .modernButtonStyle(style: .glass, shape: .capsule)
+            .editorChromeButtonStyle(style: .glass, shape: .capsule)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)

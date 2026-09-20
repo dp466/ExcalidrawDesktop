@@ -352,10 +352,10 @@ extension AISettingsView {
                     if #available(macOS 26.0, iOS 26.0, *) {
                         Circle()
                             .fill(.clear)
-                            .glassEffect(.clear, in: Circle())
+                            .editorChromeGlassEffect(.clear, in: Circle())
                     } else {
                         Circle()
-                            .fill(.regularMaterial)
+                            .fill(editorChromeSurface(material: .regular))
                     }
                 }
         }
@@ -714,10 +714,10 @@ private struct MCPServiceModeHelpSheet: View {
                     if #available(macOS 26.0, iOS 26.0, *) {
                         Circle()
                             .fill(.clear)
-                            .glassEffect(.clear, in: Circle())
+                            .editorChromeGlassEffect(.clear, in: Circle())
                     } else {
                         Circle()
-                            .fill(.regularMaterial)
+                            .fill(editorChromeSurface(material: .regular))
                     }
                 }
         }
@@ -959,10 +959,10 @@ private struct MCPGlassRoundedBackground: View {
                 if #available(macOS 26.0, iOS 26.0, *) {
                     shape
                         .fill(.clear)
-                        .glassEffect(.regular, in: shape)
+                        .editorChromeGlassEffect(.regular, in: shape)
                 } else {
                     shape
-                        .fill(.regularMaterial)
+                        .fill(editorChromeSurface(material: .regular))
                 }
             }
             .overlay {
@@ -983,15 +983,15 @@ private struct MCPGlassCapsuleBackground: View {
                     if interactive {
                         Capsule()
                             .fill(.clear)
-                            .glassEffect(.regular.interactive(), in: Capsule())
+                            .editorChromeGlassEffect(.regular.interactive(), in: Capsule())
                     } else {
                         Capsule()
                             .fill(.clear)
-                            .glassEffect(.regular, in: Capsule())
+                            .editorChromeGlassEffect(.regular, in: Capsule())
                     }
                 } else {
                     Capsule()
-                        .fill(.ultraThinMaterial)
+                        .fill(editorChromeSurface(material: .ultraThin))
                 }
             }
             .overlay {
@@ -1009,7 +1009,7 @@ private struct MCPSelectedCapsuleBackground: View {
                 if #available(macOS 26.0, iOS 26.0, *) {
                     Capsule()
                         .fill(.clear)
-                        .glassEffect(.clear.interactive(), in: Capsule())
+                        .editorChromeGlassEffect(.clear.interactive(), in: Capsule())
                 }
             }
     }
@@ -1023,10 +1023,10 @@ private struct MCPGlassCircleBackground: View {
                 if #available(macOS 26.0, iOS 26.0, *) {
                     Circle()
                         .fill(.clear)
-                        .glassEffect(.regular.interactive(), in: Circle())
+                        .editorChromeGlassEffect(.regular.interactive(), in: Circle())
                 } else {
                     Circle()
-                        .fill(.ultraThinMaterial)
+                        .fill(editorChromeSurface(material: .ultraThin))
                 }
             }
             .overlay {

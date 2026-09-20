@@ -85,7 +85,7 @@ struct JoinRoomSheetView: View {
                     Text(.localizable(.generalButtonCancel))
                         .frame(width: 60)
                 }
-                .modernButtonStyle(style: .glass)
+                .editorChromeButtonStyle(style: .glass)
                 
                 Button {
                     dismiss()
@@ -94,10 +94,10 @@ struct JoinRoomSheetView: View {
                     Text(.localizable(.collaborationJoinRoomButtonJoin))
                         .frame(width: 60)
                 }
-                .modernButtonStyle(style: .glassProminent)
+                .editorChromeButtonStyle(style: .glassProminent)
                 .disabled(error != nil || roomID == nil || name.isEmpty)
             }
-            .modernButtonStyle(shape: .modern)
+            .editorChromeButtonStyle(shape: .modern)
         }
         .padding()
     }

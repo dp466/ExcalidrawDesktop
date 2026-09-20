@@ -134,7 +134,7 @@ struct MermaidInputSheetView: View {
                     Label(.localizable(.generalButtonCancel), systemImage: "xmark")
                         .labelStyle(.iconOnly)
                 }
-                .modernButtonStyle(style: .glass, size: .extraLarge, shape: .circle)
+                .editorChromeButtonStyle(style: .glass, size: .extraLarge, shape: .circle)
                 .keyboardShortcut(.cancelAction)
 
                 Spacer(minLength: 0)
@@ -153,7 +153,7 @@ struct MermaidInputSheetView: View {
                     }
                 }
                 .lineLimit(1)
-                .modernButtonStyle(style: .glassProminent, size: .extraLarge, shape: .capsule)
+                .editorChromeButtonStyle(style: .glassProminent, size: .extraLarge, shape: .capsule)
                 .keyboardShortcut(.defaultAction)
                 .disabled(insertButtonDisabled)
             }
@@ -290,7 +290,7 @@ struct MermaidInputSheetView: View {
                     Label(.localizable(.mermaidInputSheetPasteButton), systemImage: "clipboard")
                         .labelStyle(.iconOnly)
                 }
-                .modernButtonStyle(style: .glassProminent, size: .extraLarge, shape: .circle)
+                .editorChromeButtonStyle(style: .glassProminent, size: .extraLarge, shape: .circle)
                 .padding(12)
             }
     }

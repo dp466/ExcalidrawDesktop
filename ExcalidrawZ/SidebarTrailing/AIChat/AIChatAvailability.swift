@@ -9,11 +9,7 @@ import Foundation
 
 enum AIChatAvailability {
     static var isAvailable: Bool {
-        #if APP_STORE || DEBUG
-        true
-        #else
-        false
-        #endif
+        ExcalidrawFeaturePolicy.allowsCloudAIServices
     }
 
     static var isUserEnabled: Bool {

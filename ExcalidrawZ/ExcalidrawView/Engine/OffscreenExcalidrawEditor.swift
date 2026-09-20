@@ -48,7 +48,7 @@ final class OffscreenExcalidrawEditor {
     }
 
     init(viewportSize: CGSize = CGSize(width: 1280, height: 800)) {
-        let core = ExcalidrawCore()
+        let core = ExcalidrawCore(highRefreshRequested: false)
         core.webView.frame = CGRect(origin: .zero, size: viewportSize)
         self.core = core
 #if os(macOS)
@@ -235,11 +235,7 @@ final class OffscreenExcalidrawEditor {
 #endif
 
     private static var pageURL: URL {
-#if DEBUG
-        URL(string: "http://127.0.0.1:8486/index.html")!
-#else
-        URL(string: "http://127.0.0.1:8487/index.html")!
-#endif
+        ExcalidrawServer.editorURL
     }
 }
 

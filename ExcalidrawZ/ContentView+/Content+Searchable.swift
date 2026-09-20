@@ -575,7 +575,7 @@ fileprivate struct SearchItemRow: View {
         .background {
             if isHovered {
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(.regularMaterial)
+                    .fill(editorChromeSurface())
             }
             if isSelected {
                 RoundedRectangle(cornerRadius: 8)

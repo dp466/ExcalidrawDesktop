@@ -27,7 +27,7 @@ struct ScreenAnnotationSaveControls: View {
         }
         .help("Save annotation")
         .disabled(isSaving || !canSave)
-        .modernButtonStyle(
+        .editorChromeButtonStyle(
             style: .glassProminent,
             size: .large,
             shape: .capsule

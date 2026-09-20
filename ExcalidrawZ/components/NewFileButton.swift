@@ -28,11 +28,16 @@ struct NewFileButton: View {
     
     
     var usesFileHomeOpenTransition: Bool
+    // macOS has one persistent receiver in the app header. File-browser buttons
+    // perform their direct action without also handling the same menu command.
+    var receivesCommands: Bool
     
     init(
-        usesFileHomeOpenTransition: Bool = false
+        usesFileHomeOpenTransition: Bool = false,
+        receivesCommands: Bool = false
     ) {
         self.usesFileHomeOpenTransition = usesFileHomeOpenTransition
+        self.receivesCommands = receivesCommands
     }
 
     
@@ -85,7 +90,7 @@ struct NewFileButton: View {
             createNewFile()
         }
         .fixedSize()
-        .bindWindow($window)
+        .bindAppWindow($window)
         .help(.localizable(.generalButtonCreateNewFile))
         .disabled({
             if case .group(let group) = fileState.currentActiveGroup, group.groupType == .trash {
@@ -95,12 +100,22 @@ struct NewFileButton: View {
         }() || cannotCreateInActiveCloudStorageFolder
             || fileState.currentActiveGroup == .temporary
             || isCreatingFile)
-        .onReceive(NotificationCenter.default.publisher(for: .shouldHandleNewDraw)) { _ in
-            guard window?.isKeyWindow == true else { return }
+        .onReceive(NotificationCenter.default.publisher(for: .shouldHandleNewDraw)) { notification in
+#if os(macOS)
+            guard receivesCommands else { return }
+#endif
+            if let target = notification.object as? FileState {
+                guard target === fileState else { return }
+            } else {
+                guard window?.isKeyWindow == true else { return }
+            }
             
             self.createNewFile()
         }
         .onReceive(NotificationCenter.default.publisher(for: .shouldHandleNewDrawFromClipboard)) { _ in
+#if os(macOS)
+            guard receivesCommands else { return }
+#endif
             guard window?.isKeyWindow == true else { return }
 
             self.createNewFileFromClipboard()
@@ -150,7 +165,9 @@ struct NewFileButton: View {
     
     private func createNewFile() {
         guard !isCreatingFile else { return }
-        
+#if os(macOS)
+        guard fileState.canCreateDesktopDrawing else { return }
+#endif
         isCreatingFile = true
         
         Task {

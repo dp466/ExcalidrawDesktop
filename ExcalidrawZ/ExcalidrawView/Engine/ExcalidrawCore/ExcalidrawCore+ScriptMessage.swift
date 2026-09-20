@@ -999,6 +999,8 @@ extension ExcalidrawCore {
         var dirty: Bool?
         var contentDirty: Bool?
         var appStateDirty: Bool?
+        var persistentAppStateDirty: Bool?
+        var viewportDirty: Bool?
         var appState: JSONValue?
         var elementCount: Int?
         var deletedElementCount: Int?
@@ -1008,14 +1010,40 @@ extension ExcalidrawCore {
         var currentFileId: String?
 
         var hasDirtySplitFields: Bool {
-            contentDirty != nil || appStateDirty != nil
+            contentDirty != nil || appStateDirty != nil ||
+                persistentAppStateDirty != nil || viewportDirty != nil
         }
 
         var hasAnyDirtyChanges: Bool {
             if hasDirtySplitFields {
-                return contentDirty == true || appStateDirty == true
+                return contentDirty == true || appStateDirty == true ||
+                    persistentAppStateDirty == true || viewportDirty == true
             }
             return dirty ?? true
+        }
+
+        private var hasAppStateDirtySplitFields: Bool {
+            persistentAppStateDirty != nil || viewportDirty != nil
+        }
+
+        var shouldPersistAppStateFields: Bool {
+            if let persistentAppStateDirty {
+                return persistentAppStateDirty
+            }
+            if hasAppStateDirtySplitFields {
+                return false
+            }
+            return appStateDirty == true
+        }
+
+        var shouldPersistViewport: Bool {
+            if let viewportDirty {
+                return viewportDirty
+            }
+            if hasAppStateDirtySplitFields {
+                return false
+            }
+            return appStateDirty == true
         }
 
         /// Old Web builds only sent `dirty`. Treat those as content-dirty only

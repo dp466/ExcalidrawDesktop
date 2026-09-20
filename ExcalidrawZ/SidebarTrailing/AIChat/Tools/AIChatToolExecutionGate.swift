@@ -6,10 +6,21 @@
 import LLMCore
 
 enum AIChatToolExecutionGate {
+    @TaskLocal private static var isLocalMCPExecution = false
+
     static func ensureAIEnabled() throws {
-        guard AIChatAvailability.canUseAI else {
+        guard isLocalMCPExecution || AIChatAvailability.canUseAI else {
             throw ToolError.executionFailed("AI features are disabled.")
         }
+    }
+
+    /// Runs a shared native tool for the explicitly enabled local MCP server.
+    /// This only bypasses the cloud-AI availability check for the current task;
+    /// the tool's file-access and lock-state checks still execute.
+    static func withLocalMCPExecution<Result>(
+        _ operation: () async throws -> Result
+    ) async rethrows -> Result {
+        try await $isLocalMCPExecution.withValue(true, operation: operation)
     }
 }
 

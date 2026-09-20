@@ -35,7 +35,7 @@ struct ShareSubViewBackButtonModifier: ViewModifier {
                         Image(systemSymbol: .chevronLeft)
                             .padding(4)
                     }
-                    .modernButtonStyle(style: .glass, shape: .modernCircle)
+                    .editorChromeButtonStyle(style: .glass, shape: .modernCircle)
                     .transition(
                         .offset(x: -10).combined(with: .opacity)
                     )

@@ -1,38 +1,38 @@
 {
-  "fill" : "automatic",
-  "groups" : [
+  "fill": "automatic",
+  "groups": [
     {
-      "blur-material" : null,
-      "layers" : [
+      "blur-material": null,
+      "layers": [
         {
-          "hidden" : false,
-          "image-name" : "ExcaliDrawZ logo.svg",
-          "name" : "ExcaliDrawZ logo",
-          "position" : {
-            "scale" : 1.3,
-            "translation-in-points" : [
+          "hidden": false,
+          "image-name": "ExcalidrawDesktop.svg",
+          "name": "ExcalidrawDesktop",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
               0,
               0
             ]
           }
         }
       ],
-      "lighting" : "individual",
-      "shadow" : {
-        "kind" : "layer-color",
-        "opacity" : 0.5
+      "lighting": "individual",
+      "shadow": {
+        "kind": "layer-color",
+        "opacity": 0
       },
-      "specular" : true,
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.5
+      "specular": false,
+      "translucency": {
+        "enabled": false,
+        "value": 0
       }
     }
   ],
-  "supported-platforms" : {
-    "circles" : [
+  "supported-platforms": {
+    "circles": [
       "watchOS"
     ],
-    "squares" : "shared"
+    "squares": "shared"
   }
 }

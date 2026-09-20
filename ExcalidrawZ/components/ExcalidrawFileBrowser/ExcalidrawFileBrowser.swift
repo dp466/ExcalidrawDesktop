@@ -101,7 +101,7 @@ struct ExcalidrawFileBrowser: View {
                     Text(.localizable(.generalButtonCancel))
                         .padding(.horizontal)
                 }
-                .modernButtonStyle(style: .glass, shape: .modern)
+                .editorChromeButtonStyle(style: .glass, shape: .modern)
                 
                 AsyncButton { @MainActor in
                     if case .file(let file) = fileState.currentActiveFile {
@@ -114,7 +114,7 @@ struct ExcalidrawFileBrowser: View {
                     Text(.localizable(.generalButtonCreate))
                         .padding(.horizontal)
                 }
-                .modernButtonStyle(style: .glassProminent, shape: .modern)
+                .editorChromeButtonStyle(style: .glassProminent, shape: .modern)
                 .disabled(fileState.currentActiveFile == nil)
             }
             .padding()

@@ -32,7 +32,10 @@ class ExcalidrawCore: NSObject, ObservableObject {
     lazy var webActor = ExcalidrawWebActor(coordinator: self)
     lazy var nativeEyeDropper = ExcalidrawNativeEyeDropperCoordinator(core: self)
     
-    override init() {
+    private let highRefreshRequested: Bool
+
+    init(highRefreshRequested: Bool = ExperimentalEditorRefresh.requestedAtLaunch) {
+        self.highRefreshRequested = highRefreshRequested
         self.publishError = { error in }
         super.init()
         self.documentSyncController.attach(core: self)
@@ -43,7 +46,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
     @Published var isDocumentLoaded = false
     @Published var isCollabEnabled = false
     @Published private(set) var isLoading: Bool = false
-    @Published private(set) var cameraState = CameraState()
+    private(set) var cameraState = CameraState()
     @Published private(set) var selectedElementIDs: [String] = []
     @Published private(set) var contentChangeToken = 0
     
@@ -103,7 +106,18 @@ class ExcalidrawCore: NSObject, ObservableObject {
     
     func configWebView() {
         logger.info("Configure Web View...")
-        let config = WKWebViewConfiguration()
+        var config = WKWebViewConfiguration()
+#if os(macOS) && !APP_STORE
+        if highRefreshRequested {
+            if ExperimentalEditorRefresh.configure(config, enabled: highRefreshRequested) {
+                logger.info("Experimental high refresh requested for editor")
+            } else {
+                // A failed/changed SPI must not leave partially modified preferences in use.
+                config = WKWebViewConfiguration()
+                logger.warning("Experimental high refresh unavailable; using normal rendering")
+            }
+        }
+#endif
         config.websiteDataStore = .nonPersistent()
         
         let userContentController = WKUserContentController()
@@ -188,11 +202,7 @@ class ExcalidrawCore: NSObject, ObservableObject {
         let request: URLRequest
         switch self.parent?.type {
             case .normal:
-#if DEBUG
-                request = URLRequest(url: URL(string: "http://127.0.0.1:8486/index.html")!)
-#else
-                request = URLRequest(url: URL(string: "http://127.0.0.1:8487/index.html")!)
-#endif
+                request = URLRequest(url: ExcalidrawServer.editorURL)
                 self.webView.load(request)
             case .collaboration:
                 var url = Secrets.shared.collabURL

@@ -107,7 +107,7 @@ struct CloudStorageServerConnectionSheet: View {
                             }
                             .frame(maxWidth: .infinity)
                         }
-                        .modernButtonStyle(style: .glassProminent, size: .large, shape: .modern)
+                        .editorChromeButtonStyle(style: .glassProminent, size: .large, shape: .modern)
                         .disabled(!canConnect || isConnecting)
                     }
                 }
@@ -169,7 +169,7 @@ struct CloudStorageServerConnectionSheet: View {
                 } label: {
                     Image(systemName: "xmark")
                 }
-                .modernButtonStyle(style: .glass, size: .large, shape: .circle)
+                .editorChromeButtonStyle(style: .glass, size: .large, shape: .circle)
 
                 Spacer()
             }

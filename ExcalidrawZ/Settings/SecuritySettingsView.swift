@@ -255,7 +255,7 @@ struct SecuritySettingsView: View {
                             Label(.localizable(.lockedContentUnlockButton), systemImage: systemUnlockAvailability.systemImage)
                         }
                     }
-                    .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
+                    .editorChromeButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
                     .disabled(isUnlocking || !systemUnlockAvailability.isAvailable)
                     .help(systemUnlockAvailability.buttonTitle)
                 }
@@ -707,7 +707,7 @@ private struct LostRecoveryKeyResetSheet: View {
                 dismiss()
             }
             .keyboardShortcut(.cancelAction)
-            .modernButtonStyle(style: .glass, size: .large, shape: .capsule)
+            .editorChromeButtonStyle(style: .glass, size: .large, shape: .capsule)
             .disabled(isWorking)
 
             Button(role: .destructive) {
@@ -723,7 +723,7 @@ private struct LostRecoveryKeyResetSheet: View {
                 }
             }
             .keyboardShortcut(.defaultAction)
-            .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
+            .editorChromeButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
             .disabled(destructiveResetButtonDisabled)
         }
     }
@@ -941,7 +941,7 @@ private struct RecoveryKeyResetSheet: View {
                 dismiss()
             }
             .keyboardShortcut(.cancelAction)
-            .modernButtonStyle(style: .glass, size: .large, shape: .capsule)
+            .editorChromeButtonStyle(style: .glass, size: .large, shape: .capsule)
             .disabled(isWorking)
 
             Button {
@@ -952,7 +952,7 @@ private struct RecoveryKeyResetSheet: View {
                 Text(.localizable(.settingsSecurityResetKeyButton))
             }
             .keyboardShortcut(.defaultAction)
-            .modernButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
+            .editorChromeButtonStyle(style: .glassProminent, size: .large, shape: .capsule)
             .disabled(isWorking || generatedRecoveryKey == nil || !hasSavedRecoveryKey)
         }
     }

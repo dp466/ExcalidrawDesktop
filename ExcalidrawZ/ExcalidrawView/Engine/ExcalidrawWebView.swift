@@ -20,6 +20,16 @@ import UIKit
 
 class ExcalidrawWebView: WKWebView {
     var shouldHandleInput = true
+    /// Briefly stop input while the old scene is captured and persisted.
+    var snapshotSaveInProgress = false {
+        didSet {
+#if os(macOS)
+            if snapshotSaveInProgress {
+                window?.makeFirstResponder(nil)
+            }
+#endif
+        }
+    }
     var nativeInteractionEnabled = true {
         didSet {
             guard nativeInteractionEnabled != oldValue else { return }
@@ -62,42 +72,25 @@ class ExcalidrawWebView: WKWebView {
     
 #if canImport(AppKit)
     override func hitTest(_ point: NSPoint) -> NSView? {
-        guard nativeInteractionEnabled else { return nil }
+        guard nativeInteractionEnabled && !snapshotSaveInProgress else { return nil }
         return super.hitTest(point)
     }
 
     override func resetCursorRects() {
-        guard nativeInteractionEnabled else { return }
+        guard nativeInteractionEnabled && !snapshotSaveInProgress else { return }
         super.resetCursorRects()
     }
 
     override func keyDown(with event: NSEvent) {
-        if shouldHandleInput,
-           let char = event.characters,
-           char.count == 1,
-           let character = char.first {
-            if let num = Int(char), num >= 0, num <= 9 {
-                self.toolbarActionHandler(.number(num))
-            } else if ExcalidrawTool.allCases.compactMap({ $0.keyEquivalent }).contains(character) {
-                self.toolbarActionHandler(.char(character))
-            } else if character == " " {
-                // TODO: migrate to excalidrawZHelper
-                self.toolbarActionHandler(.space)
-            } else if character == "q" {
-                // TODO: migrate to excalidrawZHelper
-                self.toolbarActionHandler(.char("q"))
-            } else {
-                super.keyDown(with: event)
-            }
-        } else {
-            super.keyDown(with: event)
-        }
+        guard !snapshotSaveInProgress else { return }
+        // Let the web editor handle its own shortcuts, including text inputs.
+        super.keyDown(with: event)
     }
 #endif
 
 #if os(iOS)
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        guard nativeInteractionEnabled else { return false }
+        guard nativeInteractionEnabled && !snapshotSaveInProgress else { return false }
         return super.point(inside: point, with: event)
     }
 #endif

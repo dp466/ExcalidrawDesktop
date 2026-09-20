@@ -631,7 +631,7 @@ extension WhatsNewView {
 
     @ViewBuilder
     private func changeLogLink() -> some View {
-        Link(destination: URL(string: "https://github.com/chocoford/ExcalidrawZ/blob/main/CHANGELOG.md")!) {
+        Link(destination: URL(string: "https://github.com/dp466/ExcalidrawDesktop/blob/main/CHANGELOG.md")!) {
             HStack(spacing: 2) {
                 Text("Change Log")
                 Image(systemSymbol: .arrowRight)

@@ -30,7 +30,7 @@ struct PresentationSlideTransitionControl: View {
                         .font(.caption.weight(.semibold))
                 }
                 .labelStyle(.iconOnly)
-                .modernButtonStyle(
+                .editorChromeButtonStyle(
                     style: .glass,
                     size: .small,
                     shape: .circle
@@ -51,7 +51,7 @@ struct PresentationSlideTransitionControl: View {
                 PresentationTransitionLabel(transition: transition)
                     .font(.caption)
             }
-            .modernButtonStyle(
+            .editorChromeButtonStyle(
                 style: .glass,
                 size: .small,
                 shape: .capsule
@@ -63,7 +63,7 @@ struct PresentationSlideTransitionControl: View {
                 Text(durationText)
                     .font(.caption.monospacedDigit())
             }
-            .modernButtonStyle(
+            .editorChromeButtonStyle(
                 style: .glass,
                 size: .small,
                 shape: .capsule

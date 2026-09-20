@@ -119,13 +119,13 @@ struct FileRowLabel: View {
             icon
                 .contentTransition(.symbolEffect(.replace))
                 .padding(1.5)
-                .background(.regularMaterial, in: Circle())
+                .background(editorChromeSurface(), in: Circle())
                 .offset(x: 5, y: 4)
                 .animation(.smooth(duration: 0.18), value: lockBadgeSystemName)
         } else {
             icon
                 .padding(1.5)
-                .background(.regularMaterial, in: Circle())
+                .background(editorChromeSurface(), in: Circle())
                 .offset(x: 5, y: 4)
                 .animation(.easeInOut(duration: 0.18), value: lockBadgeSystemName)
         }

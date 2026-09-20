@@ -14,6 +14,7 @@ struct ContentViewModern: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.alertToast) var alertToast
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject var fileState: FileState
     @EnvironmentObject var appPreference: AppPreference
     @EnvironmentObject var layoutState: LayoutState
@@ -56,28 +57,28 @@ struct ContentViewModern: View {
     
     @ViewBuilder
     private func navigationView() -> some View {
-        // Known issue: Cause `Unable to simultaneously satisfy constraints.` in iOS
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            if #available(macOS 14.0, iOS 17.0, *) {
 #if os(macOS)
+        // Keep desktop column sizing independent of NavigationSplitView's
+        // toolbar/column preference feedback during document and sheet changes.
+        HSplitView {
+            if layoutState.isSidebarPresented {
                 SidebarView()
-                     .toolbar(content: sidebarToolbar)
-#elseif os(iOS)
-                if horizontalSizeClass == .compact {
-                    SidebarView()
-                        .toolbar(content: sidebarToolbar)
-                } else {
-                    SidebarView()
-                        .toolbar(content: sidebarToolbar)
-                }
-#endif
-            } else {
-                SidebarView()
-                    .toolbar(content: sidebarToolbar)
+                    .frame(minWidth: 230, idealWidth: 250, maxWidth: 340)
             }
-        } detail: {
-             ContentViewDetail(isSettingsPresented: $isSettingsPresented)
+            ContentViewDetail(isSettingsPresented: $isSettingsPresented)
+                .frame(minWidth: 480, maxWidth: .infinity, maxHeight: .infinity)
+                .ignoresSafeArea(.container, edges: .top)
         }
+        .toolbar(.visible, for: .windowToolbar)
+        .toolbarBackground(.hidden, for: .windowToolbar)
+#else
+        NavigationSplitView(columnVisibility: $columnVisibility) {
+            SidebarView()
+                .toolbar(content: sidebarToolbar)
+        } detail: {
+            ContentViewDetail(isSettingsPresented: $isSettingsPresented)
+        }
+#endif
     }
     
     

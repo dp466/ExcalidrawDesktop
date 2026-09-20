@@ -9,6 +9,8 @@ import SwiftUI
 import ChocofordUI
 
 struct ExcalidrawZSidebarRowModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
     var isSelected: Bool
     var isMultiSelected: Bool
     var isPressed: Bool = false
@@ -19,41 +21,30 @@ struct ExcalidrawZSidebarRowModifier: ViewModifier {
         isHovered || isSelected || isPressed
     }
 
-    private var cornerRadius: CGFloat {
-        if #available(macOS 26.0, iOS 26.0, *) {
-            12
-        } else {
-            6
-        }
-    }
+    private let cornerRadius: CGFloat = 6
 
     func body(content: Content) -> some View {
         HStack(spacing: 0) {
             content
             Spacer(minLength: 0)
         }
-        .padding(6)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .foregroundStyle(
+            isActive
+            ? NavigationShellTheme.primary(for: colorScheme)
+            : Color.primary
+        )
         .contentShape(Rectangle())
         .onHover { hovering in
             self.isHovered = hovering
         }
         .background(rowBackground)
-        .padding(.vertical, {
-            if #available(macOS 26.0, iOS 26.0, *) {
-                1
-            } else {
-                0
-            }
-        }())
+        .padding(.vertical, 1)
         .overlay {
             if isMultiSelected {
-                if #available(macOS 26.0, iOS 26.0, *) {
-                    Capsule()
-                        .stroke(Color.accentColor, lineWidth: 1.5)
-                } else {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .stroke(Color.accentColor, lineWidth: 1.5)
-                }
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(NavigationShellTheme.primary(for: colorScheme), lineWidth: 1.5)
             }
         }
         .animation(.easeInOut(duration: 0.16), value: isActive)
@@ -61,31 +52,13 @@ struct ExcalidrawZSidebarRowModifier: ViewModifier {
 
     @ViewBuilder
     private var rowBackground: some View {
-        if #available(macOS 26.0, iOS 26.0, *) {
-            if isActive {
-                let tint = isSelected
-                    ? Color.accentColor.opacity(isPressed ? 0.26 : 0.18)
-                    : Color.primary.opacity(isPressed ? 0.10 : 0.06)
-
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(.clear)
-                    .glassEffect(
-                        Glass.regular
-                            .tint(tint)
-                            .interactive(),
-                        in: Capsule()
-                    )
-                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
-            }
-        } else {
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(
-                    isSelected
-                    ? Color.accentColor.opacity(isPressed ? 0.28 : 0.2)
-                    : Color.gray.opacity(isPressed ? 0.28 : 0.2)
-                )
-                .opacity(isActive ? 1 : 0)
-        }
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(
+                isSelected
+                ? NavigationShellTheme.selection(for: colorScheme)
+                : NavigationShellTheme.hover(for: colorScheme)
+            )
+            .opacity(isActive ? (isPressed ? 0.82 : 1) : 0)
     }
 }
 

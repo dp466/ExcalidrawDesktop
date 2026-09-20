@@ -39,7 +39,7 @@ struct CreateRoomSheetView: View {
                     Text(.localizable(.generalButtonCancel))
                         .frame(width: 60)
                 }
-                .modernButtonStyle(style: .glass, shape: .modern)
+                .editorChromeButtonStyle(style: .glass, shape: .modern)
 
                 Button {
                     dismiss()
@@ -48,7 +48,7 @@ struct CreateRoomSheetView: View {
                     Text(.localizable(.generalButtonCreate))
                         .frame(width: 60)
                 }
-                .modernButtonStyle(style: .glassProminent, shape: .modern)
+                .editorChromeButtonStyle(style: .glassProminent, shape: .modern)
             }
         }
         .padding()

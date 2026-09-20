@@ -70,6 +70,7 @@ struct ExcalidrawCanvasView: View {
     @Binding var loadingState: LoadingState
     var savingType: UTType
     var onDocumentLoadFinished: (String) -> Void
+    var onPersistSnapshot: (@MainActor (ExcalidrawFile) async throws -> Void)?
     var onError: (Error) -> Void
     var interactionEnabled: Bool
     
@@ -95,6 +96,7 @@ struct ExcalidrawCanvasView: View {
         loadingState: Binding<LoadingState>,
         interactionEnabled: Bool = true,
         onDocumentLoadFinished: @escaping (String) -> Void = { _ in },
+        onPersistSnapshot: (@MainActor (ExcalidrawFile) async throws -> Void)? = nil,
         onError: @escaping (Error) -> Void
     ) {
         self.type = type
@@ -103,6 +105,7 @@ struct ExcalidrawCanvasView: View {
         self._loadingState = loadingState
         self.interactionEnabled = interactionEnabled
         self.onDocumentLoadFinished = onDocumentLoadFinished
+        self.onPersistSnapshot = onPersistSnapshot
         self.onError = onError
     }
     

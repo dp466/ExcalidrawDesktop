@@ -81,7 +81,7 @@ struct IndicatorOverlay: View {
                 )
                 .clipped()
         }
-        .modernButtonStyle(
+        .editorChromeButtonStyle(
             style: .glass,
             size: buttonStyleSize,
             shape: buttonShape

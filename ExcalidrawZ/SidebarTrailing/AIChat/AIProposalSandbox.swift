@@ -112,7 +112,7 @@ enum AIProposalSandbox {
 
     @MainActor
     private static func makeOffscreenCore() -> ExcalidrawCore {
-        let core = ExcalidrawCore()
+        let core = ExcalidrawCore(highRefreshRequested: false)
         core.webView.frame = CGRect(x: 0, y: 0, width: 1, height: 1)
         offscreenCore = core
         ExcalidrawCoordinatorRegistry.shared.updateProposal(core)
@@ -124,9 +124,9 @@ enum AIProposalSandbox {
     private static func loadLocalExcalidrawPage(in core: ExcalidrawCore) {
         let url: URL
         #if DEBUG
-        url = URL(string: "http://127.0.0.1:8486/index.html")!
+        url = ExcalidrawServer.editorURL
         #else
-        url = URL(string: "http://127.0.0.1:8487/index.html")!
+        url = ExcalidrawServer.editorURL
         #endif
         core.webView.load(URLRequest(url: url))
     }

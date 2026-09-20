@@ -101,7 +101,7 @@ struct FlexibleSplitView<Item: FlexibleItem, ID: Hashable & Transferable>: View 
                             .padding(6)
                             .background {
                                 Rectangle()
-                                    .fill(.regularMaterial)
+                                    .fill(editorChromeSurface())
                             }
                         })
                         .dropDestination(for: ID.self) { items, _ in
@@ -165,7 +165,7 @@ struct FlexibleSplitView<Item: FlexibleItem, ID: Hashable & Transferable>: View 
                     .fixedSize()
                     .font(.largeTitle)
                     .padding(40)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                    .background(editorChromeSurface(material: .ultraThin), in: RoundedRectangle(cornerRadius: 12))
             }
             .simultaneousGesture(DragGesture(minimumDistance: 0).onChanged { _ in
                 if self.draggedItemID != item[keyPath: itemID] {
@@ -352,7 +352,7 @@ fileprivate struct SubViewToolbarModifier: ViewModifier {
 //            .padding(6)
 //            .background {
 //                Rectangle()
-//                    .fill(.regularMaterial)
+//                    .fill(editorChromeSurface())
 //            }
 //    }
 }

@@ -183,18 +183,23 @@ struct SubscriptionItem: Hashable, Identifiable, Comparable {
 extension Store {
     @MainActor
     var canUseExtraHighAIModel: Bool {
-        activeSubscriptionItem == .max || activeSubscriptionItem == .max10x
+        guard ExcalidrawFeaturePolicy.allowsCloudAIServices else { return false }
+        return activeSubscriptionItem == .max || activeSubscriptionItem == .max10x
     }
 
     var canUseOptimizedMCPServices: Bool {
-        guard ExcalidrawZMCPServerController.isAvailable else { return false }
-        guard let activeSubscriptionItem else { return false }
-        return activeSubscriptionItem >= .starter
+        let subscriptionAllows = activeSubscriptionItem.map { $0 >= .starter } ?? false
+        return ExcalidrawFeaturePolicy.allowsOptimizedMCP(
+            serverAvailable: ExcalidrawZMCPServerController.isAvailable,
+            subscriptionAllows: subscriptionAllows
+        )
     }
 
     var canUsePresentation: Bool {
-        guard let activeSubscriptionItem else { return false }
-        return activeSubscriptionItem >= .starter
+        let subscriptionAllows = activeSubscriptionItem.map { $0 >= .starter } ?? false
+        return ExcalidrawFeaturePolicy.allowsPresentation(
+            subscriptionAllows: subscriptionAllows
+        )
     }
 
     enum ReachPaywallReason {

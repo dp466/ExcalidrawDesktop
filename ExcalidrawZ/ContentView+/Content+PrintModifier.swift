@@ -28,7 +28,7 @@ struct PrintModifier: ViewModifier {
                 }
                 .padding(.horizontal, 40)
             }
-            .bindWindow($window)
+            .bindAppWindow($window)
 #if os(macOS)
             .onReceive(NotificationCenter.default.publisher(for: .togglePrintModalSheet)) { _ in
                 if window?.isKeyWindow == true {

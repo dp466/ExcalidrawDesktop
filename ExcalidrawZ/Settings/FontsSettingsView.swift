@@ -129,7 +129,7 @@ struct MultiFontPickerView: View {
                     } label: {
                         Text(localizable: .settingsFontsAddedFontsButtonOpenFontBook)
                     }
-                    .modernButtonStyle(shape: .modern)
+                    .editorChromeButtonStyle(shape: .modern)
                 }
                 
                 Spacer()

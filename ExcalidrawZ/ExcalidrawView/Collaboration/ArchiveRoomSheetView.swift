@@ -48,7 +48,7 @@ struct ArchiveRoomSheetView: View {
                     let roundedRectangle = RoundedRectangle(cornerRadius: 12)
                     
                     ZStack {
-                        roundedRectangle.fill(.regularMaterial)
+                        roundedRectangle.fill(editorChromeSurface())
                         roundedRectangle.stroke(.separator)
                     }
                 }
@@ -68,10 +68,10 @@ struct ArchiveRoomSheetView: View {
                     Text(.localizable(.generalButtonSave))
                         .frame(width: 60)
                 }
-                .modernButtonStyle(style: .glassProminent)
+                .editorChromeButtonStyle(style: .glassProminent)
                 .disabled(fileState.currentActiveGroup == nil)
             }
-            .modernButtonStyle(shape: .capsule)
+            .editorChromeButtonStyle(shape: .capsule)
         }
     }
     

@@ -178,11 +178,11 @@ struct ExcalidrawToolbar: View {
                     
                 } else if #available(macOS 14.0, iOS 17.0, *) {
                     RoundedRectangle(cornerRadius: size / 1.6)
-                        .fill(.regularMaterial)
+                        .fill(editorChromeSurface())
                         .stroke(.separator, lineWidth: 0.5)
                 } else {
                     RoundedRectangle(cornerRadius: size / 1.6)
-                        .fill(.regularMaterial)
+                        .fill(editorChromeSurface())
                 }
             }
             if #available(macOS 26.0, iOS 26.0, *) {
@@ -202,13 +202,13 @@ struct ExcalidrawToolbar: View {
                     if #available(macOS 14.0, iOS 17.0, *) {
                         RoundedRectangle(cornerRadius: size / 1.6)
                             .fill(
-                                isSelected ? AnyShapeStyle(Color.accentColor.secondary) : AnyShapeStyle(Material.regularMaterial)
+                                isSelected ? AnyShapeStyle(Color.accentColor.secondary) : AnyShapeStyle(editorChromeSurface())
                             )
                             .stroke(.separator, lineWidth: 0.5)
                     } else {
                         RoundedRectangle(cornerRadius: size / 1.6)
                             .fill(
-                                isSelected ? AnyShapeStyle(Color.accentColor.opacity(0.3)) : AnyShapeStyle(Material.regularMaterial)
+                                isSelected ? AnyShapeStyle(Color.accentColor.opacity(0.3)) : AnyShapeStyle(editorChromeSurface())
                             )
                         RoundedRectangle(cornerRadius: size / 1.6)
                             .stroke(.secondary, lineWidth: 0.5)
@@ -387,7 +387,7 @@ struct ExcalidrawToolbar: View {
                 } label: {
                     Label(.localizable(.generalButtonCancel), systemSymbol: .checkmark)
                 }
-                .modernButtonStyle(style: .glassProminent, shape: .circle)
+                .editorChromeButtonStyle(style: .glassProminent, shape: .circle)
             } else {
                 HStack(spacing: 20) {
                     Text(activatedTool.localization).frame(maxWidth: .infinity, alignment: .leading)
@@ -539,7 +539,7 @@ struct ExcalidrawToolbar: View {
                 .labelStyle(.iconOnly)
                 .frame(width: 28, height: 28)
         }
-        .modernButtonStyle(style: .glassProminent, size: .small, shape: .circle)
+        .editorChromeButtonStyle(style: .glassProminent, size: .small, shape: .circle)
         .help(String(localizable: .toolbarEdit))
     }
     
@@ -770,19 +770,19 @@ private struct ExcalidrawToolbarSurfaceModifier: ViewModifier {
                 if #available(iOS 26.0, *) {
                     Circle()
                         .fill(.clear)
-                        .glassEffect(.clear, in: Circle())
+                        .editorChromeGlassEffect(.clear, in: Circle())
                 } else {
                     Circle()
-                        .fill(.regularMaterial)
+                        .fill(editorChromeSurface())
                 }
             case .capsule:
                 if #available(iOS 26.0, *) {
                     Capsule()
                         .fill(.clear)
-                        .glassEffect(.clear, in: Capsule())
+                        .editorChromeGlassEffect(.clear, in: Capsule())
                 } else {
                     Capsule()
-                        .fill(.regularMaterial)
+                        .fill(editorChromeSurface())
                 }
         }
     }

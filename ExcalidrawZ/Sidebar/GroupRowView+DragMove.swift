@@ -464,7 +464,7 @@ struct DropToGroupSheetView<T: Sendable>: View {
                         Text(.localizable(.generalButtonConfirm))
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.glassProminent)
+                    .editorChromeButtonStyle(style: .glassProminent)
                     .buttonBorderShape(.capsule)
                 } else {
                     Button {

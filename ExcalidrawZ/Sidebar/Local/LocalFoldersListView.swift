@@ -67,7 +67,7 @@ struct LocalFoldersListContent: View {
                     .background {
                         ZStack {
                             RoundedRectangle(cornerRadius: 20)
-                                .fill(.regularMaterial)
+                                .fill(editorChromeSurface())
                             RoundedRectangle(cornerRadius: 20)
                                 .stroke(.secondary, lineWidth: 0.5)
                         }
@@ -126,7 +126,7 @@ struct LocalFolderEmptyPlaceholderView: View {
             VStack(spacing: 6) {
                 ImportLocalFolderButton()
                     .font(.footnote)
-                    .modernButtonStyle(style: .glassProminent, shape: .modern)
+                    .editorChromeButtonStyle(style: .glassProminent, shape: .modern)
                 
                 if containerHorizontalSizeClass == .compact {
                     Button {
@@ -138,7 +138,7 @@ struct LocalFolderEmptyPlaceholderView: View {
                         }
                     }
                     .font(.footnote)
-                    .modernButtonStyle(style: .glass, shape: .modern)
+                    .editorChromeButtonStyle(style: .glass, shape: .modern)
                 }
             }
         }
@@ -152,7 +152,7 @@ struct LocalFolderEmptyPlaceholderView: View {
                     Image(systemSymbol: .xmark)
                         .foregroundStyle(.secondary)
                 }
-                .modernButtonStyle(style: .borderless)
+                .editorChromeButtonStyle(style: .borderless)
                 .padding()
             }
         }

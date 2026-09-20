@@ -21,7 +21,7 @@ struct HomeTipsSection: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack {
                     HomeTipItemView.whatsNew
-                    HomeTipItemView.ai
+                    if AIChatAvailability.isAvailable { HomeTipItemView.ai }
                     HomeTipItemView.orginzeFiles
                     HomeTipItemView.fileHistory
                     HomeTipItemView.share
@@ -94,7 +94,7 @@ struct HomeTipItemView: View {
         VStack(alignment: .leading, spacing: 10) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(.regularMaterial)
+                    .fill(editorChromeSurface())
                     .shadow(color: .gray.opacity(0.2), radius: isHovered ? 4 : 0)
                 RoundedRectangle(cornerRadius: 12)
                     .stroke(.separator, lineWidth: 0.5)
@@ -176,7 +176,7 @@ struct TipDetailContainer: View {
                 if #available(macOS 26.0, iOS 26.0, *) {
                     dismissButton()
                         .buttonBorderShape(.circle)
-                        .buttonStyle(.glass)
+                        .editorChromeButtonStyle(style: .glass)
                         .controlSize(.extraLarge)
                 } else {
                     dismissButton()

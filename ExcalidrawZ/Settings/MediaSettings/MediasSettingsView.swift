@@ -93,11 +93,11 @@ struct MediasSettingsView: View {
                 if #available(macOS 26.0, *) {
                     shape
                         .fill(.background)
-                        .glassEffect(.regular, in: shape)
+                        .editorChromeGlassEffect(.regular, in: shape)
                         .shadow(radius: 4)
                 } else {
                     shape
-                        .fill(.regularMaterial)
+                        .fill(editorChromeSurface())
                         .shadow(radius: 4)
                 }
             }
@@ -117,7 +117,7 @@ struct MediasSettingsView: View {
                 } label: {
                     Image(systemSymbol: .xmark)
                 }
-                .modernButtonStyle(style: .glass, size: .small, shape: .circle)
+                .editorChromeButtonStyle(style: .glass, size: .small, shape: .circle)
             }
             .padding(12)
 
@@ -194,7 +194,7 @@ struct MediasSettingsView: View {
         } label: {
             Label(.localizable(.settingsMediaFilesButtonCleanUp), systemSymbol: .trash)
         }
-        .modernButtonStyle(style: .glass, size: .regular, shape: .capsule)
+        .editorChromeButtonStyle(style: .glass, size: .regular, shape: .capsule)
         .help(.localizable(.settingsMediaFilesButtonHelpCleanUp))
     }
 }

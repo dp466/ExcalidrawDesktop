@@ -257,7 +257,7 @@ struct ExcalidrawLibraryImportSheetView: View {
                                 Divider()
                             }
                             .padding(.top, 12)
-                            .background(.regularMaterial)
+                            .background(editorChromeSurface())
                         }
                     }
                 }
@@ -268,7 +268,7 @@ struct ExcalidrawLibraryImportSheetView: View {
             .background {
                 let roundedRectangle = RoundedRectangle(cornerRadius: 12)
                 roundedRectangle.stroke(.separator, lineWidth: 0.5)
-                roundedRectangle.fill(.regularMaterial)
+                roundedRectangle.fill(editorChromeSurface())
             }
             
             HStack {

@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "evaluation_status": "Static scenarios only; not a completed model-generation evaluation.",
+  "cases": [
+    {
+      "id": "new-product",
+      "prompt": "Make me one for this.",
+      "input": "Product photo with the skill selected",
+      "activate": true,
+      "must": [
+        "One isolated transparent PNG",
+        "Flat front elevation",
+        "Source structure retained",
+        "No new wires or callouts"
+      ]
+    },
+    {
+      "id": "missing-target",
+      "prompt": "Redo the approved picture.",
+      "input": "No accessible image target",
+      "activate": true,
+      "must": [
+        "Request the missing image",
+        "Do not claim or attempt a specific-image edit without a usable target"
+      ]
+    },
+    {
+      "id": "top-busbar",
+      "prompt": "Top view without the protection.",
+      "input": "Product photo showing six studs",
+      "activate": true,
+      "must": [
+        "Exactly six studs",
+        "True top-down view",
+        "No lid",
+        "No floating removed lid",
+        "Base retained"
+      ]
+    },
+    {
+      "id": "rack-edit",
+      "prompt": "1=5A; 2=5A; 3,4,5,6=Blank; 7=5A; 8=10A; 9=5A; 10=10A; 11=10A; 12=Blank.",
+      "input": "Twelve-position panel image",
+      "activate": true,
+      "expected_positions": [
+        "5A",
+        "5A",
+        "Blank",
+        "Blank",
+        "Blank",
+        "Blank",
+        "5A",
+        "10A",
+        "5A",
+        "10A",
+        "10A",
+        "Blank"
+      ],
+      "must": [
+        "Twelve slots",
+        "Seven breakers",
+        "Five blanks",
+        "Unchanged case and bank labels",
+        "No imported Victron logo"
+      ]
+    },
+    {
+      "id": "blank-research",
+      "prompt": "Search online to see what the blank looks like.",
+      "input": "Panel image and model if available",
+      "activate": true,
+      "must": [
+        "Research real accessory appearance",
+        "Prefer exact manufacturer evidence",
+        "Disclose unresolved model/blank uncertainty",
+        "Do not call an illustrative blank manufacturer-verified"
+      ]
+    },
+    {
+      "id": "open-distributor",
+      "prompt": "Inside like the PowerIN, without fuses.",
+      "input": "Original open Distributor photograph with four branches",
+      "activate": true,
+      "must": [
+        "Use the open photo",
+        "Four branch positions",
+        "PCB and terminals retained",
+        "No closed blue cover",
+        "No invented glass fuses or bridges"
+      ]
+    },
+    {
+      "id": "sensor-up",
+      "prompt": "Make it straight with the cable going up.",
+      "input": "Sensor photo with an integral two-conductor cable",
+      "activate": true,
+      "must": [
+        "Vertical device axis",
+        "Existing lead exits upward",
+        "Original attachment point retained",
+        "Correct visible wire colors/count"
+      ]
+    },
+    {
+      "id": "remove-cables",
+      "prompt": "Remove the cables.",
+      "input": "Prior converter rendering with three added external power cables",
+      "activate": true,
+      "must": [
+        "Remove added external leads",
+        "Keep all three equipment terminals",
+        "Preserve original proportions, labels and casing"
+      ]
+    },
+    {
+      "id": "native-editable",
+      "prompt": "Give me a real editable Excalidraw file.",
+      "input": "Equipment drawing",
+      "activate": true,
+      "must": [
+        "Native editable shapes if supported",
+        "No bitmap mislabeled as editable",
+        "Explain capability limitations honestly"
+      ]
+    },
+    {
+      "id": "override",
+      "prompt": "This time use a side view and keep the cables.",
+      "input": "Photo with cables",
+      "activate": true,
+      "must": [
+        "Honor explicit side view",
+        "Keep requested cables",
+        "Other style requirements retained"
+      ]
+    },
+    {
+      "id": "outside-scope",
+      "prompt": "What fuse rating should I use for this battery bank?",
+      "input": "Electrical sizing question without an illustration request",
+      "activate": false,
+      "must": [
+        "Do not use this skill as engineering authority"
+      ]
+    }
+  ]
+}

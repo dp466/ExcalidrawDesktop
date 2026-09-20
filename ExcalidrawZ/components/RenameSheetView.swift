@@ -143,9 +143,9 @@ struct RenameSheetView: View {
                             .frame(width: 64)
                     }
                     .disabled(text.isEmpty)
-                    .modernButtonStyle(style: .glassProminent)
+                    .editorChromeButtonStyle(style: .glassProminent)
                 }
-                .modernButtonStyle(shape: .modern)
+                .editorChromeButtonStyle(shape: .modern)
             }
         }
         .onAppear {

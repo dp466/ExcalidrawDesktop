@@ -72,7 +72,7 @@ struct OpenFromURLModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
 #if os(macOS)
-            .bindWindow($window)
+            .bindAppWindow($window)
             .onWindowEvent(.didBecomeKey) { window in
                 ContentWindowActivationCoordinator.shared.register(window)
             }
@@ -509,7 +509,7 @@ struct OpenURLSheetView: View {
                     
                     if isPreviewWebViewLoading {
                         Rectangle()
-                            .fill(.regularMaterial)
+                            .fill(editorChromeSurface())
                             .overlay {
                                 ProgressView()
                             }
@@ -601,7 +601,7 @@ struct OpenURLSheetView: View {
         .padding(.horizontal, 20)
 #endif
         .animation(.smooth, value: isPreviewWebView)
-        .bindWindow($window)
+        .bindAppWindow($window)
 #if os(macOS)
         .watch(value: isPreviewWebView) { newValue in
             changeViewSize(isPreviewWebView: newValue, window: window)
