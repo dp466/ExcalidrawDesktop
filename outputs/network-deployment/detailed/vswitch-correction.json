@@ -1,0 +1,33 @@
+{
+  "result": "PASS",
+  "before_revision": "z8W4e5MVPS4Z-wwhuiD3T:4",
+  "revision": "z8W4e5MVPS4Z-wwhuiD3T:5",
+  "checkpoint_id": "F7FCACF6-2888-45EA-ADB6-4BD1246C46B5",
+  "changed_ids": [
+    "hq-compute-C35",
+    "hq-compute-C35-label-mask",
+    "hq-compute-C35-ports",
+    "hq-compute-C36",
+    "hq-compute-C36-label-mask",
+    "hq-compute-C36-ports",
+    "hq-compute-C37",
+    "hq-compute-C37-label-mask",
+    "hq-compute-C37-ports",
+    "hq-compute-C38",
+    "hq-compute-C38-label-mask",
+    "hq-compute-C38-ports",
+    "hq-compute-footer"
+  ],
+  "untouched_elements_identical": true,
+  "bindings_preserved": true,
+  "audit": {
+    "ok": true,
+    "errors": [],
+    "elements": 1152,
+    "device_instances": 53,
+    "labelled_connections": 68,
+    "revision": "z8W4e5MVPS4Z-wwhuiD3T:5"
+  },
+  "persistence": "saved",
+  "render_revision": "z8W4e5MVPS4Z-wwhuiD3T:5"
+}

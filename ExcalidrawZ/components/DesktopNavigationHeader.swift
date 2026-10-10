@@ -58,6 +58,8 @@ struct DesktopNavigationHeader<Actions: View, DocumentMenu: View>: View {
                 .frame(minWidth: 40, maxWidth: .infinity, alignment: .leading)
                 .layoutPriority(-1)
                 .background(DesktopHeaderDragRegion())
+            MCPActivityIndicator()
+                .fixedSize(horizontal: true, vertical: false)
             if fileState.currentActiveFile != nil {
                 if case .collaborationFile = fileState.currentActiveFile {
                     CollaborationMembersPopoverButton()

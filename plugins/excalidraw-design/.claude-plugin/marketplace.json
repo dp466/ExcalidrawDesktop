@@ -1,0 +1,16 @@
+{
+  "name": "excalidraw-design-local",
+  "metadata": {
+    "description": "Personal hand-drawn Excalidraw diagrams and equipment symbols"
+  },
+  "owner": {
+    "name": "Dilan Paradis"
+  },
+  "plugins": [
+    {
+      "name": "excalidraw-design",
+      "source": "./",
+      "description": "Detailed illustrated network and electrical diagrams with Excalifont, device identity, terminal wiring and traceable connections."
+    }
+  ]
+}

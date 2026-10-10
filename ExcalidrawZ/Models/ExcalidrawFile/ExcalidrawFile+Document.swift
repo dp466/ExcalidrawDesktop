@@ -40,7 +40,15 @@ extension ExcalidrawFile: FileDocument {
     mutating func updateContentFilesFromFiles() throws {
         if let content = self.content,
            var contentObject = try JSONSerialization.jsonObject(with: content) as? [String : Any] {
-            contentObject["files"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(self.files))
+            let encodedFiles = try JSONSerialization.jsonObject(with: JSONEncoder().encode(self.files)) as? [String: [String: Any]] ?? [:]
+            let originalFiles = contentObject["files"] as? [String: [String: Any]] ?? [:]
+            // Resource models carry the editor's known fields. Keep supported
+            // extension metadata from the raw scene when hydrating asset bytes.
+            contentObject["files"] = encodedFiles.mapValues { encoded in
+                var merged = originalFiles[encoded["id"] as? String ?? ""] ?? [:]
+                merged.merge(encoded, uniquingKeysWith: { _, updated in updated })
+                return merged
+            }
             self.content = try JSONSerialization.data(withJSONObject: contentObject)
         }
     }

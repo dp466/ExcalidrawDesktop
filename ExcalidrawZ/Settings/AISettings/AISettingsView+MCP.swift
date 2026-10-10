@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SFSafeSymbols
+import UniformTypeIdentifiers
 
 #if os(macOS)
 import AppKit
@@ -69,6 +70,8 @@ extension AISettingsView {
             }
 
             mcpServiceModeRow
+            mcpClientCredentialsRow
+            mcpDiagramPluginRow
 
             if displayedMCPServiceMode == .basic {
                 mcpBasicReadMeRow
@@ -83,6 +86,72 @@ extension AISettingsView {
             mcpMacOnlyRow
         }
     }
+
+    @ViewBuilder
+    var mcpClientCredentialsRow: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Client access").font(.headline)
+                Spacer()
+                Menu("Create credential") {
+                    ForEach(ExcalidrawMCPClientKind.allCases) { kind in
+                        Button(kind.title) { mcpServerController.createClient(kind) }
+                    }
+                }
+            }
+            Text("Each client has a private credential stored in Keychain. Copy its configuration to connect on this Mac.")
+                .font(.caption).foregroundStyle(.secondary)
+            ForEach(mcpServerController.clients) { client in
+                MCPClientCredentialRow(client: client, controller: mcpServerController)
+            }
+            if let error = mcpServerController.credentialError {
+                Text(error).font(.caption).foregroundStyle(.red)
+            }
+            if mcpServerController.activeRequests > 0 {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("\(mcpServerController.activeRequests) active · \(mcpServerController.activeTool ?? "diagram command")")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+        }
+        .task { mcpServerController.refreshClients() }
+    }
+
+    @ViewBuilder
+    var mcpDiagramPluginRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Diagram skills").font(.headline)
+            Text("Install the shared visual style and detailed network skill in Codex or Claude Code. The package includes Excalifont rules, editable equipment, and both-port cable labels.")
+                .font(.caption).foregroundStyle(.secondary)
+#if os(macOS)
+            Button("Export diagram plugin…") { exportDiagramPlugin() }
+                .disabled(Bundle.main.url(forResource: "ExcalidrawDiagramPlugin", withExtension: "zip") == nil)
+            Text("Unzip into a permanent folder and follow its README. Connect each client separately under Client access.")
+                .font(.caption).foregroundStyle(.secondary)
+#endif
+        }
+    }
+
+#if os(macOS)
+    @MainActor
+    private func exportDiagramPlugin() {
+        guard let source = Bundle.main.url(forResource: "ExcalidrawDiagramPlugin", withExtension: "zip") else { return }
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.zip]
+        panel.nameFieldStringValue = "ExcalidrawDiagramPlugin.zip"
+        panel.canCreateDirectories = true
+        guard panel.runModal() == .OK, let destination = panel.url else { return }
+        do {
+            try Data(contentsOf: source).write(to: destination, options: .atomic)
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = "Could not export the diagram plugin"
+            alert.informativeText = error.localizedDescription
+            alert.runModal()
+        }
+    }
+#endif
 
     @ViewBuilder
     var mcpMacOnlyRow: some View {
@@ -370,7 +439,7 @@ extension AISettingsView {
         HStack(spacing: 2) {
             mcpConnectionGuideTabButton(
                 .claude,
-                title: String(localizable: .settingsAIMCPConnectionGuideClaudeTabTitle)
+                title: "Claude Code"
             )
             mcpConnectionGuideTabButton(
                 .codex,
@@ -419,16 +488,16 @@ extension AISettingsView {
     var mcpClaudeConnectionGuideContent: some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 10) {
-                Text(localizable: .settingsAIMCPClaudeDesktopGuideMessage)
+                Text("Connect Claude Code directly to the local diagram server.")
                     .foregroundStyle(.secondary)
 
-                Text(localizable: .settingsAIMCPClaudeDesktopGuideSteps)
+                Text("Create a Claude Code credential under Client access, copy its private configuration, and run the copied command in Terminal. Keep ExcalidrawDesktop open with MCP enabled. Run claude mcp list to check the connection.")
                     .font(.callout)
             }
 
             VStack(alignment: .leading, spacing: 8) {
                 mcpGuideSectionHeader(
-                    title: String(localizable: .settingsAIMCPClaudeDesktopConfigLabel),
+                    title: "Claude Code command",
                     copyText: mcpClaudeDesktopClientConfig
                 )
 
@@ -437,7 +506,7 @@ extension AISettingsView {
 
             VStack(alignment: .leading, spacing: 8) {
                 mcpGuideSectionHeader(
-                    title: String(localizable: .settingsAIMCPClaudeDesktopConfigPathLabel),
+                    title: "Claude Code connection check",
                     copyText: mcpClaudeDesktopConfigPath
                 )
 
@@ -451,20 +520,20 @@ extension AISettingsView {
     var mcpCodexConnectionGuideContent: some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 10) {
-                Text(localizable: .settingsAIMCPCodexGuideMessage)
+                Text("Connect Codex directly over HTTP.")
                     .foregroundStyle(.secondary)
 
-                Text(localizable: .settingsAIMCPCodexGuideSteps)
+                Text("Create a Codex credential under Client access and copy its private configuration into your user config.toml, normally ~/.codex/config.toml. Reload the Codex connection and inspect its MCP tools. Keep ExcalidrawDesktop open with MCP enabled.")
                     .font(.callout)
             }
 
             VStack(alignment: .leading, spacing: 8) {
                 mcpGuideSectionHeader(
-                    title: String(localizable: .settingsAIMCPCodexServerNameLabel),
-                    copyText: mcpCodexServerName
+                    title: "Codex configuration",
+                    copyText: mcpCodexClientConfig
                 )
 
-                mcpCodeBlock(mcpCodexServerName)
+                mcpCodeBlock(mcpCodexClientConfig)
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -544,33 +613,19 @@ extension AISettingsView {
     }
 
     var mcpClaudeDesktopConfigPath: String {
-        "~/Library/Application Support/Claude/claude_desktop_config.json"
+        "claude mcp list"
     }
 
     var mcpClaudeDesktopClientConfig: String {
-        """
-        {
-          "mcpServers": {
-            "excalidrawz": {
-              "command": "npx",
-              "args": ["-y", "mcp-remote", "\(mcpEndpoint)"]
-            }
-          }
-        }
-        """
+        ExcalidrawMCPClientConfiguration.configuration(kind: .claudeCode, endpoint: mcpEndpoint, token: "<PRIVATE_TOKEN>")
+    }
+
+    var mcpCodexClientConfig: String {
+        ExcalidrawMCPClientConfiguration.configuration(kind: .codex, endpoint: mcpEndpoint, token: "<PRIVATE_TOKEN>")
     }
 
     var mcpVSCodeClientConfig: String {
-        """
-        {
-          "servers": {
-            "excalidrawz": {
-              "type": "http",
-              "url": "\(mcpEndpoint)"
-            }
-          }
-        }
-        """
+        ExcalidrawMCPClientConfiguration.configuration(kind: .vscode, endpoint: mcpEndpoint, token: "<PRIVATE_TOKEN>")
     }
 
     var mcpStatusText: String {
@@ -644,6 +699,8 @@ extension AISettingsView {
 
     func mcpServiceModeTitle(for mode: ExcalidrawMCPServiceMode) -> String {
         switch mode {
+            case .full:
+                "Complete"
             case .basic:
                 String(localizable: .settingsAIMCPServiceModeBasicTitle)
             case .optimized:
@@ -660,7 +717,7 @@ extension AISettingsView {
 private struct MCPServiceModeHelpSheet: View {
     let onClose: () -> Void
 
-    @State private var selectedMode: ExcalidrawMCPServiceMode = .basic
+    @State private var selectedMode: ExcalidrawMCPServiceMode = .full
 
     var body: some View {
         VStack(spacing: 0) {
@@ -678,7 +735,7 @@ private struct MCPServiceModeHelpSheet: View {
             .scrollClipDisabledIfAvailable()
         }
         .onAppear {
-            selectedMode = .basic
+            selectedMode = .full
         }
     }
 
@@ -738,7 +795,7 @@ struct MCPServiceModeFeaturesPopoverContent: View {
 
     @State private var selectedMode: ExcalidrawMCPServiceMode
 
-    init(initialMode: ExcalidrawMCPServiceMode = .basic) {
+    init(initialMode: ExcalidrawMCPServiceMode = .full) {
         self.initialMode = initialMode
         _selectedMode = State(initialValue: initialMode)
     }
@@ -807,6 +864,8 @@ private struct MCPServiceModeSegmentedPicker: View {
 
     static func title(for mode: ExcalidrawMCPServiceMode) -> String {
         switch mode {
+            case .full:
+                "Complete"
             case .basic:
                 String(localizable: .settingsAIMCPServiceModeBasicTitle)
             case .optimized:
@@ -858,6 +917,13 @@ private struct MCPServiceModeFeaturesView: View {
 
     private static func features(for mode: ExcalidrawMCPServiceMode) -> [MCPServiceModeFeature] {
         switch mode {
+            case .full:
+                [
+                    MCPServiceModeFeature(id: "full-documents", title: "Document control", body: "Inspect, create, edit, save and export app-managed and approved local diagrams.", symbol: .folder),
+                    MCPServiceModeFeature(id: "full-transactions", title: "Reliable editing", body: "Revision checks, atomic batches, retry protection, undo and checkpoints protect your work.", symbol: .arrowTriangle2Circlepath),
+                    MCPServiceModeFeature(id: "full-quality", title: "Polished diagrams", body: "Structured creation, coherent presets, layout, visual analysis and image previews help agents refine a diagram.", symbol: .sparkles),
+                    MCPServiceModeFeature(id: "full-clients", title: "Direct client connections", body: "Codex and Claude Code connect locally with private, revocable credentials.", symbol: .link)
+                ]
             case .basic:
                 [
                     MCPServiceModeFeature(
@@ -937,6 +1003,33 @@ private struct MCPServiceModeFeaturesView: View {
                         symbol: .squareAndArrowUp
                     )
                 ]
+        }
+    }
+}
+
+private struct MCPClientCredentialRow: View {
+    let client: ExcalidrawMCPClientSummary
+    @ObservedObject var controller: ExcalidrawZMCPServerController
+    @State private var copied = false
+    var body: some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(client.kind.title).font(.callout.weight(.medium))
+                Text("Created \(client.createdAt.formatted(date: .abbreviated, time: .shortened)) · \(client.id.uuidString.suffix(6))")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button(copied ? "Copied" : "Copy private config") {
+                guard let config = controller.privateConfiguration(for: client) else { return }
+#if os(macOS)
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(config, forType: .string)
+#elseif os(iOS)
+                UIPasteboard.general.string = config
+#endif
+                copied = true
+            }
+            Button("Revoke", role: .destructive) { controller.revokeClient(client) }
         }
     }
 }

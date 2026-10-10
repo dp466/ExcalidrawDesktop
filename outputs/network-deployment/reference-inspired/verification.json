@@ -1,0 +1,44 @@
+{
+  "ok": true,
+  "errors": [],
+  "elements": 1343,
+  "device_instances": 53,
+  "labelled_connections": 68,
+  "revision": "OK7u04wB361G6ptVzg2D1:2",
+  "saved": "saved",
+  "checkpoint_id": "F2367DAE-C6C9-456F-9DC9-02EE455C38DE",
+  "exports": [
+    {
+      "file": "aurora-network-deployment.excalidraw",
+      "sha256": "08ec1770a668227da764b6c51be514e2593fe094e6db75585ccc49695f8e3bb5",
+      "bytes": 985657,
+      "revision": "OK7u04wB361G6ptVzg2D1:2"
+    },
+    {
+      "file": "aurora-network-deployment.svg",
+      "sha256": "e2e67ffbdd950b6a73fb546a4f3880cdad9de7c3db4a2be421b224a62335f472",
+      "bytes": 1025273,
+      "revision": "OK7u04wB361G6ptVzg2D1:2"
+    }
+  ],
+  "compiler": {
+    "ok": true,
+    "errors": [],
+    "devices": 41,
+    "physical_cables": 58,
+    "logical_links": 10,
+    "sheets": 10,
+    "elements": 1343,
+    "label_findings": [],
+    "route_findings": []
+  },
+  "verified_at": "2026-10-01T19:29:21.873838+00:00",
+  "reopen": {
+    "passed": true,
+    "revision": "m64l2o_V1ebAqBA2Vb-v7:1",
+    "canonical_elements_identical": true,
+    "assets_identical": true,
+    "metadata_arrays_preserved": true,
+    "normalization": "31 newly created row separators load empty boundElements as [] rather than null; all other fields are identical"
+  }
+}

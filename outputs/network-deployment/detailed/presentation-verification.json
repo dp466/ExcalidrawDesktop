@@ -1,0 +1,228 @@
+{
+  "configured": {
+    "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+    "pages": [
+      {
+        "frame_id": "hq-perimeter",
+        "hidden": false,
+        "name": "01 / AURORA / HQ perimeter & core",
+        "speaker_notes": "AURORA / HQ perimeter & core \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "hq-access",
+        "hidden": false,
+        "name": "02 / AURORA / HQ access & DMZ",
+        "speaker_notes": "AURORA / HQ access & DMZ \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "hq-compute",
+        "hidden": false,
+        "name": "03 / AURORA / HQ compute & storage",
+        "speaker_notes": "AURORA / HQ compute & storage \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "branch",
+        "hidden": false,
+        "name": "04 / AURORA / Qu\u00e9bec distribution",
+        "speaker_notes": "AURORA / Qu\u00e9bec distribution \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "dr",
+        "hidden": false,
+        "name": "05 / AURORA / private DR site",
+        "speaker_notes": "AURORA / private DR site \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "overlay",
+        "hidden": false,
+        "name": "06 / AURORA / VPN & replication overlay",
+        "speaker_notes": "AURORA / VPN & replication overlay \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "services",
+        "hidden": false,
+        "name": "07 / AURORA / virtual services",
+        "speaker_notes": "AURORA / virtual services \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "addressing",
+        "hidden": false,
+        "name": "08 / AURORA / VLANs, gateways & deployment notes",
+        "speaker_notes": "AURORA / VLANs, gateways & deployment notes \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      }
+    ],
+    "persistence": "saved",
+    "presenting": false
+  },
+  "started": {
+    "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+    "pages": [
+      {
+        "frame_id": "hq-perimeter",
+        "hidden": false,
+        "name": "01 / AURORA / HQ perimeter & core",
+        "speaker_notes": "AURORA / HQ perimeter & core \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "hq-access",
+        "hidden": false,
+        "name": "02 / AURORA / HQ access & DMZ",
+        "speaker_notes": "AURORA / HQ access & DMZ \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "hq-compute",
+        "hidden": false,
+        "name": "03 / AURORA / HQ compute & storage",
+        "speaker_notes": "AURORA / HQ compute & storage \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "branch",
+        "hidden": false,
+        "name": "04 / AURORA / Qu\u00e9bec distribution",
+        "speaker_notes": "AURORA / Qu\u00e9bec distribution \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "dr",
+        "hidden": false,
+        "name": "05 / AURORA / private DR site",
+        "speaker_notes": "AURORA / private DR site \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "overlay",
+        "hidden": false,
+        "name": "06 / AURORA / VPN & replication overlay",
+        "speaker_notes": "AURORA / VPN & replication overlay \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "services",
+        "hidden": false,
+        "name": "07 / AURORA / virtual services",
+        "speaker_notes": "AURORA / virtual services \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "addressing",
+        "hidden": false,
+        "name": "08 / AURORA / VLANs, gateways & deployment notes",
+        "speaker_notes": "AURORA / VLANs, gateways & deployment notes \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      }
+    ],
+    "persistence": "unchanged",
+    "presenting": true
+  },
+  "last_slide": {
+    "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+    "pages": [
+      {
+        "frame_id": "hq-perimeter",
+        "hidden": false,
+        "name": "01 / AURORA / HQ perimeter & core",
+        "speaker_notes": "AURORA / HQ perimeter & core \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "hq-access",
+        "hidden": false,
+        "name": "02 / AURORA / HQ access & DMZ",
+        "speaker_notes": "AURORA / HQ access & DMZ \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "hq-compute",
+        "hidden": false,
+        "name": "03 / AURORA / HQ compute & storage",
+        "speaker_notes": "AURORA / HQ compute & storage \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "branch",
+        "hidden": false,
+        "name": "04 / AURORA / Qu\u00e9bec distribution",
+        "speaker_notes": "AURORA / Qu\u00e9bec distribution \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "dr",
+        "hidden": false,
+        "name": "05 / AURORA / private DR site",
+        "speaker_notes": "AURORA / private DR site \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "overlay",
+        "hidden": false,
+        "name": "06 / AURORA / VPN & replication overlay",
+        "speaker_notes": "AURORA / VPN & replication overlay \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "services",
+        "hidden": false,
+        "name": "07 / AURORA / virtual services",
+        "speaker_notes": "AURORA / virtual services \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      },
+      {
+        "frame_id": "addressing",
+        "hidden": false,
+        "name": "08 / AURORA / VLANs, gateways & deployment notes",
+        "speaker_notes": "AURORA / VLANs, gateways & deployment notes \u2014 fictional inventory; inspect device captions and both endpoint cable labels.",
+        "transition": "none",
+        "transition_duration": 0.3
+      }
+    ],
+    "persistence": "unchanged",
+    "presenting": true
+  },
+  "stopped": {
+    "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+    "presenting": false
+  },
+  "saved": {
+    "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+    "persistence": "saved",
+    "saved_at": "2026-10-01T18:29:19Z"
+  },
+  "native_ui_verified": [
+    "01 / AURORA / HQ perimeter & core: 1 / 8",
+    "08 / AURORA / VLANs, gateways & deployment notes: 8 / 8"
+  ]
+}

@@ -1,5 +1,5 @@
 diff --git a/README.md b/README.md
-index 401c604d..f8b9ad13 100644
+index 401c604d..1efd9059 100644
 --- a/README.md
 +++ b/README.md
 @@ -262,11 +262,12 @@ Uses browser native PDF rendering with **zero external dependencies**.
@@ -16,7 +16,7 @@ index 401c604d..f8b9ad13 100644
  - Declare the Native `loadFileBuffer()` signature in `packages/excalidraw/global.d.ts` line 58-67. The private `_excalidrawZ` bridge is intentionally excluded from the public `ExcalidrawImperativeAPI` type.
  
  ### ExcalidrawZ File AppState
-@@ -291,3 +292,15 @@ Uses browser native PDF rendering with **zero external dependencies**.
+@@ -291,3 +292,41 @@ Uses browser native PDF rendering with **zero external dependencies**.
  - Use `yarn preview:cloudflare` for a local built-assets preview and `yarn deploy:cloudflare` for a local build and deployment.
  - For Cloudflare Git Builds, use repository root `/`, Node.js 20, build command `yarn build`, and deploy command `yarn wrangler deploy --config wrangler.jsonc`. Set the production branch to `ExcalidrawZ-core`; the repository default `master` branch does not contain ExcalidrawZ's deployment configuration.
  - Before switching domains, allow the Cloudflare preview/custom domain in Firebase and external backend/WebSocket origin policies. Keeping the existing custom domain avoids Native host URL changes.
@@ -32,6 +32,32 @@ index 401c604d..f8b9ad13 100644
 +
 +Build via the host repository's `script/build_release.sh`. The host records this
 +editor's base revision plus `patches/editor.patch`; generated assets are not source.
++
++### Transactional diagram automation
++
++The desktop helper exposes `diagramCommand()` and `diagramCancel()` in
++`excalidraw-app/excalidrawZ/index.js`. The command engine in
++`excalidraw-app/excalidrawZ/diagramCommands.js` validates isolated scenes before
++one undoable commit, enforces document/revision checks and per-client request
++idempotency, retains extension data, and supports inspection, graph layout,
++quality analysis and bounded snapshot rendering. The executable command manifest
++is `excalidraw-app/excalidrawZ/diagramCommandSchema.json` (line 1), returned by
++`get_capabilities`; the document identity comes from successful file loads.
++`packages/excalidraw/components/App.tsx` provides private atomic scene/assets and
++history bridges. `creators.js` bundles the ELK worker and carries edge routes into
++created arrows. `diagramCommands.test.js` covers transactions, scene relations,
++revision races, quality checks and 100/1,000-element fixtures.
++
++`excalidraw-app/excalidrawZ/creators.js:300` reserves measured connector labels
++in ELK, preserves their routed geometry and places native bound labels on clear
++segments. Cyclic graphs use ELK wrapping for readable proportions; explicit
++layout options and pinned positions remain authoritative. Quality inspection in
++`diagramCommands.js` reports `label_overlap` even inside shared frames, while
++respecting bound node text and explicitly grouped/marked illustrations.
++
++`excalidraw-app/excalidrawZ/diagramCommands.js` also reports `frame_overlap`
++for independent partially overlapping frames; full containment, frame ancestry
++and explicit intentional-overlap metadata remain valid composition choices.
 diff --git a/excalidraw-app/App.tsx b/excalidraw-app/App.tsx
 index 3f0f1650..576ef526 100644
 --- a/excalidraw-app/App.tsx
@@ -265,11 +291,480 @@ index 30b19dd3..1e8a2788 100644
 +  };
 +  return stopCameraTracking;
  };
+diff --git a/excalidraw-app/excalidrawZ/creators.js b/excalidraw-app/excalidrawZ/creators.js
+index b86f5759..d12878b6 100644
+--- a/excalidraw-app/excalidrawZ/creators.js
++++ b/excalidraw-app/excalidrawZ/creators.js
+@@ -11,6 +11,7 @@ import {
+ } from "@excalidraw/element";
+ 
+ import { insertElements } from "./placement";
++import elkWorkerURL from "elkjs/lib/elk-worker.min.js?url";
+ 
+ /**
+  * Toolkit for building Excalidraw elements from host-friendly specs.
+@@ -41,8 +42,29 @@ import { insertElements } from "./placement";
+  */
+ export const createElements = (skeletons, opts = {}) => {
+   const { regenerateIds = true } = opts;
+-  const elements = convertToExcalidrawElements(skeletons, { regenerateIds });
+-  return applyExplicitTextBoxDimensions(elements, skeletons);
++  const normalized = skeletons.map((skeleton) =>
++    ["frame", "magicframe"].includes(skeleton.type)
++      ? { ...skeleton, children: skeleton.children || [] }
++      : skeleton,
++  );
++  const elements = convertToExcalidrawElements(normalized, { regenerateIds });
++  const frameSpecs = normalized.filter((skeleton) =>
++    ["frame", "magicframe"].includes(skeleton.type),
++  );
++  let frameIndex = 0;
++  for (const element of elements) {
++    if (["frame", "magicframe"].includes(element.type)) {
++      const input = frameSpecs[frameIndex++];
++      for (const field of ["x", "y", "width", "height"]) {
++        // Upstream frame conversion uses truthiness for dimensions/positions;
++        // preserve explicit zero coordinates for empty host-created frames.
++        if (Number.isFinite(input?.[field])) {
++          element[field] = input[field];
++        }
++      }
++    }
++  }
++  return applyExplicitTextBoxDimensions(elements, normalized);
+ };
+ 
+ const toPositiveFiniteNumber = (value) => {
+@@ -73,7 +95,7 @@ const applyExplicitTextBoxDimensions = (elements, skeletons) => {
+ 
+     const originalText = element.originalText ?? element.text ?? "";
+     const nextWidth = width ?? element.width;
+-    const shouldAutoResize = skeleton.autoResize ?? (width === null);
++    const shouldAutoResize = skeleton.autoResize ?? width === null;
+ 
+     if (shouldAutoResize) {
+       return {
+@@ -85,7 +107,11 @@ const applyExplicitTextBoxDimensions = (elements, skeletons) => {
+       };
+     }
+ 
+-    const wrappedText = wrapText(originalText, getFontString(element), nextWidth);
++    const wrappedText = wrapText(
++      originalText,
++      getFontString(element),
++      nextWidth,
++    );
+     const metrics = measureText(
+       wrappedText,
+       getFontString(element),
+@@ -202,9 +228,13 @@ const autoPositionArrows = (skeletons) => {
+ let _elkPromise = null;
+ const loadELK = async () => {
+   if (!_elkPromise) {
+-    _elkPromise = import("elkjs/lib/elk.bundled.js").then(
+-      (mod) => new mod.default(),
+-    );
++    // Vite emits the worker into the app bundle; this never contacts a CDN.
++    _elkPromise =
++      typeof Worker !== "undefined"
++        ? import("elkjs/lib/elk-api.js").then(
++            (mod) => new mod.default({ workerUrl: elkWorkerURL }),
++          )
++        : import("elkjs/lib/elk.bundled.js").then((mod) => new mod.default());
+   }
+   return _elkPromise;
+ };
+@@ -268,13 +298,107 @@ const measureLabelBox = (label) => {
+   };
+ };
+ 
++/**
++ * Excalidraw anchors bound arrow text to its middle vertex/segment. ELK may
++ * place a label on another segment (especially feedback edges). Add collinear
++ * vertices so that a clear ELK label position becomes the native middle vertex;
++ * this preserves the complete route and keeps labels editable with normal tools.
++ */
++const placeRouteLabel = (points, metric, hint, obstacles, previousLabels) => {
++  if (!metric) {
++    return points;
++  }
++  const candidates = [];
++  const intersects = (a, b, margin = 8) =>
++    a.x < b.x + b.width + margin &&
++    a.x + a.width + margin > b.x &&
++    a.y < b.y + b.height + margin &&
++    a.y + a.height + margin > b.y;
++  for (let index = 0; index < points.length - 1; index++) {
++    const a = points[index],
++      b = points[index + 1];
++    const dx = b[0] - a[0],
++      dy = b[1] - a[1];
++    const lengthSquared = dx * dx + dy * dy;
++    if (lengthSquared < 1) continue;
++    const projected = hint
++      ? Math.max(
++          0.05,
++          Math.min(
++            0.95,
++            ((hint[0] - a[0]) * dx + (hint[1] - a[1]) * dy) / lengthSquared,
++          ),
++        )
++      : 0.5;
++    for (const ratio of [projected, 0.5, 0.25, 0.75]) {
++      const center = [a[0] + dx * ratio, a[1] + dy * ratio];
++      const box = {
++        x: center[0] - metric.width / 2,
++        y: center[1] - metric.height / 2,
++        ...metric,
++      };
++      if (
++        [...obstacles, ...previousLabels].some((other) =>
++          intersects(box, other),
++        )
++      )
++        continue;
++      candidates.push({
++        index,
++        center,
++        box,
++        score: hint
++          ? Math.hypot(center[0] - hint[0], center[1] - hint[1])
++          : -Math.sqrt(lengthSquared),
++      });
++    }
++  }
++  const best = candidates.sort((a, b) => a.score - b.score)[0];
++  if (!best) return points;
++  previousLabels.push(best.box);
++  let before = points.slice(0, best.index + 1);
++  let after = points.slice(best.index + 1);
++  const subdivide = (side, count, center, isBefore) => {
++    const extended = isBefore ? [...side, center] : [center, ...side];
++    let longest = 0;
++    for (let i = 1; i < extended.length - 1; i++) {
++      if (
++        Math.hypot(
++          extended[i + 1][0] - extended[i][0],
++          extended[i + 1][1] - extended[i][1],
++        ) >
++        Math.hypot(
++          extended[longest + 1][0] - extended[longest][0],
++          extended[longest + 1][1] - extended[longest][1],
++        )
++      )
++        longest = i;
++    }
++    const start = extended[longest],
++      end = extended[longest + 1];
++    const inserted = Array.from({ length: count }, (_, i) => {
++      const t = (i + 1) / (count + 1);
++      return [
++        start[0] + (end[0] - start[0]) * t,
++        start[1] + (end[1] - start[1]) * t,
++      ];
++    });
++    extended.splice(longest + 1, 0, ...inserted);
++    return isBefore ? extended.slice(0, -1) : extended.slice(1);
++  };
++  if (before.length < after.length)
++    before = subdivide(before, after.length - before.length, best.center, true);
++  if (after.length < before.length)
++    after = subdivide(after, before.length - after.length, best.center, false);
++  return [...before, best.center, ...after];
++};
++
+ /**
+  * Run the requested ELK algorithm over the bindable shapes in `skeletons`
+  * and return a new skeleton array where those shapes have ELK-computed
+  * `x` / `y` / `width` / `height`. Non-bindable elements (labels, arrows,
+- * frames without ids, etc.) pass through untouched — the subsequent
+- * `autoPositionArrows` pass picks up the new shape coordinates when
+- * computing arrow geometry.
++ * frames without ids, etc.) pass through untouched. Routed connectors keep
++ * ELK geometry and reserve measured space for their native bound labels.
+  *
+  * The "graph" is inferred from the input:
+  *   - Nodes: every skeleton with `id` AND a bindable type.
+@@ -290,7 +414,11 @@ const measureLabelBox = (label) => {
+  *
+  * Mix and match freely — pinned anchors + free shapes in the same batch.
+  */
+-const applyGraphLayout = async (skeletons, layout, layoutOptions = {}) => {
++export const applyGraphLayout = async (
++  skeletons,
++  layout,
++  layoutOptions = {},
++) => {
+   const nodeIds = new Set();
+   const nodes = [];
+   for (const skel of skeletons) {
+@@ -317,7 +445,27 @@ const applyGraphLayout = async (skeletons, layout, layoutOptions = {}) => {
+   const dims = new Map();
+   const pins = new Map();
+   for (const node of nodes) {
+-    if (node.width !== undefined && node.height !== undefined) {
++    if (node.label) {
++      // Canonical conversion wraps labels and accounts for the inscribed text
++      // area of diamonds/ellipses before ELK sees dimensions. Otherwise a
++      // container could expand after layout and overlap a neighboring node.
++      const estimated = measureLabelBox(node.label);
++      const factor =
++        node.type === "diamond" ? 2 : node.type === "ellipse" ? Math.SQRT2 : 1;
++      const [measured] = createElements(
++        [
++          {
++            ...node,
++            x: 0,
++            y: 0,
++            width: node.width ?? estimated.width * factor,
++            height: node.height ?? estimated.height * factor,
++          },
++        ],
++        { regenerateIds: false },
++      );
++      dims.set(node.id, { width: measured.width, height: measured.height });
++    } else if (node.width !== undefined && node.height !== undefined) {
+       dims.set(node.id, { width: node.width, height: node.height });
+     } else {
+       dims.set(node.id, measureLabelBox(node.label));
+@@ -331,10 +479,43 @@ const applyGraphLayout = async (skeletons, layout, layoutOptions = {}) => {
+     "elk.algorithm": layout,
+   };
+ 
++  const edgeMetrics = new Map(
++    edges
++      .filter((e) => e.label)
++      .map((e) => {
++        const box = measureLabelBox(e.label);
++        return [
++          e,
++          {
++            width: box.width - LAYOUT_NODE_PADDING * 2,
++            height: box.height - LAYOUT_NODE_PADDING * 2,
++          },
++        ];
++      }),
++  );
++  const composition =
++    layout === "layered" && nodes.length >= 6 && !pins.size
++      ? {
++          "elk.aspectRatio": 1.6,
++          "elk.layered.wrapping.strategy": "MULTI_EDGE",
++        }
++      : {};
++  const labelSpacing = edgeMetrics.size
++    ? {
++        "elk.spacing.edgeNode": 32,
++        "elk.spacing.edgeEdge": 24,
++        "elk.layered.spacing.edgeNodeBetweenLayers": 32,
++      }
++    : {};
+   const elk = await loadELK();
+   const elkGraph = {
+     id: "__excalidrawZ_graph_root",
+-    layoutOptions: { ...algoDefaults, ...layoutOptions },
++    layoutOptions: {
++      ...algoDefaults,
++      ...composition,
++      ...labelSpacing,
++      ...layoutOptions,
++    },
+     children: nodes.map((n) => {
+       const child = { id: n.id, ...dims.get(n.id) };
+       const pin = pins.get(n.id);
+@@ -354,6 +535,19 @@ const applyGraphLayout = async (skeletons, layout, layoutOptions = {}) => {
+       id: `__excalidrawZ_edge_${idx}`,
+       sources: [e.start.id],
+       targets: [e.end.id],
++      ...(edgeMetrics.has(e) && {
++        labels: [
++          {
++            text: typeof e.label === "string" ? e.label : e.label.text,
++            width: edgeMetrics.get(e).width + 24,
++            height: edgeMetrics.get(e).height + 24,
++            layoutOptions: {
++              "elk.edgeLabels.placement": "CENTER",
++              "elk.edgeLabels.inline": true,
++            },
++          },
++        ],
++      }),
+     })),
+   };
+ 
+@@ -365,13 +559,127 @@ const applyGraphLayout = async (skeletons, layout, layoutOptions = {}) => {
+     positions.set(child.id, pin || { x: child.x, y: child.y });
+   }
+ 
++  // Algorithms may ignore position hints. Preserve pins and deterministically
++  // move free nodes away from them; never claim ELK itself guarantees this.
++  const occupied = [...pins].map(([id, pin]) => ({ ...pin, ...dims.get(id) }));
++  for (const child of laidOut.children || []) {
++    if (pins.has(child.id)) {
++      continue;
++    }
++    const pos = positions.get(child.id),
++      dim = dims.get(child.id);
++    let collision;
++    let guard = 0;
++    while (
++      (collision = occupied.find(
++        (box) =>
++          pos.x < box.x + box.width + 20 &&
++          pos.x + dim.width + 20 > box.x &&
++          pos.y < box.y + box.height + 20 &&
++          pos.y + dim.height + 20 > box.y,
++      )) &&
++      guard++ < nodes.length + 1
++    ) {
++      pos.y = collision.y + collision.height + 20;
++    }
++    occupied.push({ ...pos, ...dim });
++  }
++  const routes = new Map();
++  const labelObstacles = nodes.map((node) => ({
++    ...positions.get(node.id),
++    ...dims.get(node.id),
++  }));
++  const placedLabels = [];
++  for (const [index, edge] of edges.entries()) {
++    const elkEdge = laidOut.edges?.find(
++      (item) => item.id === `__excalidrawZ_edge_${index}`,
++    );
++    const section = elkEdge?.sections?.[0];
++    const start = positions.get(edge.start.id),
++      end = positions.get(edge.end.id);
++    const sourceChild = laidOut.children?.find(
++      (item) => item.id === edge.start.id,
++    );
++    const targetChild = laidOut.children?.find(
++      (item) => item.id === edge.end.id,
++    );
++    const moved =
++      start.x !== sourceChild?.x ||
++      start.y !== sourceChild?.y ||
++      end.x !== targetChild?.x ||
++      end.y !== targetChild?.y;
++    let points;
++    if (section && !moved) {
++      points = [
++        section.startPoint,
++        ...(section.bendPoints || []),
++        section.endPoint,
++      ].map((point) => [point.x, point.y]);
++    } else {
++      const sd = dims.get(edge.start.id),
++        td = dims.get(edge.end.id);
++      const sx = start.x + sd.width / 2,
++        sy = start.y + sd.height / 2;
++      const tx = end.x + td.width / 2,
++        ty = end.y + td.height / 2;
++      const horizontal = String(elkGraph.layoutOptions["elk.direction"]).match(
++        /RIGHT|LEFT/,
++      );
++      points = horizontal
++        ? [
++            [sx, sy],
++            [(sx + tx) / 2, sy],
++            [(sx + tx) / 2, ty],
++            [tx, ty],
++          ]
++        : [
++            [sx, sy],
++            [sx, (sy + ty) / 2],
++            [tx, (sy + ty) / 2],
++            [tx, ty],
++          ];
++    }
++    const elkLabel = elkEdge?.labels?.[0];
++    points = placeRouteLabel(
++      points,
++      edgeMetrics.get(edge),
++      !moved && elkLabel
++        ? [elkLabel.x + elkLabel.width / 2, elkLabel.y + elkLabel.height / 2]
++        : null,
++      labelObstacles,
++      placedLabels,
++    );
++    const x = points[0][0],
++      y = points[0][1];
++    routes.set(edge.id || edge, {
++      x,
++      y,
++      points: points.map(([px, py]) => [px - x, py - y]),
++      width:
++        Math.max(...points.map((p) => p[0])) -
++        Math.min(...points.map((p) => p[0])),
++      height:
++        Math.max(...points.map((p) => p[1])) -
++        Math.min(...points.map((p) => p[1])),
++    });
++  }
+   return skeletons.map((skel) => {
++    const route = routes.get(skel.id || skel);
++    if (route) {
++      return { ...skel, ...route };
++    }
+     if (!skel.id || !positions.has(skel.id)) {
+       return skel;
+     }
+-    const pos = positions.get(skel.id);
+-    const dim = dims.get(skel.id);
+-    return { ...skel, x: pos.x, y: pos.y, width: dim.width, height: dim.height };
++    const pos = positions.get(skel.id),
++      dim = dims.get(skel.id);
++    return {
++      ...skel,
++      x: pos.x,
++      y: pos.y,
++      width: dim.width,
++      height: dim.height,
++    };
+   });
+ };
+ 
+@@ -422,12 +730,7 @@ const applyGraphLayout = async (skeletons, layout, layoutOptions = {}) => {
+  * @throws if excalidrawAPI isn't ready.
+  */
+ export const insertFromSkeleton = async (skeletons, opts = {}) => {
+-  const {
+-    layout,
+-    layoutOptions,
+-    regenerateIds = true,
+-    ...insertOpts
+-  } = opts;
++  const { layout, layoutOptions, regenerateIds = true, ...insertOpts } = opts;
+   const list = Array.isArray(skeletons) ? skeletons : [skeletons];
+   const positioned = layout
+     ? await applyGraphLayout(list, layout, layoutOptions)
+@@ -520,15 +823,7 @@ const normalizeLabel = (label) =>
+  * }} params
+  * @returns {object[]}  `[shape]` or `[shape, text]`
+  */
+-export const createShape = ({
+-  shape,
+-  x,
+-  y,
+-  width,
+-  height,
+-  text,
+-  ...style
+-}) => {
++export const createShape = ({ shape, x, y, width, height, text, ...style }) => {
+   const skeleton = compact({
+     type: shape,
+     x,
 diff --git a/excalidraw-app/excalidrawZ/index.js b/excalidraw-app/excalidrawZ/index.js
-index 34b742c7..3561edf5 100644
+index 34b742c7..fd816beb 100644
 --- a/excalidraw-app/excalidrawZ/index.js
 +++ b/excalidraw-app/excalidrawZ/index.js
-@@ -15,6 +15,7 @@ import {
+@@ -1,4 +1,5 @@
+ import "./clipboard";
++import { diagramCommand, diagramCancel } from "./diagramCommands";
+ import {
+   connectPencil,
+   getPointerInputPolicy,
+@@ -15,6 +16,7 @@ import {
  import { sendMessage } from "./message";
  import { toggleToolbarAction } from "./actions";
  import { throttle } from "./_helpers";
@@ -277,7 +772,7 @@ index 34b742c7..3561edf5 100644
  import {
    loadFileBuffer,
    loadFileString,
-@@ -205,10 +206,9 @@ const WATCH_STATE_SLOW_MS = 100;
+@@ -205,10 +207,9 @@ const WATCH_STATE_SLOW_MS = 100;
  
  let watchStatePerfId = 0;
  let watchStateRevision = 0;
@@ -289,7 +784,7 @@ index 34b742c7..3561edf5 100644
  
  const getPerformanceNow = () =>
    typeof performance !== "undefined" &&
-@@ -218,45 +218,6 @@ const getPerformanceNow = () =>
+@@ -218,45 +219,6 @@ const getPerformanceNow = () =>
  
  const roundDuration = (duration) => Math.round(duration * 10) / 10;
  
@@ -335,7 +830,7 @@ index 34b742c7..3561edf5 100644
  const getNextStateRevision = () => {
    watchStateRevision += 1;
    if (window.excalidrawZHelper) {
-@@ -265,11 +226,6 @@ const getNextStateRevision = () => {
+@@ -265,11 +227,6 @@ const getNextStateRevision = () => {
    return watchStateRevision;
  };
  
@@ -347,7 +842,7 @@ index 34b742c7..3561edf5 100644
  const resetWatchStateBaseline = () => {
    const api = window.excalidrawZHelper?._api;
    if (!api) {
-@@ -279,7 +235,11 @@ const resetWatchStateBaseline = () => {
+@@ -279,7 +236,11 @@ const resetWatchStateBaseline = () => {
    const elements =
      api.getSceneElementsIncludingDeleted?.() ?? api.getSceneElements?.() ?? [];
    const appState = api.getAppState?.() ?? {};
@@ -360,7 +855,7 @@ index 34b742c7..3561edf5 100644
    return true;
  };
  
-@@ -301,33 +261,20 @@ const beginStateChangeSuppression = () => {
+@@ -301,33 +262,20 @@ const beginStateChangeSuppression = () => {
    };
  };
  
@@ -407,7 +902,7 @@ index 34b742c7..3561edf5 100644
  };
  
  const logWatchStatePerformance = (summary) => {
-@@ -340,9 +287,9 @@ const logWatchStatePerformance = (summary) => {
+@@ -340,9 +288,9 @@ const logWatchStatePerformance = (summary) => {
  /**
   * Watch scene/appState changes and broadcast a lightweight `onStateChanged`.
   *
@@ -420,7 +915,7 @@ index 34b742c7..3561edf5 100644
   * `contentDirty` is true.
   *
   * Event-driven (api.onChange) + 1s throttle:
-@@ -362,83 +309,77 @@ const startWatchExcalidrawState = () => {
+@@ -362,83 +310,77 @@ const startWatchExcalidrawState = () => {
  
    resetWatchStateBaseline();
  
@@ -565,7 +1060,7 @@ index 34b742c7..3561edf5 100644
  const watchHistoryButtonState = () => {
    const containerNode = document.querySelector(".excalidraw-container");
    let undoButtonNode = null;
-@@ -489,7 +430,7 @@ const watchHistoryButtonState = () => {
+@@ -489,7 +431,7 @@ const watchHistoryButtonState = () => {
        event: "historyStateChanged",
        data: {
          type: "undo",
@@ -574,7 +1069,7 @@ index 34b742c7..3561edf5 100644
        },
      });
      const newRedoButtonNode = document.querySelector(
-@@ -499,7 +440,7 @@ const watchHistoryButtonState = () => {
+@@ -499,7 +441,7 @@ const watchHistoryButtonState = () => {
        event: "historyStateChanged",
        data: {
          type: "redo",
@@ -583,7 +1078,7 @@ index 34b742c7..3561edf5 100644
        },
      });
      if (newUndoButtonNode && newUndoButtonNode !== undoButtonNode) {
-@@ -543,7 +484,6 @@ const onDomReady = () => {
+@@ -543,7 +485,6 @@ const onDomReady = () => {
    // DOM-level setup only. The "onload" message is deferred until the
    // helper is fully initialized (excalidrawAPI bridged + trackers started),
    // which is signalled by App.tsx via `notifyHelperReady()` below.
@@ -591,11 +1086,63 @@ index 34b742c7..3561edf5 100644
    observeContainerLoad(() => {
      watchHistoryButtonState();
    });
+@@ -601,6 +542,8 @@ document.addEventListener(
+ );
+ 
+ window.excalidrawZHelper = {
++  diagramCommand,
++  diagramCancel,
+   sendMessage,
+ 
+   loadFileBuffer,
 diff --git a/excalidraw-app/excalidrawZ/load+save.js b/excalidraw-app/excalidrawZ/load+save.js
-index c142bb66..1a7d8594 100644
+index c142bb66..b1042ad0 100644
 --- a/excalidraw-app/excalidrawZ/load+save.js
 +++ b/excalidraw-app/excalidrawZ/load+save.js
-@@ -345,18 +345,24 @@ export const loadFileBuffer = async (buffer, fileId, requestId) =>
+@@ -70,6 +70,9 @@ const createLoadRequestId = () =>
+ let latestFileLoadRequestId = null;
+ const fileLoadRequests = new Map();
+ 
++export const isFileLoadInProgress = () =>
++  [...fileLoadRequests.values()].some((request) => !request.settled);
++
+ const createFileLoadError = (status, message, requestId, fileId) => {
+   const error = new Error(message);
+   error.name = "ExcalidrawZFileLoadError";
+@@ -295,6 +298,32 @@ const loadSerializedFile = async ({
+       throw new Error(`${source}: invalid Excalidraw file`);
+     }
+ 
++    // Keep serializable extension fields from a canonical scene. Excalidraw's
++    // migrations remain authoritative for known fields; transient renderer
++    // caches and prototype keys must never be imported from file data.
++    const originalElements = new Map(
++      (content.elements || []).map((element) => [element.id, element]),
++    );
++    restored.data.elements = restored.data.elements.map((element) => {
++      const original = originalElements.get(element.id);
++      if (!original) {
++        return element;
++      }
++      const extensions = Object.fromEntries(
++        Object.entries(original).filter(
++          ([key]) =>
++            ![
++              "shape",
++              "canvas",
++              "__proto__",
++              "prototype",
++              "constructor",
++            ].includes(key),
++        ),
++      );
++      return { ...extensions, ...element };
++    });
++
+     // Final guard before the only operation that mutates the live scene.
+     request.assertCurrent();
+     const { elementCount } = await request.wait(
+@@ -345,18 +374,24 @@ export const loadFileBuffer = async (buffer, fileId, requestId) =>
  
  /**
   * @param {string} dataString
@@ -625,7 +1172,7 @@ index c142bb66..1a7d8594 100644
    });
  
 diff --git a/excalidraw-app/excalidrawZ/load+save.snapshot.test.js b/excalidraw-app/excalidrawZ/load+save.snapshot.test.js
-index c7c49e55..6d7b900e 100644
+index c7c49e55..74b43109 100644
 --- a/excalidraw-app/excalidrawZ/load+save.snapshot.test.js
 +++ b/excalidraw-app/excalidrawZ/load+save.snapshot.test.js
 @@ -5,6 +5,7 @@ import * as indexDB from "./indexdb+";
@@ -636,7 +1183,55 @@ index c7c49e55..6d7b900e 100644
    requestCurrentFileSaveStream,
  } from "./load+save";
  
-@@ -224,6 +225,44 @@ describe("loadFileBuffer completion", () => {
+@@ -176,6 +177,47 @@ describe("loadFileBuffer completion", () => {
+     delete window.excalidrawZHelper;
+   });
+ 
++  it("preserves extensions while canonical migrations override known properties", async () => {
++    mockFileRestore();
++    blobData.loadSceneOrLibraryFromBlob.mockResolvedValue({
++      type: MIME_TYPES.excalidraw,
++      data: {
++        elements: [{ id: "loaded-element", type: "rectangle", x: 4 }],
++        appState: {},
++        files: {},
++      },
++    });
++    const applyFileScene = vi.fn().mockResolvedValue({ elementCount: 1 });
++    window.excalidrawZHelper = {
++      _api: {
++        getAppState: () => ({}),
++        getSceneElementsIncludingDeleted: () => [],
++        _excalidrawZ: { applyFileScene },
++      },
++    };
++    await loadFileString(
++      JSON.stringify({
++        elements: [
++          {
++            id: "loaded-element",
++            type: "rectangle",
++            x: 1,
++            futureExtension: { retained: true },
++            shape: { stale: true },
++            constructor: "unsafe",
++          },
++        ],
++      }),
++      "extension-file",
++      "extension-load",
++    );
++    const applied = applyFileScene.mock.calls[0][0].elements[0];
++    expect(applied.x).toBe(4);
++    expect(applied.futureExtension).toEqual({ retained: true });
++    expect(Object.hasOwn(applied, "shape")).toBe(false);
++    expect(Object.hasOwn(applied, "constructor")).toBe(false);
++  });
++
+   it("waits for async scene application before updating the file identity", async () => {
+     mockFileRestore();
+ 
+@@ -224,6 +266,44 @@ describe("loadFileBuffer completion", () => {
      expect(window.excalidrawZHelper.currentFileId).toBe("next-file");
    });
  
@@ -736,25 +1331,104 @@ index d18b7a7d..10f76cea 100644
    }
  
 diff --git a/packages/excalidraw/components/App.tsx b/packages/excalidraw/components/App.tsx
-index 55c349d6..290f0ef3 100644
+index 55c349d6..688e5d46 100644
 --- a/packages/excalidraw/components/App.tsx
 +++ b/packages/excalidraw/components/App.tsx
-@@ -516,6 +516,7 @@ type ExcalidrawZImperativeAPI = ExcalidrawImperativeAPI & {
+@@ -516,6 +516,13 @@ type ExcalidrawZImperativeAPI = ExcalidrawImperativeAPI & {
      ) => Promise<{
        elementCount: number;
      }>;
 +    getSceneNonce: () => number | undefined;
++    applyDiagramScene: (data: {
++      elements: readonly ExcalidrawElement[];
++      files: BinaryFiles;
++      appState: Partial<AppState>;
++    }) => void;
++    applyHistory: (operation: "undo" | "redo") => boolean;
    };
  };
  
-@@ -835,6 +836,7 @@ class App extends React.Component<AppProps, AppState> {
+@@ -835,6 +842,15 @@ class App extends React.Component<AppProps, AppState> {
        // Kept out of the public ExcalidrawImperativeAPI surface.
        _excalidrawZ: {
          applyFileScene: this.applyExcalidrawZFileScene,
 +        getSceneNonce: () => this.scene.getSceneNonce(),
++        applyDiagramScene: this.applyExcalidrawZDiagramScene,
++        applyHistory: (operation) => {
++          const before = this.scene.getSceneNonce();
++          this.actionManager.executeAction(
++            this.actionManager.actions[operation],
++          );
++          return this.scene.getSceneNonce() !== before;
++        },
        },
      };
      return api;
+@@ -5502,6 +5518,32 @@ class App extends React.Component<AppProps, AppState> {
+     return { addedFiles };
+   };
+ 
++  // Automation prepares and validates an isolated scene and decodes assets
++  // before this synchronous, single-history-entry commit. No onChange callback
++  // can observe new assets with the previous scene.
++  private applyExcalidrawZDiagramScene = withBatchedUpdates(
++    (data: {
++      elements: readonly ExcalidrawElement[];
++      files: BinaryFiles;
++      appState: Partial<AppState>;
++    }) => {
++      const previousFiles = this.files;
++      this.files = data.files;
++      try {
++        this.updateScene({
++          elements: data.elements,
++          appState: data.appState as AppState,
++          captureUpdate: CaptureUpdateAction.IMMEDIATELY,
++        });
++      } catch (error) {
++        this.files = previousFiles;
++        throw error;
++      }
++      this.clearImageShapeCache(data.files);
++      this.addNewImagesToImageCache();
++    },
++  );
++
+   public updateScene = withBatchedUpdates(
+     <K extends keyof AppState>(sceneData: {
+       elements?: SceneData["elements"];
+@@ -13524,13 +13566,27 @@ class App extends React.Component<AppProps, AppState> {
+       captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+     });
+     const imageCacheUpdate = this.latestImageCacheUpdate;
++    // Completion must describe the applied scene, rather than a change event:
++    // two blank documents can have identical rendered contents. Wait for React
++    // to commit the final state and for assets to finish hydrating.
++    await new Promise<void>((resolve) => this.setState({}, resolve));
+     await imageCacheUpdate;
+     await new Promise<void>((resolve) => {
+-      requestAnimationFrame(() => resolve());
++      // WebKit suspends animation frames for occluded/hidden native WebViews.
++      // The scene is already committed; do not block switching documents on a
++      // paint that cannot occur until the host shows this view again.
++      const timer = this.ownerWindow.setTimeout(() => {
++        this.ownerWindow.cancelAnimationFrame(frame);
++        resolve();
++      }, 100);
++      const frame = this.ownerWindow.requestAnimationFrame(() => {
++        this.ownerWindow.clearTimeout(timer);
++        resolve();
++      });
+     });
+-    setTimeout(() => {
+-      this.resetHistory();
+-    }, 200);
++    // Clear the file-load entry before acknowledging completion. A delayed
++    // reset would erase edits performed immediately after switching documents.
++    this.resetHistory();
+ 
+     return { elementCount: data.elements.length };
+   };
 diff --git a/packages/excalidraw/components/LayerUI.tsx b/packages/excalidraw/components/LayerUI.tsx
 index e0680d1a..a1581172 100644
 --- a/packages/excalidraw/components/LayerUI.tsx
@@ -798,6 +1472,44 @@ index daae0c38..469444dd 100644
          >
            <div style={{ position: "relative" }}>
              {renderWelcomeScreen && <WelcomeScreenHelpHintTunnel.Out />}
+diff --git a/packages/excalidraw/tests/excalidrawZFileLoad.test.tsx b/packages/excalidraw/tests/excalidrawZFileLoad.test.tsx
+index 83eaecdd..18152205 100644
+--- a/packages/excalidraw/tests/excalidrawZFileLoad.test.tsx
++++ b/packages/excalidraw/tests/excalidrawZFileLoad.test.tsx
+@@ -18,6 +18,33 @@ describe("ExcalidrawZ file scene loading", () => {
+     vi.restoreAllMocks();
+   });
+ 
++  it("acknowledges consecutive blank documents when an occluded view does not paint", async () => {
++    await render(<Excalidraw />);
++    const requestFrame = vi
++      .spyOn(window, "requestAnimationFrame")
++      .mockReturnValue(42);
++    const cancelFrame = vi.spyOn(window, "cancelAnimationFrame");
++    const resetHistory = vi.spyOn(h.app as any, "resetHistory");
++    for (let index = 0; index < 2; index++) {
++      let pending!: Promise<{ elementCount: number }>;
++      await act(async () => {
++        pending = (h.app.api as any)._excalidrawZ.applyFileScene({
++          elements: [],
++          appState: { viewBackgroundColor: "#ffffff" },
++          files: {},
++        });
++      });
++      await expect(pending).resolves.toEqual({ elementCount: 0 });
++      expect(h.app.api.getSceneElements()).toEqual([]);
++      expect(h.app.api.getAppState().isLoading).toBe(false);
++    }
++    expect(requestFrame).toHaveBeenCalledTimes(2);
++    expect(cancelFrame).toHaveBeenCalledWith(42);
++    expect(resetHistory).toHaveBeenCalledTimes(4); // resetScene + completion for each load
++    await new Promise((resolve) => setTimeout(resolve, 300));
++    expect(resetHistory).toHaveBeenCalledTimes(4);
++  });
++
+   it("waits for image hydration and a final paint", async () => {
+     await render(<Excalidraw />);
+ 
 diff --git a/excalidraw-app/excalidrawZ/camera.test.js b/excalidraw-app/excalidrawZ/camera.test.js
 new file mode 100644
 index 00000000..bc5b2da9
@@ -866,6 +1578,2905 @@ index 00000000..9e2354da
 +});
 +it("retains the mobile fallback for genuinely narrow windows", () => {
 +  expect(getFormFactor(500, 700)).toBe("phone");
++});
+diff --git a/excalidraw-app/excalidrawZ/diagramCommandSchema.json b/excalidraw-app/excalidrawZ/diagramCommandSchema.json
+new file mode 100644
+index 00000000..9f69acb0
+--- /dev/null
++++ b/excalidraw-app/excalidrawZ/diagramCommandSchema.json
+@@ -0,0 +1,180 @@
++{
++  "version": 1,
++  "mutation_required": ["document_id", "expected_revision", "request_id"],
++  "trusted_fields": ["client_id"],
++  "actions": {
++    "inspect": {
++      "optional": ["ids", "types", "query", "frame_id", "selected_only", "include_deleted", "include_assets", "offset", "limit"]
++    },
++    "apply_operations": {
++      "required": ["operations"],
++      "optional": ["dry_run", "files"]
++    },
++    "create_diagram": {
++      "required": ["nodes"],
++      "optional": ["edges", "containers", "preset", "direction", "layout_options", "dry_run"]
++    },
++    "layout_diagram": {
++      "optional": ["ids", "direction", "layout_options", "pinned_ids", "dry_run"]
++    },
++    "analyze_diagram": {
++      "optional": ["ids", "types", "query", "frame_id", "selected_only"]
++    },
++    "render_diagram": {
++      "optional": ["scope", "frame_id", "region", "max_dimension", "with_background"]
++    },
++    "history": {
++      "required": ["operation"]
++    },
++    "import_assets": {
++      "required": ["assets"],
++      "optional": ["dry_run"]
++    },
++    "get_capabilities": {}
++  },
++  "operations": {
++    "create": {
++      "required": ["elements"],
++      "optional": ["raw"]
++    },
++    "update": {
++      "required": ["patches"],
++      "shape": "patches: [{id, updates}]"
++    },
++    "delete": {
++      "required": ["ids"],
++      "behavior": "Deletes frame children and bound labels; clears dependent bindings"
++    },
++    "duplicate": {
++      "required": ["ids"],
++      "optional": ["dx", "dy"],
++      "behavior": "Includes labels and frame children, remaps IDs/groups/bindings"
++    },
++    "move": {
++      "required": ["ids"],
++      "optional": ["dx", "dy"]
++    },
++    "resize": {
++      "required": ["ids", "width", "height"]
++    },
++    "rotate": {
++      "required": ["ids", "angle"],
++      "optional": ["relative"],
++      "units": "radians"
++    },
++    "flip": {
++      "required": ["ids", "axis"],
++      "enum": {
++        "axis": ["horizontal", "vertical"]
++      }
++    },
++    "group": {
++      "required": ["ids"],
++      "optional": ["group_id"]
++    },
++    "ungroup": {
++      "required": ["ids"],
++      "optional": ["group_id"]
++    },
++    "align": {
++      "required": ["ids", "alignment"],
++      "enum": {
++        "alignment": ["left", "center", "right", "top", "middle", "bottom"]
++      }
++    },
++    "distribute": {
++      "required": ["ids", "axis"],
++      "enum": {
++        "axis": ["horizontal", "vertical"]
++      }
++    },
++    "order": {
++      "required": ["ids", "position"],
++      "enum": {
++        "position": ["front", "back", "forward", "backward"]
++      }
++    },
++    "lock": {
++      "required": ["ids", "locked"]
++    },
++    "link": {
++      "required": ["ids", "link"]
++    },
++    "select": {
++      "required": ["ids"],
++      "behavior": "Empty ids clears selection"
++    },
++    "frame": {
++      "required": ["frame_id", "ids"],
++      "optional": ["remove", "name"]
++    },
++    "connect": {
++      "required": ["from", "to"],
++      "optional": ["id", "arrow"],
++      "shape": "arrow: styles plus label, elbowed, mode, fixedPoint: {start:[0..1,0..1],end:[0..1,0..1]}"
++    },
++    "style": {
++      "required": ["ids", "style"]
++    },
++    "preset": {
++      "required": ["ids", "preset"],
++      "enum": {
++        "preset": ["technical_clean", "presentation", "sketch"]
++      }
++    },
++    "import_scene": {
++      "required": ["elements"],
++      "optional": ["files", "replace"]
++    },
++    "replace_scene": {
++      "required": ["elements", "files"],
++      "optional": ["app_state"],
++      "behavior": "Canonical checkpoint restoration; accepts persistent app state only"
++    },
++    "mermaid": {
++      "required": ["source"],
++      "optional": ["mermaidConfig"]
++    },
++    "math": {
++      "required": ["svg or svgBase64 or dataURL"],
++      "optional": ["latex", "expression", "mode", "x", "y", "width", "height", "customData"],
++      "behavior": "Native renders LaTeX/plots offscene; engine accepts SVG and preserves metadata"
++    }
++  },
++  "node_shape": {
++    "required": ["id"],
++    "optional": ["type", "text", "x", "y", "width", "height", "style properties"]
++  },
++  "edge_shape": {
++    "required": ["from", "to"],
++    "optional": ["id", "label", "style properties"]
++  },
++  "container_shape": {
++    "required": ["id", "child_ids"],
++    "optional": ["name", "padding"]
++  },
++  "asset_shape": {
++    "required": ["data_url"],
++    "optional": ["id", "file_id", "mime_type", "x", "y", "width", "height"]
++  },
++  "errors": [
++    "invalid_arguments",
++    "document_mismatch",
++    "revision_conflict",
++    "request_id_conflict",
++    "element_not_found",
++    "element_locked",
++    "invalid_scene",
++    "invalid_binding",
++    "missing_asset",
++    "asset_id_conflict",
++    "invalid_asset",
++    "limit_exceeded",
++    "layout_scope_conflict",
++    "unsupported_operation",
++    "unsupported_action",
++    "editor_unavailable",
++    "empty_render",
++    "cancelled"
++  ]
++}
+diff --git a/excalidraw-app/excalidrawZ/diagramCommands.js b/excalidraw-app/excalidrawZ/diagramCommands.js
+new file mode 100644
+index 00000000..13fa635c
+--- /dev/null
++++ b/excalidraw-app/excalidrawZ/diagramCommands.js
+@@ -0,0 +1,2044 @@
++import { arrayToMap, getFontString, randomId } from "@excalidraw/common";
++import {
++  Scene,
++  getCommonBounds,
++  newArrowElement,
++  newElementWith,
++  newTextElement,
++  redrawTextBoundingBox,
++  updateBoundElements,
++  syncInvalidIndices,
++  duplicateElements,
++  measureText,
++} from "@excalidraw/element";
++import { createElements, applyGraphLayout } from "./creators";
++import { exportElementsToBlob, exportViewportToBlob } from "./export";
++import { mermaidToElements } from "./mermaid";
++import { createMathImage } from "./math";
++import { isFileLoadInProgress } from "./load+save";
++import { Fonts } from "@excalidraw/excalidraw/fonts";
++import diagramCommandSchema from "./diagramCommandSchema.json";
++
++const ELEMENT_TYPES = [
++  "rectangle",
++  "diamond",
++  "ellipse",
++  "text",
++  "arrow",
++  "line",
++  "freedraw",
++  "image",
++  "frame",
++  "magicframe",
++  "embeddable",
++  "iframe",
++];
++export const DIAGRAM_PRESETS = {
++  technical_clean: {
++    strokeColor: "#334155",
++    backgroundColor: "#eff6ff",
++    fillStyle: "solid",
++    strokeWidth: 1.5,
++    roughness: 0,
++    fontFamily: 2,
++    fontSize: 20,
++  },
++  presentation: {
++    strokeColor: "#4c3a78",
++    backgroundColor: "#f3effb",
++    fillStyle: "solid",
++    strokeWidth: 2,
++    roughness: 0,
++    fontFamily: 2,
++    fontSize: 24,
++  },
++  sketch: {
++    strokeColor: "#1e1e1e",
++    backgroundColor: "transparent",
++    fillStyle: "hachure",
++    strokeWidth: 2,
++    roughness: 1,
++    fontFamily: 1,
++    fontSize: 20,
++  },
++};
++export const DIAGRAM_OPERATIONS = [
++  "create",
++  "update",
++  "delete",
++  "duplicate",
++  "move",
++  "resize",
++  "rotate",
++  "flip",
++  "group",
++  "ungroup",
++  "align",
++  "distribute",
++  "order",
++  "lock",
++  "link",
++  "select",
++  "frame",
++  "connect",
++  "style",
++  "preset",
++  "import_scene",
++  "replace_scene",
++  "mermaid",
++  "math",
++];
++const LIMITS = {
++  operations: 500,
++  elements: 20000,
++  inspect_page: 1000,
++  render_dimension: 4096,
++  assets_bytes: 32 * 1024 * 1024,
++  request_cache: 512,
++};
++const clone = (value) => JSON.parse(JSON.stringify(value));
++const stable = (value) =>
++  JSON.stringify(value, (_, item) =>
++    item && typeof item === "object" && !Array.isArray(item)
++      ? Object.keys(item)
++          .sort()
++          .reduce((o, key) => {
++            o[key] = item[key];
++            return o;
++          }, {})
++      : item,
++  );
++const fail = (code, message, data) => {
++  const error = new Error(message);
++  error.code = code;
++  error.data = data;
++  throw error;
++};
++const finite = (value, field) => {
++  if (typeof value !== "number" || !Number.isFinite(value)) {
++    fail("invalid_arguments", `${field} must be a finite number`);
++  }
++  return value;
++};
++const positive = (value, field) => {
++  finite(value, field);
++  if (value <= 0) {
++    fail("invalid_arguments", `${field} must be positive`);
++  }
++  return value;
++};
++const bounds = (elements) => {
++  if (!elements.length) {
++    return { x: 0, y: 0, width: 0, height: 0 };
++  }
++  const [x1, y1, x2, y2] = getCommonBounds(elements);
++  return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
++};
++const textFields = [
++  "text",
++  "originalText",
++  "fontSize",
++  "fontFamily",
++  "lineHeight",
++  "textAlign",
++  "verticalAlign",
++  "autoResize",
++  "width",
++];
++const protectedFields = new Set([
++  "id",
++  "type",
++  "version",
++  "versionNonce",
++  "updated",
++  "isDeleted",
++  "seed",
++  "index",
++]);
++const styleFields = new Set([
++  "strokeColor",
++  "backgroundColor",
++  "fillStyle",
++  "strokeWidth",
++  "strokeStyle",
++  "roughness",
++  "opacity",
++  "roundness",
++  "fontFamily",
++  "fontSize",
++  "textAlign",
++  "verticalAlign",
++  "startArrowhead",
++  "endArrowhead",
++]);
++
++/** A separate instance is bound to each actual editor API; never reuse state across windows. */
++export const createDiagramCommandEngine = (
++  getAPI,
++  getDocumentId,
++  options = {},
++) => {
++  const instance = randomId();
++  let counter = 0;
++  let signature = null;
++  let trackedAPI = null;
++  let unsubscribe = null;
++  const requests = new Map();
++  const pending = new Map();
++  const cancelled = new Set();
++  const renderer = options.renderer || exportElementsToBlob;
++  const viewportRenderer = options.viewportRenderer || exportViewportToBlob;
++
++  const apiReady = () => {
++    const api = getAPI();
++    if (!api) {
++      fail("editor_unavailable", "The diagram editor is not ready");
++    }
++    if (trackedAPI !== api) {
++      unsubscribe?.();
++      trackedAPI = api;
++      signature = null;
++      unsubscribe = api.onChange?.(() => revision(api));
++    }
++    return api;
++  };
++  const revision = (api) => {
++    // Scene nonce observes human edits and history, including in-place changes.
++    // Exact fallback is for test adapters and older embedded APIs.
++    const elements = api.getSceneElementsIncludingDeleted();
++    const state = api.getAppState();
++    const nonce = api._excalidrawZ?.getSceneNonce?.();
++    const files = api.getFiles?.() || {};
++    const next = stable([
++      getDocumentId(),
++      nonce ?? elements,
++      Object.keys(files)
++        .sort()
++        .map((id) => [
++          id,
++          files[id].version,
++          files[id].dataURL,
++          files[id].mimeType,
++        ]),
++      state.viewBackgroundColor,
++      state.gridSize,
++      state.frameRendering,
++    ]);
++    if (next !== signature) {
++      signature = next;
++      counter += 1;
++    }
++    return `${instance}:${counter}`;
++  };
++  const assertDocument = (payload) => {
++    if (isFileLoadInProgress()) {
++      fail(
++        "document_loading",
++        "A document load is in progress; retry after it completes",
++      );
++    }
++    const actual = getDocumentId();
++    if (!actual || payload.document_id !== actual) {
++      fail(
++        "document_mismatch",
++        "The requested document is not loaded in this editor",
++        {
++          requested_document_id: payload.document_id,
++          loaded_document_id: actual ?? null,
++        },
++      );
++    }
++  };
++  const assertCurrent = (payload, api, initial) => {
++    assertDocument(payload);
++    const current = revision(api);
++    if (current !== initial || payload.expected_revision !== current) {
++      fail(
++        "revision_conflict",
++        "The diagram changed; inspect it and retry with its current revision",
++        { expected_revision: payload.expected_revision, revision: current },
++      );
++    }
++    if (
++      cancelled.has(`${payload.client_id || "local"}:${payload.request_id}`)
++    ) {
++      fail("cancelled", "The diagram request was cancelled before commit");
++    }
++  };
++  const snapshot = (api) => ({
++    elements: clone(api.getSceneElementsIncludingDeleted()),
++    files: clone(api.getFiles?.() || {}),
++    appState: {
++      ...api.getAppState(),
++      selectedElementIds: { ...api.getAppState().selectedElementIds },
++    },
++  });
++  const reply = (payload, api, result) => ({
++    action: payload.action,
++    document_id: getDocumentId(),
++    revision: revision(api),
++    ...result,
++  });
++
++  const command = async (payload) => {
++    if (!payload || typeof payload !== "object") {
++      fail("invalid_arguments", "A diagram command object is required");
++    }
++    if (payload.action === "get_capabilities") {
++      return {
++        schema: diagramCommandSchema,
++        actions: [
++          "inspect",
++          "apply_operations",
++          "create_diagram",
++          "layout_diagram",
++          "analyze_diagram",
++          "render_diagram",
++          "history",
++          "import_assets",
++        ],
++        operations: DIAGRAM_OPERATIONS,
++        element_types: ELEMENT_TYPES,
++        presets: Object.keys(DIAGRAM_PRESETS),
++        render_scopes: ["full", "viewport", "selection", "frame", "region"],
++        asset_mime_types: [
++          "image/png",
++          "image/jpeg",
++          "image/webp",
++          "image/gif",
++          "image/svg+xml",
++        ],
++        limits: LIMITS,
++        instructions:
++          "Inspect the document, edit using its revision and a unique request_id, analyze and render the result, refine, then save. Operations are validated and committed atomically as one undo step. Native persistence is confirmed separately.",
++      };
++    }
++    const api = apiReady();
++    assertDocument(payload);
++    const initial = revision(api);
++    if (
++      ["inspect", "analyze_diagram", "render_diagram"].includes(payload.action)
++    ) {
++      const source = snapshot(api);
++      if (payload.action === "inspect") {
++        return reply(payload, api, inspectScene(source, payload));
++      }
++      if (payload.action === "analyze_diagram") {
++        return {
++          action: payload.action,
++          document_id: payload.document_id,
++          revision: initial,
++          findings: analyzeScene(source, payload),
++        };
++      }
++      const rendered = await renderScene(
++        source,
++        payload,
++        renderer,
++        viewportRenderer,
++      );
++      // Snapshot rendering may finish after a human edit: label exactly the snapshot rendered.
++      return {
++        action: payload.action,
++        document_id: payload.document_id,
++        revision: initial,
++        image: { data: rendered.blobData, mime_type: "image/png" },
++        ...Object.fromEntries(
++          Object.entries(rendered).filter(([key]) => key !== "blobData"),
++        ),
++      };
++    }
++    if (!DIAGRAM_MUTATIONS.includes(payload.action)) {
++      fail("unsupported_action", `Unknown diagram action: ${payload.action}`);
++    }
++    if (
++      typeof payload.expected_revision !== "string" ||
++      typeof payload.request_id !== "string" ||
++      !payload.request_id.trim()
++    ) {
++      fail(
++        "invalid_arguments",
++        "Editing requires expected_revision and a nonempty request_id",
++      );
++    }
++    const key = `${payload.client_id || "local"}:${payload.document_id}:${
++      payload.request_id
++    }`;
++    const fingerprint = stable(payload);
++    const known = requests.get(key) || pending.get(key);
++    if (known) {
++      if (known.fingerprint !== fingerprint) {
++        fail(
++          "request_id_conflict",
++          "This request_id was already used with different arguments",
++        );
++      }
++      return clone(await (known.promise || known.result));
++    }
++    assertCurrent(payload, api, initial);
++    const liveState = api.getAppState();
++    if (
++      liveState.editingTextElement ||
++      liveState.resizingElement ||
++      liveState.newElement ||
++      liveState.multiElement ||
++      liveState.selectedElementsAreBeingDragged ||
++      liveState.selectionElement
++    ) {
++      fail(
++        "editor_busy",
++        "Finish the current canvas gesture or text edit before applying automation",
++      );
++    }
++    const promise = executeMutation(payload, api, initial);
++    pending.set(key, { fingerprint, promise });
++    try {
++      const result = await promise;
++      requests.set(key, { fingerprint, result: clone(result) });
++      if (requests.size > LIMITS.request_cache) {
++        requests.delete(requests.keys().next().value);
++      }
++      return result;
++    } finally {
++      pending.delete(key);
++      cancelled.delete(`${payload.client_id || "local"}:${payload.request_id}`);
++    }
++  };
++
++  const executeMutation = async (payload, api, initial) => {
++    if (payload.action === "history") {
++      if (!["undo", "redo"].includes(payload.operation)) {
++        fail("invalid_arguments", "history.operation must be undo or redo");
++      }
++      assertCurrent(payload, api, initial);
++      if (!api._excalidrawZ?.applyHistory) {
++        fail("unsupported_action", "Document history is unavailable");
++      }
++      const changed = api._excalidrawZ.applyHistory(payload.operation);
++      await Promise.resolve();
++      return reply(payload, api, {
++        changed,
++        persistence: changed ? "canvas_changed" : "unchanged",
++      });
++    }
++    const source = snapshot(api);
++    const staged = {
++      ...source,
++      elements: clone(source.elements),
++      appState: { ...source.appState },
++      files: { ...source.files, ...clone(payload.files || {}) },
++      results: [],
++      created_ids: {},
++    };
++    if (payload.action === "create_diagram") {
++      const elements = await prepareGraph(payload);
++      staged.elements.push(...elements);
++      staged.created_ids = Object.fromEntries(
++        elements.map((element) => [element.id, element.id]),
++      );
++      staged.results.push({
++        type: "create_diagram",
++        element_ids: elements.map((e) => e.id),
++      });
++    } else if (payload.action === "layout_diagram") {
++      await layoutScene(staged, payload);
++      staged.results.push({
++        type: "layout_diagram",
++        element_ids:
++          payload.ids ||
++          staged.elements.filter((e) => !e.isDeleted).map((e) => e.id),
++      });
++    } else if (payload.action === "import_assets") {
++      await prepareAssets(staged, payload.assets);
++    } else {
++      if (
++        !Array.isArray(payload.operations) ||
++        !payload.operations.length ||
++        payload.operations.length > LIMITS.operations
++      ) {
++        fail(
++          "invalid_arguments",
++          `operations must contain 1–${LIMITS.operations} items`,
++        );
++      }
++      for (let index = 0; index < payload.operations.length; index++) {
++        try {
++          await applyOperation(staged, payload.operations[index]);
++        } catch (error) {
++          error.data = { ...error.data, operation_index: index };
++          throw error;
++        }
++      }
++    }
++    if (staged.elements.length > LIMITS.elements) {
++      fail(
++        "limit_exceeded",
++        `A diagram supports at most ${LIMITS.elements} elements through automation`,
++      );
++    }
++    // Excalidraw's undo snapshot captures an existing ID only when its
++    // version advances. Imported/restored scenes can carry older versions or
++    // reuse a nonce; normalize changed IDs without altering their content.
++    const previousById = new Map(
++      source.elements.map((element) => [element.id, element]),
++    );
++    staged.elements = staged.elements.map((element) => {
++      const previous = previousById.get(element.id);
++      if (
++        previous &&
++        stable(previous) !== stable(element) &&
++        (!Number.isFinite(element.version) ||
++          element.version <= previous.version ||
++          element.versionNonce === previous.versionNonce)
++      ) {
++        return newElementWith(
++          element,
++          {
++            version:
++              Math.max(
++                previous.version,
++                Number.isFinite(element.version) ? element.version : 0,
++              ) + 1,
++            versionNonce: undefined,
++          },
++          true,
++        );
++      }
++      return element;
++    });
++    validateScene(staged);
++    await validateNewAssets(staged, source);
++    assertCurrent(payload, api, initial);
++    const changed =
++      stable([staged.elements, staged.files]) !==
++        stable([source.elements, source.files]) ||
++      (!!staged.changed_app_state &&
++        Object.entries(staged.changed_app_state).some(
++          ([key, value]) => stable(value) !== stable(source.appState[key]),
++        ));
++    if (payload.dry_run) {
++      return {
++        action: payload.action,
++        document_id: payload.document_id,
++        revision: initial,
++        changed,
++        dry_run: true,
++        results: staged.results,
++        created_ids: staged.created_ids,
++        bounds: bounds(staged.elements.filter((e) => !e.isDeleted)),
++        persistence: "not_applied",
++      };
++    }
++    if (!changed) {
++      if (
++        stable(staged.appState.selectedElementIds) !==
++        stable(source.appState.selectedElementIds)
++      ) {
++        api.updateScene({
++          appState: { selectedElementIds: staged.appState.selectedElementIds },
++          captureUpdate: "IMMEDIATELY",
++        });
++      }
++      return reply(payload, api, {
++        changed: false,
++        results: staged.results,
++        created_ids: staged.created_ids,
++        persistence: "unchanged",
++      });
++    }
++    // No await between the final revision check and the single commit.
++    if (api._excalidrawZ?.applyDiagramScene) {
++      api._excalidrawZ.applyDiagramScene({
++        elements: staged.elements,
++        files: staged.files,
++        appState: staged.changed_app_state || {
++          selectedElementIds: staged.appState.selectedElementIds,
++        },
++      });
++    } else if (stable(staged.files) === stable(source.files)) {
++      api.updateScene({
++        elements: staged.elements,
++        appState: staged.changed_app_state || {
++          selectedElementIds: staged.appState.selectedElementIds,
++        },
++        captureUpdate: "IMMEDIATELY",
++      });
++    } else {
++      fail(
++        "unsupported_action",
++        "Atomic asset updates require the current embedded editor",
++      );
++    }
++    return reply(payload, api, {
++      changed,
++      results: staged.results,
++      created_ids: staged.created_ids,
++      persistence: changed ? "canvas_changed" : "unchanged",
++    });
++  };
++  return {
++    command,
++    cancel: (requestId, clientId = "local") =>
++      cancelled.add(`${clientId}:${requestId}`),
++  };
++};
++const DIAGRAM_MUTATIONS = [
++  "apply_operations",
++  "create_diagram",
++  "layout_diagram",
++  "history",
++  "import_assets",
++];
++
++const selected = (stage, ids, allowLocked = false) => {
++  if (
++    !Array.isArray(ids) ||
++    !ids.length ||
++    ids.some((id) => typeof id !== "string")
++  ) {
++    fail("invalid_arguments", "ids must be a nonempty array of element IDs");
++  }
++  const map = arrayToMap(stage.elements);
++  return [...new Set(ids)].map((id) => {
++    const element = map.get(id);
++    if (!element || element.isDeleted) {
++      fail("element_not_found", `Element ${id} is not present`);
++    }
++    if (element.locked && !allowLocked) {
++      fail("element_locked", `Element ${id} is locked`);
++    }
++    return element;
++  });
++};
++const expandChildren = (stage, ids) => {
++  const set = new Set(ids);
++  let changed = true;
++  while (changed) {
++    changed = false;
++    for (const element of stage.elements) {
++      if (
++        !element.isDeleted &&
++        (set.has(element.frameId) || set.has(element.containerId)) &&
++        !set.has(element.id)
++      ) {
++        set.add(element.id);
++        changed = true;
++      }
++    }
++  }
++  return [...set];
++};
++const replace = (stage, changes, updateBindings = true) => {
++  const map = new Map(changes.map((element) => [element.id, element]));
++  stage.elements = stage.elements.map(
++    (element) => map.get(element.id) || element,
++  );
++  if (updateBindings) {
++    const scene = new Scene(arrayToMap(stage.elements));
++    for (const element of changes.filter((e) => !e.isDeleted)) {
++      updateBoundElements(element, scene, { simultaneouslyUpdated: changes });
++    }
++    for (const element of scene.getElementsIncludingDeleted()) {
++      if (
++        element.type === "text" &&
++        !element.isDeleted &&
++        (map.has(element.id) || map.has(element.containerId))
++      ) {
++        redrawTextBoundingBox(
++          element,
++          scene.getElement(element.containerId) || null,
++          scene,
++        );
++      }
++    }
++    stage.elements = [...scene.getElementsIncludingDeleted()];
++    scene.destroy();
++  }
++};
++const patchElements = (stage, elements, patch) =>
++  replace(
++    stage,
++    elements.map((element) => {
++      const updates = typeof patch === "function" ? patch(element) : patch;
++      for (const key of Object.keys(updates)) {
++        if (protectedFields.has(key)) {
++          fail(
++            "invalid_arguments",
++            `Cannot update protected element field ${key}`,
++          );
++        }
++      }
++      if (
++        element.type === "text" &&
++        updates.text !== undefined &&
++        updates.originalText === undefined
++      ) {
++        updates.originalText = updates.text;
++      }
++      return newElementWith(element, updates);
++    }),
++  );
++
++const applyOperation = async (stage, operation) => {
++  if (!operation || !DIAGRAM_OPERATIONS.includes(operation.type)) {
++    fail("unsupported_operation", `Unknown operation: ${operation?.type}`);
++  }
++  const type = operation.type;
++  let result = { type };
++  if (type === "create") {
++    if (!Array.isArray(operation.elements) || !operation.elements.length) {
++      fail("invalid_arguments", "create.elements must be nonempty");
++    }
++    const inputs = operation.elements.map((e) => ({
++      x: 0,
++      y: 0,
++      ...e,
++      id: e.id || randomId(),
++    }));
++    await loadSkeletonFonts(inputs);
++    const elements = operation.raw
++      ? clone(operation.elements)
++      : createElements(inputs, { regenerateIds: false });
++    // Canonical scene input retains extension fields that skeleton conversion does not know.
++    for (const element of elements) {
++      const raw = inputs.find((item) => item.id === element.id);
++      if (raw) {
++        Object.assign(
++          element,
++          Object.fromEntries(
++            Object.entries(raw).filter(
++              ([key]) =>
++                !["label", "start", "end", "children"].includes(key) &&
++                // Skeleton conversion has already measured/wrapped this text.
++                // Copying the input text back would discard that wrapping.
++                (operation.raw ||
++                  element.type !== "text" ||
++                  ![
++                    "text",
++                    "originalText",
++                    "width",
++                    "height",
++                    "autoResize",
++                    "baseline",
++                    "lineHeight",
++                  ].includes(key)),
++            ),
++          ),
++        );
++      }
++    }
++    stage.elements.push(...elements);
++    Object.assign(
++      stage.created_ids,
++      Object.fromEntries(elements.map((e) => [e.id, e.id])),
++    );
++    result.element_ids = elements.map((e) => e.id);
++  } else if (type === "import_scene" || type === "replace_scene") {
++    if (!Array.isArray(operation.elements)) {
++      fail("invalid_arguments", "import_scene.elements must be an array");
++    }
++    if (type === "replace_scene" || operation.replace === true) {
++      stage.elements = clone(operation.elements);
++    } else {
++      stage.elements.push(...clone(operation.elements));
++    }
++    if (type === "replace_scene") {
++      stage.files = clone(operation.files || {});
++    } else {
++      Object.assign(stage.files, clone(operation.files || {}));
++    }
++    if (operation.app_state) {
++      const allowed = [
++        "viewBackgroundColor",
++        "gridSize",
++        "gridStep",
++        "gridModeEnabled",
++        "frameRendering",
++      ];
++      stage.changed_app_state = Object.fromEntries(
++        Object.entries(operation.app_state).filter(([key]) =>
++          allowed.includes(key),
++        ),
++      );
++    }
++  } else if (type === "mermaid") {
++    const converted = await mermaidToElements(
++      operation.source || operation.definition,
++      { mermaidConfig: operation.mermaidConfig },
++    );
++    stage.elements.push(...converted.elements);
++    Object.assign(stage.files, converted.files);
++    result.element_ids = converted.elements.map((e) => e.id);
++  } else if (type === "math") {
++    const converted = createMathImage(operation);
++    stage.elements.push(...converted.elements);
++    Object.assign(stage.files, converted.files);
++    result.element_ids = converted.elements.map((e) => e.id);
++  } else if (type === "connect") {
++    result = { ...result, ...prepareConnection(stage, operation) };
++  } else if (type === "update") {
++    if (!Array.isArray(operation.patches) || !operation.patches.length) {
++      fail("invalid_arguments", "update.patches must be nonempty");
++    }
++    for (const patch of operation.patches) {
++      if (!patch.updates || typeof patch.updates !== "object") {
++        fail("invalid_arguments", "Each patch requires updates");
++      }
++      patchElements(stage, selected(stage, [patch.id]), clone(patch.updates));
++    }
++  } else if (type === "delete") {
++    selected(stage, operation.ids);
++    const deleted = new Set(expandChildren(stage, operation.ids));
++    stage.elements = stage.elements.map((element) => {
++      if (deleted.has(element.id)) {
++        return newElementWith(element, { isDeleted: true });
++      }
++      const updates = {};
++      if (deleted.has(element.containerId)) {
++        updates.containerId = null;
++      }
++      if (deleted.has(element.frameId)) {
++        updates.frameId = null;
++      }
++      if (element.boundElements?.some((bound) => deleted.has(bound.id))) {
++        updates.boundElements = element.boundElements.filter(
++          (bound) => !deleted.has(bound.id),
++        );
++      }
++      for (const end of ["startBinding", "endBinding"]) {
++        if (deleted.has(element[end]?.elementId)) {
++          updates[end] = null;
++        }
++      }
++      return Object.keys(updates).length
++        ? newElementWith(element, updates)
++        : element;
++    });
++    result.element_ids = [...deleted];
++  } else if (type === "duplicate") {
++    const elements = selected(stage, expandChildren(stage, operation.ids));
++    const { duplicatedElements, origIdToDuplicateId } = duplicateElements({
++      type: "everything",
++      elements,
++      preserveFrameChildrenOrder: true,
++    });
++    const copies = duplicatedElements.map((element) =>
++      newElementWith(element, {
++        x: element.x + (operation.dx ?? 20),
++        y: element.y + (operation.dy ?? 20),
++      }),
++    );
++    stage.elements.push(...copies);
++    Object.assign(stage.created_ids, Object.fromEntries(origIdToDuplicateId));
++    result.element_ids = copies.map((e) => e.id);
++    result.id_map = Object.fromEntries(origIdToDuplicateId);
++  } else if (type === "select") {
++    const elements = operation.ids?.length
++      ? selected(stage, operation.ids, true)
++      : [];
++    stage.appState.selectedElementIds = Object.fromEntries(
++      elements.map((element) => [element.id, true]),
++    );
++  } else if (type === "frame") {
++    const [frame] = selected(stage, [operation.frame_id]);
++    if (!["frame", "magicframe"].includes(frame.type)) {
++      fail("invalid_arguments", "frame_id must identify a frame");
++    }
++    const children = selected(stage, expandChildren(stage, operation.ids));
++    if (
++      children.some((element) => ["frame", "magicframe"].includes(element.type))
++    ) {
++      fail(
++        "unsupported_operation",
++        "Excalidraw does not support nested frames; use groups for nested containers",
++      );
++    }
++    patchElements(stage, children, {
++      frameId: operation.remove ? null : frame.id,
++    });
++    if (operation.name !== undefined) {
++      patchElements(stage, [frame], { name: operation.name });
++    }
++  } else {
++    let elements = selected(stage, operation.ids, type === "lock");
++    if (["move", "rotate", "flip"].includes(type)) {
++      elements = selected(stage, expandChildren(stage, operation.ids));
++    }
++    if (type === "move") {
++      const dx = finite(operation.dx ?? 0, "dx"),
++        dy = finite(operation.dy ?? 0, "dy");
++      patchElements(stage, elements, (element) => ({
++        x: element.x + dx,
++        y: element.y + dy,
++      }));
++    } else if (type === "resize") {
++      const width = positive(operation.width, "width"),
++        height = positive(operation.height, "height");
++      patchElements(stage, elements, (element) => ({
++        width,
++        height,
++        ...(element.points && {
++          points: element.points.map(([x, y]) => [
++            (x * width) / (element.width || 1),
++            (y * height) / (element.height || 1),
++          ]),
++        }),
++      }));
++    } else if (type === "rotate") {
++      const angle = finite(operation.angle, "angle");
++      patchElements(stage, elements, (element) => ({
++        angle: operation.relative ? element.angle + angle : angle,
++      }));
++    } else if (type === "flip") {
++      if (!["horizontal", "vertical"].includes(operation.axis)) {
++        fail("invalid_arguments", "flip.axis must be horizontal or vertical");
++      }
++      const box = bounds(elements),
++        horizontal = operation.axis === "horizontal";
++      patchElements(stage, elements, (element) => ({
++        x: horizontal
++          ? 2 * box.x + box.width - element.x - element.width
++          : element.x,
++        y: horizontal
++          ? element.y
++          : 2 * box.y + box.height - element.y - element.height,
++        angle: horizontal ? Math.PI - element.angle : -element.angle,
++        ...(element.type === "image" && {
++          scale: [
++            horizontal ? -(element.scale?.[0] || 1) : element.scale?.[0] || 1,
++            horizontal ? element.scale?.[1] || 1 : -(element.scale?.[1] || 1),
++          ],
++        }),
++        ...(element.points && {
++          points: element.points.map(([x, y]) => [
++            horizontal ? -x : x,
++            horizontal ? y : -y,
++          ]),
++          x: horizontal ? 2 * box.x + box.width - element.x : element.x,
++          y: horizontal ? element.y : 2 * box.y + box.height - element.y,
++        }),
++      }));
++    } else if (type === "group") {
++      const id = operation.group_id || randomId();
++      patchElements(stage, elements, (element) => ({
++        groupIds: [...(element.groupIds || []), id],
++      }));
++      result.group_id = id;
++    } else if (type === "ungroup") {
++      patchElements(stage, elements, (element) => ({
++        groupIds: operation.group_id
++          ? element.groupIds.filter((id) => id !== operation.group_id)
++          : element.groupIds.slice(0, -1),
++      }));
++    } else if (type === "align") {
++      const box = bounds(elements),
++        alignment = operation.alignment;
++      if (
++        !["left", "center", "right", "top", "middle", "bottom"].includes(
++          alignment,
++        )
++      ) {
++        fail("invalid_arguments", "Unknown alignment");
++      }
++      patchElements(stage, elements, (e) => ({
++        ...(alignment === "left" && { x: box.x }),
++        ...(alignment === "center" && { x: box.x + (box.width - e.width) / 2 }),
++        ...(alignment === "right" && { x: box.x + box.width - e.width }),
++        ...(alignment === "top" && { y: box.y }),
++        ...(alignment === "middle" && {
++          y: box.y + (box.height - e.height) / 2,
++        }),
++        ...(alignment === "bottom" && { y: box.y + box.height - e.height }),
++      }));
++    } else if (type === "distribute") {
++      if (!["horizontal", "vertical"].includes(operation.axis)) {
++        fail(
++          "invalid_arguments",
++          "distribute.axis must be horizontal or vertical",
++        );
++      }
++      const horizontal = operation.axis === "horizontal",
++        coordinate = horizontal ? "x" : "y",
++        size = horizontal ? "width" : "height";
++      const sorted = [...elements].sort(
++        (a, b) => a[coordinate] - b[coordinate],
++      );
++      if (sorted.length > 2) {
++        const first = sorted[0],
++          last = sorted[sorted.length - 1];
++        const gap =
++          (last[coordinate] +
++            last[size] -
++            first[coordinate] -
++            sorted.reduce((sum, e) => sum + e[size], 0)) /
++          (sorted.length - 1);
++        let position = first[coordinate];
++        const changes = sorted.map((e) => {
++          const changed = newElementWith(e, { [coordinate]: position });
++          position += e[size] + gap;
++          return changed;
++        });
++        replace(stage, changes);
++      }
++    } else if (type === "order") {
++      if (
++        !["front", "back", "forward", "backward"].includes(operation.position)
++      ) {
++        fail("invalid_arguments", "Unknown stacking position");
++      }
++      const ids = new Set(elements.map((e) => e.id));
++      if (operation.position === "front" || operation.position === "back") {
++        const rest = stage.elements.filter((e) => !ids.has(e.id));
++        stage.elements =
++          operation.position === "front"
++            ? [...rest, ...elements]
++            : [...elements, ...rest];
++      } else {
++        const order = [...stage.elements];
++        const forward = operation.position === "forward";
++        for (
++          let i = forward ? order.length - 2 : 1;
++          forward ? i >= 0 : i < order.length;
++          i += forward ? -1 : 1
++        ) {
++          const j = i + (forward ? 1 : -1);
++          if (ids.has(order[i].id) && !ids.has(order[j].id)) {
++            [order[i], order[j]] = [order[j], order[i]];
++          }
++        }
++        stage.elements = order;
++      }
++      syncInvalidIndices(stage.elements);
++    } else if (type === "lock") {
++      if (typeof operation.locked !== "boolean") {
++        fail("invalid_arguments", "lock.locked must be boolean");
++      }
++      patchElements(stage, elements, { locked: operation.locked });
++    } else if (type === "link") {
++      if (operation.link !== null && typeof operation.link !== "string") {
++        fail("invalid_arguments", "link must be a string or null");
++      }
++      patchElements(stage, elements, { link: operation.link });
++    } else if (type === "style" || type === "preset") {
++      const style =
++        type === "preset" ? DIAGRAM_PRESETS[operation.preset] : operation.style;
++      if (!style || typeof style !== "object") {
++        fail("invalid_arguments", "A known preset or style object is required");
++      }
++      for (const key of Object.keys(style)) {
++        if (!styleFields.has(key)) {
++          fail("invalid_arguments", `Unknown style field ${key}`);
++        }
++      }
++      patchElements(stage, elements, (e) =>
++        Object.fromEntries(
++          Object.entries(style).filter(
++            ([key]) =>
++              !(
++                e.type !== "text" &&
++                [
++                  "fontFamily",
++                  "fontSize",
++                  "textAlign",
++                  "verticalAlign",
++                ].includes(key)
++              ),
++          ),
++        ),
++      );
++      const containers = new Set(elements.map((e) => e.id));
++      const labels = stage.elements.filter(
++        (e) =>
++          e.type === "text" && !e.isDeleted && containers.has(e.containerId),
++      );
++      patchElements(
++        stage,
++        labels,
++        Object.fromEntries(
++          Object.entries(style).filter(
++            ([key]) => textFields.includes(key) || key === "strokeColor",
++          ),
++        ),
++      );
++    }
++  }
++  stage.results.push(result);
++};
++
++const prepareConnection = (stage, operation) => {
++  const endpointsList = selected(stage, [operation.from, operation.to]);
++  const from = endpointsList[0],
++    to = endpointsList.find((e) => e.id === operation.to) || from;
++  if (
++    ["line", "arrow", "freedraw", "frame", "magicframe"].includes(from.type) ||
++    ["line", "arrow", "freedraw", "frame", "magicframe"].includes(to.type)
++  ) {
++    fail("invalid_arguments", "Connectors require bindable shapes or text");
++  }
++  const sx = from.x + from.width / 2,
++    sy = from.y + from.height / 2,
++    tx = to.x + to.width / 2,
++    ty = to.y + to.height / 2;
++  const spec = operation.arrow || {};
++  const arrow = newArrowElement({
++    type: "arrow",
++    ...Object.fromEntries(
++      Object.entries(spec).filter(
++        ([key]) => styleFields.has(key) || key === "elbowed",
++      ),
++    ),
++    id: operation.id || randomId(),
++    x: sx,
++    y: sy,
++    width: Math.abs(tx - sx),
++    height: Math.abs(ty - sy),
++    points: [
++      [0, 0],
++      [tx - sx, ty - sy],
++    ],
++    startArrowhead: spec.startArrowhead ?? null,
++    endArrowhead: spec.endArrowhead ?? "arrow",
++  });
++  arrow.startBinding = {
++    elementId: from.id,
++    fixedPoint: spec.fixedPoint?.start || [0.5, 0.5],
++    mode: spec.mode || "orbit",
++  };
++  arrow.endBinding = {
++    elementId: to.id,
++    fixedPoint: spec.fixedPoint?.end || [0.5, 0.5],
++    mode: spec.mode || "orbit",
++  };
++  const endpoints = [...new Map([from, to].map((e) => [e.id, e])).values()];
++  replace(
++    stage,
++    endpoints.map((e) =>
++      newElementWith(e, {
++        boundElements: [
++          ...(e.boundElements || []),
++          { id: arrow.id, type: "arrow" },
++        ],
++      }),
++    ),
++    false,
++  );
++  stage.elements.push(arrow);
++  stage.created_ids[operation.id || arrow.id] = arrow.id;
++  if (spec.label !== undefined) {
++    const label = newTextElement({
++      x: 0,
++      y: 0,
++      ...(typeof spec.label === "string" ? { text: spec.label } : spec.label),
++      textAlign: "center",
++      verticalAlign: "middle",
++      containerId: arrow.id,
++    });
++    arrow.boundElements = [{ id: label.id, type: "text" }];
++    stage.elements.push(label);
++    const scene = new Scene(arrayToMap(stage.elements));
++    redrawTextBoundingBox(label, arrow, scene);
++    stage.elements = [...scene.getElementsIncludingDeleted()];
++    scene.destroy();
++    return { arrow_id: arrow.id, label_id: label.id };
++  }
++  return { arrow_id: arrow.id };
++};
++
++const validateScene = (stage) => {
++  const ids = new Set();
++  for (const element of stage.elements) {
++    if (
++      !element ||
++      typeof element.id !== "string" ||
++      !element.id ||
++      ids.has(element.id)
++    ) {
++      fail("invalid_scene", "Every element must have a unique nonempty ID");
++    }
++    ids.add(element.id);
++    if (!ELEMENT_TYPES.includes(element.type)) {
++      fail("invalid_scene", `Unsupported element type: ${element.type}`);
++    }
++    for (const key of ["x", "y", "width", "height", "angle"]) {
++      finite(element[key], `${element.id}.${key}`);
++    }
++    if (element.width < 0 || element.height < 0) {
++      fail("invalid_scene", "Element dimensions cannot be negative");
++    }
++    for (const key of ["fontSize", "strokeWidth", "opacity", "roughness"]) {
++      if (element[key] !== undefined) {
++        finite(element[key], `${element.id}.${key}`);
++      }
++    }
++    if (
++      element.opacity < 0 ||
++      element.opacity > 100 ||
++      element.strokeWidth < 0 ||
++      element.fontSize <= 0
++    ) {
++      fail("invalid_scene", `Invalid styling on ${element.id}`);
++    }
++    if (element.points) {
++      if (
++        element.points.some(
++          (point) =>
++            !Array.isArray(point) ||
++            point.length !== 2 ||
++            point.some((value) => !Number.isFinite(value)),
++        )
++      ) {
++        fail("invalid_scene", `Invalid points on ${element.id}`);
++      }
++    }
++    if (
++      element.type === "image" &&
++      !element.isDeleted &&
++      !stage.files[element.fileId]
++    ) {
++      fail(
++        "missing_asset",
++        `Image ${element.id} requires file ${element.fileId}`,
++      );
++    }
++  }
++  for (const element of stage.elements) {
++    if (
++      element.type === "text" &&
++      (typeof element.text !== "string" ||
++        typeof element.originalText !== "string")
++    ) {
++      fail(
++        "invalid_scene",
++        `Text ${element.id} requires text and originalText strings`,
++      );
++    }
++    if (
++      element.fillStyle &&
++      !["hachure", "cross-hatch", "solid", "zigzag"].includes(element.fillStyle)
++    ) {
++      fail("invalid_scene", `Invalid fill style on ${element.id}`);
++    }
++    if (
++      element.strokeStyle &&
++      !["solid", "dashed", "dotted"].includes(element.strokeStyle)
++    ) {
++      fail("invalid_scene", `Invalid stroke style on ${element.id}`);
++    }
++  }
++  const live = new Map(
++    stage.elements.filter((e) => !e.isDeleted).map((e) => [e.id, e]),
++  );
++  for (const element of live.values()) {
++    for (const id of [
++      element.containerId,
++      element.frameId,
++      element.startBinding?.elementId,
++      element.endBinding?.elementId,
++      ...(element.boundElements || []).map((binding) => binding.id),
++    ].filter(Boolean)) {
++      if (!live.has(id)) {
++        fail(
++          "invalid_binding",
++          `Element ${element.id} references missing element ${id}`,
++        );
++      }
++    }
++    if (
++      element.frameId &&
++      !["frame", "magicframe"].includes(live.get(element.frameId)?.type)
++    ) {
++      fail(
++        "invalid_binding",
++        `Element ${element.id} references a non-frame parent`,
++      );
++    }
++    for (const field of ["startBinding", "endBinding"]) {
++      const binding = element[field];
++      if (
++        binding?.fixedPoint &&
++        (binding.fixedPoint.length !== 2 ||
++          binding.fixedPoint.some(
++            (point) => !Number.isFinite(point) || point < 0 || point > 1,
++          ))
++      ) {
++        fail("invalid_binding", `Invalid attachment point on ${element.id}`);
++      }
++    }
++  }
++};
++
++const validateNewAssets = async (stage, source) => {
++  const referenced = new Set(
++    stage.elements
++      .filter((e) => !e.isDeleted && e.type === "image")
++      .map((e) => e.fileId),
++  );
++  for (const id of referenced) {
++    const asset = stage.files[id];
++    if (source.files[id]?.dataURL === asset.dataURL) {
++      continue;
++    }
++    if (
++      asset.id !== id ||
++      typeof asset.dataURL !== "string" ||
++      !/^data:image\/(png|jpeg|webp|gif|svg\+xml)[;,]/.test(asset.dataURL) ||
++      asset.dataURL.length > (LIMITS.assets_bytes * 4) / 3
++    ) {
++      fail("invalid_asset", `Invalid or oversized image asset ${id}`);
++    }
++    const image = new Image();
++    image.src = asset.dataURL;
++    let timer;
++    try {
++      await Promise.race([
++        image.decode(),
++        new Promise((_, reject) => {
++          timer = setTimeout(
++            () => reject(new Error("Image decoding timed out")),
++            15000,
++          );
++        }),
++      ]);
++    } catch {
++      fail("invalid_asset", `Image asset ${id} cannot be decoded`);
++    } finally {
++      clearTimeout(timer);
++    }
++  }
++};
++
++const waitForFonts = async (elements = []) => {
++  await document.fonts?.ready;
++  if (document.fonts && elements.length) {
++    await Fonts.loadElementsFonts(
++      elements.filter((element) => element.type === "text"),
++    );
++  }
++};
++const loadSkeletonFonts = async (skeletons) => {
++  const texts = skeletons.flatMap((skeleton) => {
++    const label =
++      typeof skeleton.label === "string"
++        ? { text: skeleton.label }
++        : skeleton.label;
++    return [
++      ...(skeleton.type === "text" ? [skeleton] : []),
++      ...(label
++        ? [
++            {
++              ...skeleton,
++              ...label,
++              type: "text",
++              fontFamily: label.fontFamily || skeleton.fontFamily || 5,
++            },
++          ]
++        : []),
++    ];
++  });
++  await waitForFonts(
++    texts.map((text) => ({
++      ...text,
++      originalText: text.originalText || text.text || "",
++      fontFamily: text.fontFamily || 5,
++    })),
++  );
++};
++const prepareGraph = async (payload) => {
++  await waitForFonts();
++  if (!Array.isArray(payload.nodes) || !payload.nodes.length) {
++    fail("invalid_arguments", "create_diagram.nodes must be nonempty");
++  }
++  if (payload.nodes.length + (payload.edges?.length || 0) > LIMITS.elements) {
++    fail("limit_exceeded", "Graph input exceeds the element limit");
++  }
++  if (
++    payload.direction &&
++    !["RIGHT", "LEFT", "UP", "DOWN"].includes(payload.direction)
++  ) {
++    fail("invalid_arguments", "direction must be RIGHT, LEFT, UP or DOWN");
++  }
++  const preset = DIAGRAM_PRESETS[payload.preset || "technical_clean"];
++  if (!preset) {
++    fail("invalid_arguments", "Unknown diagram preset");
++  }
++  const skeletons = payload.nodes.map((node) => {
++    if (!node.id) {
++      fail("invalid_arguments", "Each graph node requires an id");
++    }
++    const { text, ...properties } = node;
++    return {
++      ...preset,
++      ...properties,
++      type: node.type || "rectangle",
++      ...(text !== undefined && {
++        label:
++          typeof text === "string"
++            ? { text, fontSize: preset.fontSize, fontFamily: preset.fontFamily }
++            : text,
++      }),
++    };
++  });
++  skeletons.push(
++    ...(payload.edges || []).map((edge) => ({
++      ...preset,
++      ...edge,
++      id: edge.id || randomId(),
++      type: "arrow",
++      start: { id: edge.from },
++      end: { id: edge.to },
++      ...(edge.label !== undefined && {
++        label: {
++          fontFamily: preset.fontFamily,
++          fontSize: Math.round(preset.fontSize * 0.85),
++          ...(typeof edge.label === "string"
++            ? { text: edge.label }
++            : edge.label),
++        },
++      }),
++    })),
++  );
++  await loadSkeletonFonts(skeletons);
++  const laidOut = await applyGraphLayout(skeletons, "layered", {
++    "elk.direction": payload.direction || "RIGHT",
++    "elk.edgeRouting": "ORTHOGONAL",
++    ...payload.layout_options,
++  });
++  const elements = createElements(laidOut, { regenerateIds: false });
++  for (const container of payload.containers || []) {
++    const memberIds = new Set(container.child_ids || []);
++    for (const element of elements) {
++      if (
++        element.type === "arrow" &&
++        memberIds.has(element.startBinding?.elementId) &&
++        memberIds.has(element.endBinding?.elementId)
++      ) {
++        memberIds.add(element.id);
++      }
++    }
++    for (const element of elements) {
++      if (memberIds.has(element.containerId)) {
++        memberIds.add(element.id);
++      }
++    }
++    const children = elements.filter((e) => memberIds.has(e.id));
++    if (!children.length) {
++      fail(
++        "invalid_arguments",
++        `Container ${container.id} has no existing children`,
++      );
++    }
++    const box = bounds(children),
++      padding = container.padding ?? 32;
++    const frames = createElements(
++      [
++        {
++          type: "frame",
++          id: container.id,
++          name: container.name || container.id,
++          x: box.x - padding,
++          y: box.y - padding,
++          width: box.width + padding * 2,
++          height: box.height + padding * 2,
++        },
++      ],
++      { regenerateIds: false },
++    );
++    for (const child of children) {
++      child.frameId = container.id;
++    }
++    elements.push(...frames);
++  }
++  return elements;
++};
++
++const layoutScene = async (stage, payload) => {
++  await waitForFonts(stage.elements);
++  const requested = payload.ids
++    ? new Set(selected(stage, payload.ids, true).map((e) => e.id))
++    : new Set(stage.elements.filter((e) => !e.isDeleted).map((e) => e.id));
++  const eligible = stage.elements.filter(
++    (e) =>
++      !e.isDeleted &&
++      requested.has(e.id) &&
++      !["arrow", "line", "freedraw", "frame", "magicframe"].includes(e.type) &&
++      !e.containerId,
++  );
++  const map = arrayToMap(stage.elements);
++  // Keep grouped and framed composition as indivisible nodes, moving all children together.
++  const bundles = new Map();
++  for (const element of eligible) {
++    const group = element.groupIds?.at(-1);
++    const key = element.frameId || group || element.id;
++    if (!bundles.has(key)) {
++      bundles.set(key, []);
++    }
++    bundles.get(key).push(element);
++  }
++  const idToBundle = new Map();
++  const nodes = [...bundles.entries()].map(([id, elements]) => {
++    const all = stage.elements.filter(
++      (e) =>
++        !e.isDeleted &&
++        (e.id === id ||
++          e.frameId === id ||
++          e.groupIds?.includes(id) ||
++          elements.some((item) => e.containerId === item.id) ||
++          elements.includes(e)),
++    );
++    if (
++      all.some(
++        (e) =>
++          !requested.has(e.id) &&
++          !e.containerId &&
++          !["frame", "magicframe"].includes(e.type),
++      )
++    ) {
++      fail(
++        "layout_scope_conflict",
++        "Layout would move an unrequested member of a frame or group; include the complete container",
++        { container_id: id },
++      );
++    }
++    bundles.set(id, all);
++    for (const member of all) {
++      idToBundle.set(member.id, id);
++    }
++    const box = bounds(all),
++      pinned = all.some((e) => e.locked) || payload.pinned_ids?.includes(id);
++    return {
++      id,
++      type: "rectangle",
++      width: Math.max(1, box.width),
++      height: Math.max(1, box.height),
++      ...(pinned && { x: box.x, y: box.y }),
++    };
++  });
++  const arrows = stage.elements.filter(
++    (e) =>
++      e.type === "arrow" &&
++      !e.isDeleted &&
++      requested.has(e.id) &&
++      idToBundle.has(e.startBinding?.elementId) &&
++      idToBundle.has(e.endBinding?.elementId),
++  );
++  const skeletons = [
++    ...nodes,
++    ...arrows.map((e) => ({
++      id: e.id,
++      type: "arrow",
++      start: { id: idToBundle.get(e.startBinding.elementId) },
++      end: { id: idToBundle.get(e.endBinding.elementId) },
++      ...(map.get(
++        e.boundElements?.find((bound) => bound.type === "text")?.id,
++      ) && {
++        label: map.get(
++          e.boundElements.find((bound) => bound.type === "text").id,
++        ),
++      }),
++    })),
++  ];
++  const laidOut = await applyGraphLayout(skeletons, "layered", {
++    "elk.direction": payload.direction || "RIGHT",
++    "elk.edgeRouting": "ORTHOGONAL",
++    ...payload.layout_options,
++  });
++  const changes = [];
++  for (const node of laidOut.filter((e) => bundles.has(e.id))) {
++    const members = bundles.get(node.id),
++      old = bounds(members);
++    for (const member of members) {
++      if (!member.locked) {
++        changes.push(
++          newElementWith(member, {
++            x: member.x + node.x - old.x,
++            y: member.y + node.y - old.y,
++          }),
++        );
++      }
++    }
++  }
++  replace(stage, changes);
++  // Only use ELK routes for single nodes; grouped endpoints need real member binding geometry.
++  for (const route of laidOut.filter((e) => e.type === "arrow" && e.points)) {
++    const arrow = map.get(route.id);
++    if (
++      !arrow.locked &&
++      bundles.get(idToBundle.get(arrow.startBinding.elementId))?.length === 1 &&
++      bundles.get(idToBundle.get(arrow.endBinding.elementId))?.length === 1
++    ) {
++      replace(stage, [
++        newElementWith(
++          stage.elements.find((e) => e.id === arrow.id),
++          {
++            x: route.x,
++            y: route.y,
++            points: route.points,
++            width: route.width,
++            height: route.height,
++          },
++        ),
++      ]);
++    }
++  }
++};
++
++const prepareAssets = async (stage, assets) => {
++  if (!Array.isArray(assets) || !assets.length) {
++    fail("invalid_arguments", "assets must be nonempty");
++  }
++  for (const asset of assets) {
++    const url = asset.data_url;
++    if (
++      typeof url !== "string" ||
++      !/^data:image\/(png|jpeg|webp|gif|svg\+xml)[;,]/.test(url) ||
++      url.length > (LIMITS.assets_bytes * 4) / 3
++    ) {
++      fail(
++        "invalid_asset",
++        "Supply a supported image data URL of at most 32 MiB",
++      );
++    }
++    const image = new Image();
++    image.src = url;
++    let timer;
++    try {
++      await Promise.race([
++        image.decode(),
++        new Promise((_, reject) => {
++          timer = setTimeout(
++            () => reject(new Error("Image decoding timed out")),
++            15000,
++          );
++        }),
++      ]);
++    } catch {
++      fail("invalid_asset", "The image could not be decoded");
++    } finally {
++      clearTimeout(timer);
++    }
++    const fileId = asset.file_id || randomId();
++    if (stage.files[fileId] && stage.files[fileId].dataURL !== url) {
++      fail(
++        "asset_id_conflict",
++        "An existing asset ID cannot be replaced with different data",
++      );
++    }
++    stage.files[fileId] = {
++      id: fileId,
++      dataURL: url,
++      mimeType: asset.mime_type || url.match(/^data:([^;,]+)/)[1],
++      created: Date.now(),
++    };
++    const elements = createElements(
++      [
++        {
++          type: "image",
++          id: asset.id || randomId(),
++          fileId,
++          x: asset.x ?? 0,
++          y: asset.y ?? 0,
++          width: positive(asset.width ?? image.naturalWidth, "width"),
++          height: positive(asset.height ?? image.naturalHeight, "height"),
++        },
++      ],
++      { regenerateIds: false },
++    );
++    stage.elements.push(...elements);
++    stage.results.push({
++      type: "import_asset",
++      file_id: fileId,
++      element_ids: elements.map((e) => e.id),
++    });
++  }
++};
++
++const filtered = (source, payload) => {
++  const ids = payload.ids ? new Set(payload.ids) : null,
++    types = payload.types ? new Set(payload.types) : null;
++  return source.elements.filter(
++    (element) =>
++      (payload.include_deleted || !element.isDeleted) &&
++      (!ids || ids.has(element.id)) &&
++      (!types || types.has(element.type)) &&
++      (!payload.frame_id ||
++        element.id === payload.frame_id ||
++        element.frameId === payload.frame_id) &&
++      (!payload.selected_only ||
++        source.appState.selectedElementIds?.[element.id]) &&
++      (!payload.query ||
++        `${element.text || ""} ${element.name || ""} ${element.link || ""}`
++          .toLowerCase()
++          .includes(String(payload.query).toLowerCase())),
++  );
++};
++const inspectScene = (source, payload) => {
++  const elements = filtered(source, payload),
++    offset = payload.offset ?? 0,
++    limit = payload.limit ?? 200;
++  if (
++    !Number.isInteger(offset) ||
++    offset < 0 ||
++    !Number.isInteger(limit) ||
++    limit < 1 ||
++    limit > LIMITS.inspect_page
++  ) {
++    fail(
++      "invalid_arguments",
++      "Invalid pagination; limit must be 1–1000 and offset nonnegative",
++    );
++  }
++  const page = elements.slice(offset, offset + limit);
++  return {
++    elements: page,
++    total: elements.length,
++    offset,
++    next_offset: offset + limit < elements.length ? offset + limit : null,
++    selection: Object.keys(source.appState.selectedElementIds || {}).filter(
++      (id) => source.appState.selectedElementIds[id],
++    ),
++    bounds: bounds(elements),
++    frames: source.elements
++      .filter((e) => !e.isDeleted && ["frame", "magicframe"].includes(e.type))
++      .map((e) => ({ id: e.id, name: e.name })),
++    assets: Object.fromEntries(
++      Object.entries(source.files)
++        .filter(([id]) => page.some((e) => e.fileId === id))
++        .map(([id, asset]) => [
++          id,
++          payload.include_assets
++            ? asset
++            : { id, mimeType: asset.mimeType, created: asset.created },
++        ]),
++    ),
++    available_fonts: window.excalidrawZHelper?.availableFonts || [],
++    app_state: {
++      viewBackgroundColor: source.appState.viewBackgroundColor,
++      gridSize: source.appState.gridSize,
++    },
++  };
++};
++
++export const analyzeScene = (source, payload = {}) => {
++  const elements = filtered(source, payload),
++    all = arrayToMap(source.elements.filter((e) => !e.isDeleted)),
++    findings = [];
++  const add = (code, ids, message, suggestion) =>
++    findings.push({ code, element_ids: ids, message, suggestion });
++  for (const e of elements) {
++    for (const id of [
++      e.containerId,
++      e.frameId,
++      e.startBinding?.elementId,
++      e.endBinding?.elementId,
++    ].filter(Boolean)) {
++      if (!all.has(id)) {
++        add(
++          "broken_binding",
++          [e.id, id],
++          "Element references a missing element",
++          "Reconnect or clear this binding",
++        );
++      }
++    }
++    if (e.type === "text") {
++      const metrics = measureText(e.text || "", getFontString(e), e.lineHeight);
++      if (metrics.height > e.height + 2 || metrics.width > e.width + 2) {
++        add(
++          "clipped_label",
++          [e.id],
++          "Text exceeds its element bounds",
++          "Resize or wrap the label",
++        );
++      }
++    }
++    if (e.type === "image" && !source.files[e.fileId]) {
++      add("missing_asset", [e.id], "Image data is missing", "Import its asset");
++    }
++    if (
++      e.type === "arrow" &&
++      e.elbowed &&
++      e.points?.some(
++        (point, index) =>
++          index &&
++          Math.abs(point[0] - e.points[index - 1][0]) > 0.01 &&
++          Math.abs(point[1] - e.points[index - 1][1]) > 0.01,
++      )
++    ) {
++      add(
++        "non_orthogonal_route",
++        [e.id],
++        "An orthogonal arrow has a diagonal segment",
++        "Recompute its route",
++      );
++    }
++  }
++  const nodes = elements.filter(
++    (e) =>
++      !["arrow", "line", "freedraw", "frame", "magicframe"].includes(e.type) &&
++      !e.containerId &&
++      !e.customData?.intentionalOverlap,
++  );
++  for (let i = 0; i < nodes.length; i++) {
++    const a = nodes[i];
++    for (let j = i + 1; j < nodes.length; j++) {
++      const b = nodes[j];
++      if (
++        a.groupIds?.some((id) => b.groupIds?.includes(id)) ||
++        a.frameId === b.id ||
++        b.frameId === a.id
++      ) {
++        continue;
++      }
++      // Full containment is intentional in illustrated components; labels and frames are excluded above.
++      const ab = bounds([a]),
++        bb = bounds([b]);
++      const contains = (outer, inner) =>
++        outer.x <= inner.x &&
++        outer.y <= inner.y &&
++        outer.x + outer.width >= inner.x + inner.width &&
++        outer.y + outer.height >= inner.y + inner.height;
++      if (
++        (contains(ab, bb) && a.customData?.role === "container") ||
++        (contains(bb, ab) && b.customData?.role === "container")
++      ) {
++        continue;
++      }
++      if (
++        Math.min(ab.x + ab.width, bb.x + bb.width) > Math.max(ab.x, bb.x) + 2 &&
++        Math.min(ab.y + ab.height, bb.y + bb.height) > Math.max(ab.y, bb.y) + 2
++      ) {
++        add(
++          "overlap",
++          [a.id, b.id],
++          "Elements overlap",
++          "Separate these elements or mark customData.intentionalOverlap",
++        );
++      }
++    }
++  }
++  // Frame membership and full geometric containment describe intentional
++  // nesting. Independent presentation/diagram frames should not partly cover
++  // each other merely because their contents happen to be collision-free.
++  const frames = elements.filter(
++    (e) =>
++      ["frame", "magicframe"].includes(e.type) &&
++      !e.customData?.intentionalOverlap,
++  );
++  const isFrameAncestor = (ancestor, descendant) => {
++    const visited = new Set();
++    let parentId = descendant.frameId;
++    while (parentId && !visited.has(parentId)) {
++      if (parentId === ancestor.id) return true;
++      visited.add(parentId);
++      parentId = all.get(parentId)?.frameId;
++    }
++    return false;
++  };
++  const containsFrame = (outer, inner) =>
++    outer.x <= inner.x &&
++    outer.y <= inner.y &&
++    outer.x + outer.width >= inner.x + inner.width &&
++    outer.y + outer.height >= inner.y + inner.height;
++  for (let i = 0; i < frames.length; i++) {
++    const a = frames[i],
++      ab = bounds([a]);
++    for (let j = i + 1; j < frames.length; j++) {
++      const b = frames[j],
++        bb = bounds([b]);
++      if (
++        containsFrame(ab, bb) ||
++        containsFrame(bb, ab) ||
++        isFrameAncestor(a, b) ||
++        isFrameAncestor(b, a)
++      )
++        continue;
++      if (
++        Math.min(ab.x + ab.width, bb.x + bb.width) > Math.max(ab.x, bb.x) + 2 &&
++        Math.min(ab.y + ab.height, bb.y + bb.height) > Math.max(ab.y, bb.y) + 2
++      ) {
++        add(
++          "frame_overlap",
++          [a.id, b.id],
++          "Independent frames partly overlap",
++          "Move or resize these frames, nest them explicitly, or mark customData.intentionalOverlap",
++        );
++      }
++    }
++  }
++  // A node's own bound text and explicitly grouped illustrations are
++  // intentional. Arrow labels are not allowed to conceal neighboring nodes or
++  // another label, even when the connectors share a frame.
++  const labels = elements.filter(
++    (e) =>
++      e.type === "text" &&
++      e.containerId &&
++      all.get(e.containerId)?.type === "arrow" &&
++      !e.customData?.intentionalOverlap,
++  );
++  const labelObstacles = elements.filter(
++    (e) =>
++      !["arrow", "line", "freedraw", "frame", "magicframe"].includes(e.type) &&
++      !e.customData?.intentionalOverlap,
++  );
++  for (const label of labels) {
++    const lb = bounds([label]);
++    for (const other of labelObstacles) {
++      if (
++        label.id === other.id ||
++        (labels.includes(other) && label.id > other.id) ||
++        label.groupIds?.some((id) => other.groupIds?.includes(id))
++      )
++        continue;
++      const ob = bounds([other]);
++      if (
++        Math.min(lb.x + lb.width, ob.x + ob.width) > Math.max(lb.x, ob.x) + 2 &&
++        Math.min(lb.y + lb.height, ob.y + ob.height) > Math.max(lb.y, ob.y) + 2
++      ) {
++        add(
++          "label_overlap",
++          [label.id, other.id],
++          "A connector label overlaps a node or another label",
++          "Reserve label space and move its route onto a clear segment",
++        );
++      }
++    }
++  }
++  for (const type of ["rectangle", "ellipse", "diamond", "text"]) {
++    const peers = elements.filter((e) => e.type === type);
++    if (peers.length < 5) {
++      continue;
++    }
++    const signatures = new Map();
++    for (const element of peers) {
++      const key = stable([
++        element.strokeWidth,
++        element.roughness,
++        type === "text" ? element.fontFamily : element.fillStyle,
++      ]);
++      if (!signatures.has(key)) {
++        signatures.set(key, []);
++      }
++      signatures.get(key).push(element.id);
++    }
++    const dominant = [...signatures.values()].sort(
++      (a, b) => b.length - a.length,
++    )[0];
++    if (
++      dominant.length >= peers.length * 0.8 &&
++      dominant.length < peers.length
++    ) {
++      const inconsistent = peers
++        .filter((e) => !dominant.includes(e.id))
++        .map((e) => e.id);
++      add(
++        "inconsistent_style",
++        inconsistent,
++        "These elements differ from the prevailing style of their peers",
++        "Review whether the difference is intentional or apply the same preset",
++      );
++    }
++  }
++  return findings;
++};
++
++const renderScene = async (source, payload, renderer, viewportRenderer) => {
++  await waitForFonts(source.elements);
++  const scope = payload.scope || "full";
++  let elements = source.elements.filter((e) => !e.isDeleted),
++    exportingFrame = null;
++  const max = payload.max_dimension ?? 2048;
++  if (!Number.isInteger(max) || max < 64 || max > LIMITS.render_dimension) {
++    fail("invalid_arguments", "max_dimension must be 64–4096");
++  }
++  if (scope === "selection") {
++    const ids = new Set(
++      expandChildren(
++        source,
++        Object.keys(source.appState.selectedElementIds || {}).filter(
++          (id) => source.appState.selectedElementIds[id],
++        ),
++      ),
++    );
++    elements = elements.filter((e) => ids.has(e.id));
++  }
++  if (scope === "frame") {
++    exportingFrame = elements.find(
++      (e) =>
++        e.id === payload.frame_id && ["frame", "magicframe"].includes(e.type),
++    );
++    if (!exportingFrame) {
++      fail("element_not_found", "The requested frame does not exist");
++    }
++    elements = elements.filter(
++      (e) => e.id === exportingFrame.id || e.frameId === exportingFrame.id,
++    );
++  }
++  if (scope === "viewport" || scope === "region") {
++    const appState = { ...source.appState };
++    if (scope === "region") {
++      const region = payload.region;
++      if (!region) {
++        fail("invalid_arguments", "region is required");
++      }
++      finite(region.x, "region.x");
++      finite(region.y, "region.y");
++      positive(region.width, "region.width");
++      positive(region.height, "region.height");
++      const scale = Math.min(1, max / Math.max(region.width, region.height));
++      Object.assign(appState, {
++        width: region.width * scale,
++        height: region.height * scale,
++        scrollX: -region.x,
++        scrollY: -region.y,
++        zoom: { value: scale },
++      });
++    } else {
++      const scale = Math.min(
++        1,
++        max / Math.max(appState.width, appState.height),
++      );
++      appState.width *= scale;
++      appState.height *= scale;
++      appState.zoom = { ...appState.zoom, value: appState.zoom.value * scale };
++    }
++    return viewportRenderer({ ...source, elements, appState });
++  }
++  if (!["full", "selection", "frame"].includes(scope)) {
++    fail("invalid_arguments", "Unknown render scope");
++  }
++  if (!elements.length) {
++    fail("empty_render", "There are no elements to render");
++  }
++  const box = bounds(elements),
++    scale = Math.min(1, max / Math.max(1, box.width + 20, box.height + 20));
++  return renderer(elements, source.files, {
++    exportingFrame,
++    exportScale: scale,
++    withBackground: payload.with_background !== false,
++    viewBackgroundColor: source.appState.viewBackgroundColor,
++    mimeType: "image/png",
++  });
++};
++
++let engine;
++const getEngine = () =>
++  engine ||
++  (engine = createDiagramCommandEngine(
++    () => window.excalidrawZHelper?._api,
++    () => window.excalidrawZHelper?.currentFileId,
++  ));
++export const diagramCommand = async (payload) => {
++  try {
++    return await getEngine().command(payload);
++  } catch (error) {
++    return {
++      error: {
++        code: error.code || "diagram_error",
++        message: error.message || String(error),
++        data: error.data || null,
++      },
++    };
++  }
++};
++export const diagramCancel = (requestId, clientId) =>
++  getEngine().cancel(requestId, clientId);
+diff --git a/excalidraw-app/excalidrawZ/diagramCommands.test.js b/excalidraw-app/excalidrawZ/diagramCommands.test.js
+new file mode 100644
+index 00000000..c1ea1c34
+--- /dev/null
++++ b/excalidraw-app/excalidrawZ/diagramCommands.test.js
+@@ -0,0 +1,657 @@
++import { createElements } from "./creators";
++import { createDiagramCommandEngine, analyzeScene } from "./diagramCommands";
++import {
++  StoreSnapshot,
++  CaptureUpdateAction,
++} from "../../packages/element/src/store";
++
++const setup = (initial = []) => {
++  let elements = initial,
++    files = {},
++    documentId = "test-document";
++  const listeners = new Set();
++  const state = {
++    selectedElementIds: {},
++    viewBackgroundColor: "#ffffff",
++    width: 800,
++    height: 600,
++    scrollX: 0,
++    scrollY: 0,
++    zoom: { value: 1 },
++  };
++  const commits = [];
++  const api = {
++    getSceneElementsIncludingDeleted: () => elements,
++    getAppState: () => state,
++    getFiles: () => files,
++    onChange: (fn) => {
++      listeners.add(fn);
++      return () => listeners.delete(fn);
++    },
++    updateScene: (data) => {
++      commits.push(data);
++      elements = data.elements || elements;
++      Object.assign(state, data.appState);
++      for (const fn of listeners) {
++        fn();
++      }
++    },
++    _excalidrawZ: {
++      applyDiagramScene: (data) => {
++        files = data.files;
++        api.updateScene({ ...data, captureUpdate: "IMMEDIATELY" });
++      },
++    },
++  };
++  const engine = createDiagramCommandEngine(
++    () => api,
++    () => documentId,
++    { renderer: async () => ({ blobData: "cG5n", actualScale: 1 }) },
++  );
++  const read = () =>
++    engine.command({ action: "inspect", document_id: documentId });
++  const edit = async (operations, extras = {}) =>
++    engine.command({
++      action: "apply_operations",
++      document_id: documentId,
++      expected_revision: (await read()).revision,
++      request_id: `request-${Math.random()}`,
++      operations,
++      ...extras,
++    });
++  return {
++    api,
++    engine,
++    read,
++    edit,
++    commits,
++    setDocument: (id) => {
++      documentId = id;
++    },
++    current: () => elements,
++  };
++};
++const shape = (id, x = 0, y = 0) =>
++  createElements([{ id, type: "rectangle", x, y, width: 100, height: 60 }], {
++    regenerateIds: false,
++  })[0];
++
++describe("document diagram transactions", () => {
++  it("captures imported same-ID replacements in the real undo snapshot", async () => {
++    const original = createElements(
++      [
++        {
++          id: "title",
++          type: "text",
++          x: 0,
++          y: 0,
++          text: "Old title",
++          fontFamily: 2,
++        },
++      ],
++      { regenerateIds: false },
++    )[0];
++    original.version = 40;
++    const fixture = setup([original]);
++    const before = StoreSnapshot.create(
++      new Map([[original.id, original]]),
++      fixture.api.getAppState(),
++    );
++    await fixture.edit([
++      {
++        type: "replace_scene",
++        files: {},
++        elements: [
++          {
++            ...original,
++            text: "New title",
++            originalText: "New title",
++            fontFamily: 5,
++            version: 1,
++          },
++        ],
++      },
++    ]);
++    const captured = before.maybeClone(
++      CaptureUpdateAction.IMMEDIATELY,
++      new Map(fixture.current().map((e) => [e.id, e])),
++      fixture.api.getAppState(),
++    );
++    expect(captured.elements.get("title").text).toBe("New title");
++    expect(captured.elements.get("title").fontFamily).toBe(5);
++    await fixture.edit([
++      {
++        type: "update",
++        patches: [{ id: "title", updates: { text: "Temporary title" } }],
++      },
++    ]);
++    expect(captured.elements.get("title").text).toBe("New title");
++  });
++
++  it("keeps measured wrapping from skeleton text creation", async () => {
++    const fixture = setup();
++    await fixture.edit([
++      {
++        type: "create",
++        elements: [
++          {
++            id: "caption",
++            type: "text",
++            x: 0,
++            y: 0,
++            text: "A long caption that must wrap inside its narrow text box",
++            fontFamily: 5,
++            fontSize: 20,
++            width: 100,
++            autoResize: false,
++          },
++        ],
++      },
++    ]);
++    const caption = fixture.current()[0];
++    expect(caption.text).toContain("\n");
++    expect(caption.originalText).toBe(
++      "A long caption that must wrap inside its narrow text box",
++    );
++    expect(caption.height).toBeGreaterThan(25);
++  });
++
++  it("rejects a late invalid operation without touching any live element", async () => {
++    const original = shape("a"),
++      fixture = setup([original]);
++    const before = JSON.stringify(original);
++    await expect(
++      fixture.edit([
++        { type: "move", ids: ["a"], dx: 50, dy: 40 },
++        { type: "resize", ids: ["missing"], width: 20, height: 20 },
++      ]),
++    ).rejects.toMatchObject({
++      code: "element_not_found",
++      data: { operation_index: 1 },
++    });
++    expect(JSON.stringify(original)).toBe(before);
++    expect(fixture.commits).toHaveLength(0);
++  });
++  it("rejects stale revisions and mismatched document handles", async () => {
++    const fixture = setup([shape("a")]);
++    const revision = (await fixture.read()).revision;
++    fixture.api.updateScene({ elements: [shape("a", 20)] });
++    await expect(
++      fixture.engine.command({
++        action: "apply_operations",
++        document_id: "test-document",
++        expected_revision: revision,
++        request_id: "stale",
++        operations: [{ type: "move", ids: ["a"], dx: 20 }],
++      }),
++    ).rejects.toMatchObject({ code: "revision_conflict" });
++    fixture.setDocument("new-document");
++    await expect(
++      fixture.engine.command({
++        action: "inspect",
++        document_id: "test-document",
++      }),
++    ).rejects.toMatchObject({ code: "document_mismatch" });
++  });
++  it("deduplicates retries per client and rejects request reuse with different arguments", async () => {
++    const fixture = setup([shape("a")]);
++    const payload = {
++      action: "apply_operations",
++      document_id: "test-document",
++      expected_revision: (await fixture.read()).revision,
++      request_id: "once",
++      client_id: "codex",
++      operations: [{ type: "move", ids: ["a"], dx: 20 }],
++    };
++    const first = await fixture.engine.command(payload),
++      second = await fixture.engine.command(payload);
++    expect(first).toEqual(second);
++    expect(fixture.commits).toHaveLength(1);
++    expect(fixture.current()[0].x).toBe(20);
++    await expect(
++      fixture.engine.command({
++        ...payload,
++        operations: [{ type: "move", ids: ["a"], dx: 30 }],
++      }),
++    ).rejects.toMatchObject({ code: "request_id_conflict" });
++  });
++  it("validates a dry run and commits a multi-operation batch as one undo action", async () => {
++    const fixture = setup([shape("a")]);
++    const operations = [
++      { type: "move", ids: ["a"], dx: 20 },
++      { type: "style", ids: ["a"], style: { backgroundColor: "#e2e8f0" } },
++    ];
++    const preview = await fixture.edit(operations, { dry_run: true });
++    expect(preview.dry_run).toBe(true);
++    expect(fixture.commits).toHaveLength(0);
++    await fixture.edit(operations);
++    expect(fixture.commits).toHaveLength(1);
++    expect(fixture.commits[0].captureUpdate).toBe("IMMEDIATELY");
++  });
++  it("preserves canonical extension data and rejects invalid complete scenes", async () => {
++    const fixture = setup();
++    const element = {
++      ...shape("a"),
++      futureExtension: { preserved: [1, 2, 3] },
++      customData: { customer: "demo" },
++    };
++    await fixture.edit([{ type: "create", raw: true, elements: [element] }]);
++    await fixture.edit([{ type: "move", ids: ["a"], dx: 30 }]);
++    expect(fixture.current()[0].futureExtension).toEqual(
++      element.futureExtension,
++    );
++    await expect(
++      fixture.edit([
++        {
++          type: "create",
++          raw: true,
++          elements: [{ ...element, id: "invalid", x: NaN }],
++        },
++      ]),
++    ).rejects.toMatchObject({ code: "invalid_arguments" });
++  });
++  it("preserves bound arrows while moving and resizing nodes and clears deleted references", async () => {
++    const fixture = setup([shape("a"), shape("b", 300)]);
++    const connected = await fixture.edit([
++      { type: "connect", from: "a", to: "b", arrow: { label: "Links" } },
++    ]);
++    const arrowId = connected.results[0].arrow_id;
++    await fixture.edit([
++      { type: "move", ids: ["a"], dx: 50, dy: 70 },
++      { type: "resize", ids: ["b"], width: 150, height: 80 },
++    ]);
++    const arrow = fixture.current().find((e) => e.id === arrowId);
++    expect(arrow.startBinding.elementId).toBe("a");
++    expect(arrow.endBinding.elementId).toBe("b");
++    expect(arrow.y).not.toBe(30);
++    await fixture.edit([{ type: "delete", ids: ["a"] }]);
++    expect(
++      fixture.current().find((e) => e.id === arrowId).startBinding,
++    ).toBeNull();
++  });
++  it("duplicates frames, group IDs, labels and connector relationships without sharing element IDs", async () => {
++    const fixture = setup([shape("a"), shape("b", 300)]);
++    await fixture.edit([
++      { type: "connect", from: "a", to: "b", arrow: { label: "Link" } },
++      { type: "group", ids: ["a", "b"] },
++    ]);
++    const originalIds = fixture.current().map((e) => e.id);
++    const result = await fixture.edit([
++      { type: "duplicate", ids: originalIds, dx: 500, dy: 0 },
++    ]);
++    const mapping = result.results[0].id_map;
++    const copies = fixture.current().filter((e) => !originalIds.includes(e.id));
++    expect(copies).toHaveLength(originalIds.length);
++    const arrow = copies.find((e) => e.type === "arrow");
++    expect(arrow.startBinding.elementId).toBe(mapping.a);
++    expect(arrow.endBinding.elementId).toBe(mapping.b);
++    expect(copies.find((e) => e.type === "text").containerId).toBe(arrow.id);
++    expect(copies.find((e) => e.id === mapping.a).groupIds).not.toEqual(
++      fixture.current().find((e) => e.id === "a").groupIds,
++    );
++  });
++  it("returns the exact rendered snapshot revision when humans edit during rendering", async () => {
++    const fixture = setup([shape("a")]);
++    const revision = (await fixture.read()).revision;
++    const render = fixture.engine.command({
++      action: "render_diagram",
++      document_id: "test-document",
++    });
++    fixture.api.updateScene({ elements: [shape("a", 100)] });
++    expect((await render).revision).toBe(revision);
++    expect((await fixture.read()).revision).not.toBe(revision);
++  });
++  it("detects asset changes, including changes with the same element array", async () => {
++    const fixture = setup([shape("a")]);
++    const before = (await fixture.read()).revision;
++    fixture.api._excalidrawZ.applyDiagramScene({
++      elements: fixture.current(),
++      files: {
++        image: {
++          id: "image",
++          dataURL: "data:image/png;base64,AAA",
++          mimeType: "image/png",
++        },
++      },
++    });
++    expect((await fixture.read()).revision).not.toBe(before);
++  });
++  it("blocks a cancelled request before commit", async () => {
++    const fixture = setup([shape("a")]);
++    const payload = {
++      action: "apply_operations",
++      document_id: "test-document",
++      expected_revision: (await fixture.read()).revision,
++      request_id: "cancel",
++      operations: [{ type: "move", ids: ["a"], dx: 20 }],
++    };
++    const response = fixture.engine.command(payload);
++    fixture.engine.cancel("cancel");
++    await expect(response).rejects.toMatchObject({ code: "cancelled" });
++    expect(fixture.commits).toHaveLength(0);
++  });
++  it("restores a checkpoint scene with its extension data in one undoable commit", async () => {
++    const fixture = setup([shape("a")]);
++    const restored = {
++      ...shape("checkpoint", 300),
++      customData: { persisted: true },
++    };
++    await fixture.edit([
++      {
++        type: "replace_scene",
++        elements: [restored],
++        files: {},
++        app_state: { viewBackgroundColor: "#f8f8ff" },
++      },
++    ]);
++    expect(fixture.current()).toEqual([restored]);
++    expect(fixture.api.getAppState().viewBackgroundColor).toBe("#f8f8ff");
++    expect(fixture.commits).toHaveLength(1);
++  });
++  it("creates a measured 100-node routed graph without unintended overlaps", async () => {
++    const fixture = setup();
++    const start = performance.now();
++    const result = await fixture.engine.command({
++      action: "create_diagram",
++      document_id: "test-document",
++      expected_revision: (await fixture.read()).revision,
++      request_id: "100-nodes",
++      nodes: Array.from({ length: 100 }, (_, i) => ({
++        id: `node-${i}`,
++        text: `Node ${i} — Équipe`,
++      })),
++      edges: Array.from({ length: 99 }, (_, i) => ({
++        from: `node-${i}`,
++        to: `node-${i + 1}`,
++        label: i % 10 === 0 ? "Flow" : undefined,
++      })),
++      preset: "technical_clean",
++      direction: "RIGHT",
++    });
++    expect(result.changed).toBe(true);
++    expect(performance.now() - start).toBeLessThan(15000);
++    expect(
++      analyzeScene({ elements: fixture.current(), files: {} }).filter(
++        (finding) =>
++          ["overlap", "label_overlap", "clipped_label"].includes(finding.code),
++      ),
++    ).toEqual([]);
++    const arrow = fixture.current().find((e) => e.type === "arrow");
++    expect(arrow.points.length).toBeGreaterThanOrEqual(2);
++    expect(arrow.startBinding).toBeTruthy();
++  }, 20000);
++  it("lays out diamonds, ellipse labels and frame members with final measured dimensions", async () => {
++    const fixture = setup();
++    const result = await fixture.engine.command({
++      action: "create_diagram",
++      document_id: "test-document",
++      expected_revision: (await fixture.read()).revision,
++      request_id: "measured-shapes",
++      nodes: [
++        {
++          id: "a",
++          type: "diamond",
++          text: "Gateway with a long multilingual label — Équipe",
++        },
++        { id: "b", type: "ellipse", text: "Diagram editor" },
++        { id: "c", text: "Persistence" },
++      ],
++      edges: [
++        { from: "a", to: "b", label: "Apply" },
++        { from: "b", to: "c", label: "Save" },
++      ],
++      containers: [{ id: "slide", child_ids: ["a", "b", "c"] }],
++    });
++    expect(result.changed).toBe(true);
++    const elements = fixture.current();
++    expect(
++      elements
++        .filter((e) => e.id !== "slide")
++        .every((e) => e.frameId === "slide"),
++    ).toBe(true);
++    expect(
++      analyzeScene({ elements, files: {} }).filter((e) =>
++        ["overlap", "label_overlap", "clipped_label"].includes(e.code),
++      ),
++    ).toEqual([]);
++  });
++
++  it.each([
++    ["technical_clean", "RIGHT"],
++    ["sketch", "DOWN"],
++    ["presentation", "RIGHT"],
++  ])(
++    "reserves edge labels and wraps cyclic %s diagrams in %s direction",
++    async (preset, direction) => {
++      const fixture = setup();
++      await fixture.engine.command({
++        action: "create_diagram",
++        document_id: "test-document",
++        expected_revision: (await fixture.read()).revision,
++        request_id: "cycle-labels",
++        preset,
++        direction,
++        nodes: [
++          { id: "request", text: "Request\nÉquipe / Client" },
++          { id: "gateway", text: "Gateway / Validation", type: "diamond" },
++          { id: "service", text: "Diagram service\nLong multilingual label" },
++          { id: "editor", text: "Embedded Excalidraw editor" },
++          { id: "store", text: "Document store" },
++          { id: "preview", text: "Preview and refine" },
++        ],
++        edges: [
++          { from: "request", to: "gateway", label: "Connect" },
++          { from: "gateway", to: "service", label: "Authorized" },
++          { from: "service", to: "editor", label: "Apply atomic edit" },
++          { from: "editor", to: "store", label: "Save" },
++          { from: "editor", to: "preview", label: "Render" },
++          { from: "preview", to: "service", label: "Refine" },
++        ],
++        containers:
++          preset === "presentation"
++            ? [
++                {
++                  id: "slide",
++                  child_ids: [
++                    "request",
++                    "gateway",
++                    "service",
++                    "editor",
++                    "store",
++                    "preview",
++                  ],
++                },
++              ]
++            : [],
++      });
++      const snapshot = await fixture.read();
++      expect(
++        analyzeScene({ elements: fixture.current(), files: {} }).filter(
++          (finding) =>
++            ["overlap", "label_overlap", "clipped_label"].includes(
++              finding.code,
++            ),
++        ),
++      ).toEqual([]);
++      expect(snapshot.bounds.width / snapshot.bounds.height).toBeLessThan(2.8);
++      expect(
++        fixture
++          .current()
++          .filter((e) => e.type === "arrow")
++          .every((e) => e.startBinding && e.endBinding),
++      ).toBe(true);
++    },
++    20000,
++  );
++
++  it("paginates and mutates a 1000-element scene within a bounded time", async () => {
++    const fixture = setup(
++      Array.from({ length: 1000 }, (_, i) =>
++        shape(`shape-${i}`, (i % 40) * 150, Math.floor(i / 40) * 100),
++      ),
++    );
++    const start = performance.now();
++    const page = await fixture.engine.command({
++      action: "inspect",
++      document_id: "test-document",
++      offset: 990,
++      limit: 20,
++    });
++    expect(page.total).toBe(1000);
++    expect(page.elements).toHaveLength(10);
++    await fixture.edit([
++      { type: "move", ids: fixture.current().map((e) => e.id), dx: 30 },
++    ]);
++    expect(performance.now() - start).toBeLessThan(5000);
++    expect(fixture.commits).toHaveLength(1);
++  });
++});
++
++describe("diagram quality inspection", () => {
++  it("ignores bound labels, marked containment and intended grouped overlaps", () => {
++    const a = shape("a"),
++      b = {
++        ...shape("b", 10, 10),
++        width: 10,
++        height: 10,
++        customData: { intentionalOverlap: true },
++      };
++    const c = { ...shape("c", 50, 10), groupIds: ["group"] },
++      d = { ...shape("d", 80, 10), groupIds: ["group"] };
++    expect(analyzeScene({ elements: [a, b], files: {} })).toEqual([]);
++    expect(analyzeScene({ elements: [c, d], files: {} })).toEqual([]);
++    const label = createElements(
++      [{ type: "text", id: "text", x: 20, y: 20, text: "Label" }],
++      { regenerateIds: false },
++    )[0];
++    label.containerId = a.id;
++    expect(analyzeScene({ elements: [a, label], files: {} })).toEqual([]);
++  });
++  it("reports independent frame collisions while preserving nested frames and a normal frame fixture", () => {
++    const frame = (id, x, y, width, height, extra = {}) =>
++      createElements([{ id, type: "frame", x, y, width, height, ...extra }], {
++        regenerateIds: false,
++      })[0];
++    const a = frame("a", 0, 0, 400, 300),
++      b = frame("b", 300, 100, 400, 300);
++    expect(analyzeScene({ elements: [a, b], files: {} })).toEqual([
++      expect.objectContaining({
++        code: "frame_overlap",
++        element_ids: ["a", "b"],
++      }),
++    ]);
++    expect(
++      analyzeScene({
++        elements: [a, { ...b, customData: { intentionalOverlap: true } }],
++        files: {},
++      }),
++    ).toEqual([]);
++    expect(
++      analyzeScene({
++        elements: [a, frame("inside", 20, 20, 100, 100)],
++        files: {},
++      }),
++    ).toEqual([]);
++    const parent = frame("parent", 0, 0, 1000, 1000),
++      child = frame("child", 0, 0, 200, 200, { frameId: "parent" });
++    // A nested frame may extend beyond its ancestor; ancestry remains intentional.
++    const grandchild = frame("grandchild", 900, 900, 200, 200, {
++      frameId: "child",
++    });
++    expect(
++      analyzeScene({ elements: [parent, child, grandchild], files: {} }),
++    ).toEqual([]);
++    const node = { ...shape("node", 40, 40), frameId: "a" };
++    expect(analyzeScene({ elements: [a, node], files: {} })).toEqual([]);
++    expect(
++      analyzeScene({
++        elements: [a, frame("separate", 450, 0, 400, 300)],
++        files: {},
++      }),
++    ).toEqual([]);
++  });
++
++  it("reports connector labels covering nodes inside a frame but permits their own bound text and intentional groups", () => {
++    const elements = createElements(
++      [
++        {
++          id: "a",
++          type: "rectangle",
++          x: 0,
++          y: 0,
++          width: 100,
++          height: 60,
++          label: { text: "Node A" },
++        },
++        { id: "b", type: "rectangle", x: 300, y: 0, width: 100, height: 60 },
++        {
++          id: "edge",
++          type: "arrow",
++          x: 110,
++          y: 30,
++          width: 180,
++          height: 0,
++          points: [
++            [0, 0],
++            [180, 0],
++          ],
++          start: { id: "a" },
++          end: { id: "b" },
++          label: { text: "Traffic" },
++        },
++      ],
++      { regenerateIds: false },
++    );
++    const arrowLabel = elements.find((e) => e.containerId === "edge");
++    arrowLabel.x = 20;
++    arrowLabel.y = 20;
++    elements.forEach((e) => (e.frameId = "slide"));
++    const findings = analyzeScene({ elements, files: {} });
++    expect(
++      findings.some(
++        (e) => e.code === "label_overlap" && e.element_ids.includes("a"),
++      ),
++    ).toBe(true);
++    elements.forEach((e) => (e.groupIds = ["intentional-component"]));
++    expect(
++      analyzeScene({ elements, files: {} }).filter(
++        (e) => e.code === "label_overlap",
++      ),
++    ).toEqual([]);
++    arrowLabel.customData = { intentionalOverlap: true };
++    elements.forEach((e) => (e.groupIds = []));
++    expect(
++      analyzeScene({ elements, files: {} }).filter(
++        (e) => e.code === "label_overlap",
++      ),
++    ).toEqual([]);
++  });
++
++  it("reports overlapping shapes and clipped long labels with element IDs", () => {
++    const a = shape("a"),
++      b = shape("b", 50, 20);
++    const text = createElements(
++      [
++        {
++          type: "text",
++          id: "text",
++          x: 500,
++          y: 0,
++          text: "A long multilingual label — français",
++          width: 100,
++        },
++      ],
++      { regenerateIds: false },
++    )[0];
++    text.height = 1;
++    const findings = analyzeScene({ elements: [a, b, text], files: {} });
++    expect(
++      findings.some((e) => e.code === "overlap" && e.element_ids.includes("a")),
++    ).toBe(true);
++    expect(
++      findings.some(
++        (e) => e.code === "clipped_label" && e.element_ids.includes("text"),
++      ),
++    ).toBe(true);
++  });
 +});
 diff --git a/excalidraw-app/excalidrawZ/stateChange.js b/excalidraw-app/excalidrawZ/stateChange.js
 new file mode 100644

@@ -35,6 +35,7 @@ manifest = {
     'configuration': 'Release', 'architecture': 'arm64',
     'signing': 'local build; not notarized',
     'bundled_editor_assets_sha256': assets,
+    'diagram_plugin_sha256': sha(app / 'Contents/Resources/ExcalidrawDiagramPlugin.zip'),
 }
 output = json.dumps(manifest, indent=2) + '\n'
 (root / 'build').mkdir(exist_ok=True)

@@ -1,12 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 source "$(dirname "$0")/toolchain.sh"
+python3 "$ROOT/script/test_diagram_plugin.py"
 python3 "$ROOT/script/test_verify_patch.py"
 EDITOR_CACHE_ROOT="${EDITOR_CACHE_ROOT:-${TMPDIR:-/private/tmp}/excalidraw-editor-source}"
 EDITOR_CACHE_ROOT="$EDITOR_CACHE_ROOT" "$ROOT/script/prepare_editor_cache.sh"
 cd "$EDITOR_CACHE_ROOT"
 "$NODE" "$YARN_JS" test:typecheck
-"$NODE" node_modules/vitest/vitest.mjs run excalidraw-app/excalidrawZ --reporter=dot
+"$NODE" node_modules/vitest/vitest.mjs run excalidraw-app/excalidrawZ packages/excalidraw/tests/excalidrawZFileLoad.test.tsx --reporter=dot
 cd "$ROOT"
 DERIVED="${DERIVED:-${TMPDIR:-/private/tmp}/excalidraw-test-derived-data}"
 PACKAGES="${PACKAGES:-${TMPDIR:-/private/tmp}/excalidraw-test-source-packages}"
@@ -41,5 +42,13 @@ xcodebuild -project "$SOURCE_ROOT/ExcalidrawZ.xcodeproj" -scheme ExcalidrawZ -co
   -only-testing:ExcalidrawZTests/LocalFolderContentsLoaderTests \
   -only-testing:ExcalidrawZTests/ActiveFileSnapshotFlushGateTests \
   -only-testing:ExcalidrawZTests/EmbeddedEditorCompatibilityTests \
+  -only-testing:ExcalidrawZTests/MCPEmbeddedDiagramTests \
   -only-testing:ExcalidrawZTests/DocumentOpeningTests \
+  -only-testing:ExcalidrawZTests/MCPTransportTests \
+  -only-testing:ExcalidrawZTests/MCPKeychainCredentialTests \
+  -only-testing:ExcalidrawZTests/MCPDocumentCommandTests \
+  -only-testing:ExcalidrawZTests/MCPDiagramCommandTests \
+  -only-testing:ExcalidrawZTests/MCPRealClientAcceptanceTests/testNativeCommandServiceTransactionAndPersistence \
+  -only-testing:ExcalidrawZTests/MCPLibraryAssetStoreTests \
+  -only-testing:ExcalidrawZTests/FullDiagramToolTests \
   -only-testing:ExcalidrawZTests/FileCoverPreviewPreparationTests test

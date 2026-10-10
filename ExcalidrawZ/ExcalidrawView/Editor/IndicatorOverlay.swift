@@ -70,6 +70,13 @@ struct IndicatorOverlay: View {
     }
 
     var body: some View {
+        HStack(spacing: 8) {
+            MCPActivityIndicator()
+            syncIndicator
+        }
+    }
+
+    private var syncIndicator: some View {
         Button {} label: {
             contentView(event: currentEvent)
                 .modifier(

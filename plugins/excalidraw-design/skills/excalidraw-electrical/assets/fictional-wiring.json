@@ -1,0 +1,316 @@
+{
+  "title": "Fictional electrical documentation sampler",
+  "status": "Concept only; disconnected examples, not an installation design",
+  "devices": [
+    {
+      "id": "BAT-01",
+      "kind": "battery",
+      "model": "Concept battery (fictional)",
+      "evidence": "Fictional documentation sampler; not a manufacturer pinout",
+      "terminals": {
+        "+": {
+          "kind": "dc_positive",
+          "domain": "DC48",
+          "x": 185,
+          "y": 0
+        },
+        "-": {
+          "kind": "dc_negative",
+          "domain": "DC48",
+          "x": 45,
+          "y": 0
+        }
+      }
+    },
+    {
+      "id": "FUSE-01",
+      "kind": "fuse",
+      "model": "Concept fuse / rating TBD (unverified)",
+      "evidence": "Fictional documentation sampler; not a manufacturer pinout",
+      "terminals": {
+        "IN": {
+          "kind": "dc_positive",
+          "domain": "DC48",
+          "x": 120,
+          "y": 0
+        },
+        "OUT": {
+          "kind": "dc_positive",
+          "domain": "DC48",
+          "x": 120,
+          "y": 160
+        }
+      }
+    },
+    {
+      "id": "BUS-01",
+      "kind": "busbar",
+      "model": "Concept return bus",
+      "evidence": "Fictional documentation sampler; not a manufacturer pinout",
+      "terminals": {
+        "STUD1": {
+          "kind": "dc_negative",
+          "domain": "DC48",
+          "x": 50,
+          "y": 80
+        }
+      }
+    },
+    {
+      "id": "MPPT-01",
+      "kind": "mppt",
+      "model": "Concept solar controller",
+      "evidence": "Fictional documentation sampler; not a manufacturer pinout",
+      "terminals": {
+        "DATA": {
+          "kind": "communication",
+          "domain": "DATA",
+          "x": 185,
+          "y": 160,
+          "protocol": "VE.Direct",
+          "bus": "DIRECT1"
+        }
+      }
+    },
+    {
+      "id": "GX-01",
+      "kind": "gx",
+      "model": "Concept system controller",
+      "evidence": "Fictional documentation sampler; not a manufacturer pinout",
+      "terminals": {
+        "VE.Direct1": {
+          "kind": "communication",
+          "domain": "DATA",
+          "x": 50,
+          "y": 0,
+          "protocol": "VE.Direct",
+          "bus": "DIRECT1"
+        },
+        "COM": {
+          "kind": "dry_contact",
+          "domain": "START",
+          "x": 120,
+          "y": 160
+        },
+        "NO": {
+          "kind": "dry_contact",
+          "domain": "START",
+          "x": 190,
+          "y": 160
+        }
+      }
+    },
+    {
+      "id": "GEN-01",
+      "kind": "generator",
+      "model": "Concept generator / start interface",
+      "evidence": "Fictional documentation sampler; not a manufacturer pinout",
+      "terminals": {
+        "L": {
+          "kind": "ac_line",
+          "domain": "AC120",
+          "x": 40,
+          "y": 0
+        },
+        "N": {
+          "kind": "ac_neutral",
+          "domain": "AC120",
+          "x": 100,
+          "y": 0
+        },
+        "PE": {
+          "kind": "protective_earth",
+          "domain": "PE",
+          "x": 160,
+          "y": 0
+        },
+        "COM": {
+          "kind": "dry_contact",
+          "domain": "START",
+          "x": 0,
+          "y": 90
+        },
+        "RUN": {
+          "kind": "dry_contact",
+          "domain": "START",
+          "x": 0,
+          "y": 130
+        }
+      }
+    },
+    {
+      "id": "INV-01",
+      "kind": "inverter",
+      "model": "Concept inverter / charger",
+      "evidence": "Fictional documentation sampler; not a manufacturer pinout",
+      "terminals": {
+        "AC.IN.L": {
+          "kind": "ac_line",
+          "domain": "AC120",
+          "x": 40,
+          "y": 160
+        },
+        "AC.IN.N": {
+          "kind": "ac_neutral",
+          "domain": "AC120",
+          "x": 100,
+          "y": 160
+        },
+        "PE": {
+          "kind": "protective_earth",
+          "domain": "PE",
+          "x": 160,
+          "y": 160
+        }
+      }
+    }
+  ],
+  "wires": [
+    {
+      "id": "W001",
+      "kind": "dc_positive",
+      "domain": "DC48",
+      "source": {
+        "device": "BAT-01",
+        "terminal": "+"
+      },
+      "destination": {
+        "device": "FUSE-01",
+        "terminal": "IN"
+      },
+      "net": "BANK1+",
+      "gauge": "TBD (unverified)",
+      "cable": "CBL01",
+      "core": "dc_positive",
+      "evidence": "Fictional sampler; no installation values selected"
+    },
+    {
+      "id": "W002",
+      "kind": "dc_negative",
+      "domain": "DC48",
+      "source": {
+        "device": "BAT-01",
+        "terminal": "-"
+      },
+      "destination": {
+        "device": "BUS-01",
+        "terminal": "STUD1"
+      },
+      "net": "BANK1-",
+      "gauge": "TBD (unverified)",
+      "cable": "CBL02",
+      "core": "dc_negative",
+      "evidence": "Fictional sampler; no installation values selected"
+    },
+    {
+      "id": "W003",
+      "kind": "communication",
+      "domain": "DATA",
+      "source": {
+        "device": "MPPT-01",
+        "terminal": "DATA"
+      },
+      "destination": {
+        "device": "GX-01",
+        "terminal": "VE.Direct1"
+      },
+      "net": "DIRECT1",
+      "gauge": "TBD (unverified)",
+      "cable": "CBL03",
+      "core": "communication",
+      "evidence": "Fictional sampler; no installation values selected",
+      "protocol": "VE.Direct",
+      "bus": "DIRECT1"
+    },
+    {
+      "id": "W004",
+      "kind": "ac_line",
+      "domain": "AC120",
+      "source": {
+        "device": "GEN-01",
+        "terminal": "L"
+      },
+      "destination": {
+        "device": "INV-01",
+        "terminal": "AC.IN.L"
+      },
+      "net": "GEN-L",
+      "gauge": "TBD (unverified)",
+      "cable": "CBL04",
+      "core": "ac_line",
+      "evidence": "Fictional sampler; no installation values selected"
+    },
+    {
+      "id": "W005",
+      "kind": "ac_neutral",
+      "domain": "AC120",
+      "source": {
+        "device": "GEN-01",
+        "terminal": "N"
+      },
+      "destination": {
+        "device": "INV-01",
+        "terminal": "AC.IN.N"
+      },
+      "net": "GEN-N",
+      "gauge": "TBD (unverified)",
+      "cable": "CBL05",
+      "core": "ac_neutral",
+      "evidence": "Fictional sampler; no installation values selected"
+    },
+    {
+      "id": "W006",
+      "kind": "protective_earth",
+      "domain": "PE",
+      "source": {
+        "device": "GEN-01",
+        "terminal": "PE"
+      },
+      "destination": {
+        "device": "INV-01",
+        "terminal": "PE"
+      },
+      "net": "GEN-PE",
+      "gauge": "TBD (unverified)",
+      "cable": "CBL06",
+      "core": "protective_earth",
+      "evidence": "Fictional sampler; no installation values selected"
+    },
+    {
+      "id": "W007",
+      "kind": "dry_contact",
+      "domain": "START",
+      "source": {
+        "device": "GX-01",
+        "terminal": "COM"
+      },
+      "destination": {
+        "device": "GEN-01",
+        "terminal": "COM"
+      },
+      "net": "START-COM",
+      "gauge": "TBD (unverified)",
+      "cable": "CBL07",
+      "core": "dry_contact",
+      "evidence": "Fictional sampler; no installation values selected"
+    },
+    {
+      "id": "W008",
+      "kind": "dry_contact",
+      "domain": "START",
+      "source": {
+        "device": "GX-01",
+        "terminal": "NO"
+      },
+      "destination": {
+        "device": "GEN-01",
+        "terminal": "RUN"
+      },
+      "net": "START-RUN",
+      "gauge": "TBD (unverified)",
+      "cable": "CBL08",
+      "core": "dry_contact",
+      "evidence": "Fictional sampler; no installation values selected"
+    }
+  ]
+}

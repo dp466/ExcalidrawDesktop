@@ -7,8 +7,10 @@ import shutil
 import subprocess
 import tempfile
 
-ROOT = Path(__file__).resolve().parent.parent
-SOURCE = ROOT / "build/Release/ExcalidrawZ.app"
+RELEASE_OUTPUT_ROOT = Path(os.environ.get(
+    "RELEASE_OUTPUT_ROOT", str(Path.home() / "Library/Caches/ExcalidrawDesktop/release")
+))
+SOURCE = RELEASE_OUTPUT_ROOT / "Release/ExcalidrawZ.app"
 DESTINATION = Path(os.environ.get("EXCALIDRAW_INSTALL_DIR", "/Applications")) / "ExcalidrawDesktop.app"
 BUNDLE_ID = "local.dparadis.ExcalidrawDesktop"
 

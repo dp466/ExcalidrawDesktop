@@ -1,0 +1,6 @@
+interface:
+  display_name: "Excalidraw Design"
+  short_description: "Handwritten diagrams with editable equipment icons"
+  default_prompt: "Use $excalidraw-design to create an editable network drawing with Excalifont and hand-drawn equipment."
+policy:
+  allow_implicit_invocation: true

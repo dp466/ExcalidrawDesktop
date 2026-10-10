@@ -1,0 +1,87 @@
+/* Quiet Lavender — proposed portable family subset, 2026-09-20.
+   Shell colors/geometry are observed; text-on-selection, web text mapping,
+   explicit focus and reduced-motion behavior are recommended normalization. */
+:root {
+  color-scheme: light;
+  --ql-surface: #ffffff;
+  --ql-workspace: #f6f6f9;
+  --ql-text: #1b1b1f;
+  --ql-text-secondary: #5c5c5c;
+  --ql-accent: #6965db;
+  --ql-selection: #e3e2fe;
+  --ql-on-selection: #030064;
+  --ql-hover: #efedff;
+  --ql-border: #ebebeb;
+  --ql-outline: #767680;
+  --ql-danger: #700000;
+  --ql-danger-surface: #fff0f0;
+  --ql-radius-control: 6px;
+  --ql-radius-panel: 8px;
+  --ql-radius-dialog: 12px;
+  --ql-control-height: 32px;
+  --ql-font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --ql-menu-shadow: 0 5px 12px rgb(0 0 0 / 12%);
+  --ql-motion-fast: 160ms;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --ql-surface: #232329;
+  --ql-workspace: #121212;
+  --ql-text: #e3e3e8;
+  --ql-text-secondary: #b8b8b8;
+  --ql-accent: #a8a5ff;
+  --ql-selection: #4f4d6f;
+  --ql-on-selection: #e0dfff;
+  --ql-hover: #37334f;
+  --ql-border: #36363f;
+  --ql-outline: #8e8d9c;
+  --ql-danger: #fbcbcc;
+  --ql-danger-surface: #672120;
+}
+.ql-button {
+  box-sizing: border-box; display: inline-flex; align-items: center;
+  justify-content: center; gap: 8px; min-height: var(--ql-control-height);
+  padding: 0 10px; border: 1px solid var(--ql-border);
+  border-radius: var(--ql-radius-control); background: transparent;
+  color: var(--ql-text); font: 500 13px/1.2 var(--ql-font); cursor: pointer;
+  transition: background-color var(--ql-motion-fast), color var(--ql-motion-fast);
+}
+.ql-button:hover:not(:disabled) { background: var(--ql-hover); color: var(--ql-accent); }
+.ql-button:active:not(:disabled) { opacity: .7; }
+.ql-button:disabled { opacity: .4; cursor: default; }
+.ql-button--primary, .ql-button--primary:hover:not(:disabled) {
+  background: var(--ql-selection); color: var(--ql-on-selection);
+}
+.ql-button--small { min-height: 24px; }
+.ql-button--large { min-height: 36px; }
+.ql-button--xl { min-height: 40px; }
+.ql-button--icon { width: var(--ql-control-height); padding: 0; }
+.ql-button--destructive { color: var(--ql-danger); background: var(--ql-danger-surface); }
+.ql-button:focus-visible, .ql-row:focus-visible, .ql-field:focus-visible {
+  outline: 2px solid var(--ql-accent); outline-offset: 2px;
+}
+.ql-row {
+  box-sizing: border-box; display: flex; gap: 10px; align-items: center;
+  width: 100%; min-height: 32px; padding: 6px 8px; margin: 1px 0;
+  border: 0; border-radius: 6px; background: transparent;
+  text-align: left; color: var(--ql-text); font: 400 13px/18px var(--ql-font);
+  cursor: pointer; transition: background-color 160ms ease-in-out;
+}
+.ql-row:hover { background: var(--ql-hover); color: var(--ql-accent); }
+.ql-row[aria-pressed='true'], .ql-row[aria-current='page'] {
+  background: var(--ql-selection); color: var(--ql-on-selection);
+}
+.ql-row:active { opacity: .82; }
+.ql-panel { background: var(--ql-surface); border: 1px solid var(--ql-border); border-radius: 8px; padding: 16px; }
+.ql-field {
+  box-sizing: border-box; min-height: 32px; width: 100%; padding: 6px 10px;
+  border: 1px solid var(--ql-outline); border-radius: 6px;
+  background: var(--ql-surface); color: var(--ql-text); font: 400 14px/20px var(--ql-font);
+}
+.ql-field::placeholder { color: var(--ql-text-secondary); }
+.ql-field:hover { border-color: var(--ql-accent); }
+.ql-label { display: block; margin-bottom: 8px; font: 500 13px/18px var(--ql-font); }
+.ql-hint { font: 400 12px/1.5 var(--ql-font); color: var(--ql-text-secondary); }
+@media (prefers-reduced-motion: reduce) {
+  .ql-button, .ql-row, .ql-field { transition: none; }
+}

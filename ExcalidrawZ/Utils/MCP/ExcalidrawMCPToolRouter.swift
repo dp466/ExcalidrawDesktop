@@ -13,7 +13,7 @@ actor ExcalidrawMCPToolRouter {
     private var serviceMode: ExcalidrawMCPServiceMode
 
     init(
-        serviceMode: ExcalidrawMCPServiceMode = .basic,
+        serviceMode: ExcalidrawMCPServiceMode = .full,
         store: ExcalidrawMCPDiagramSessionStore = ExcalidrawMCPDiagramSessionStore()
     ) {
         self.serviceMode = serviceMode
@@ -36,17 +36,27 @@ actor ExcalidrawMCPToolRouter {
         elementConverter = converter
     }
 
-    func handle(_ request: MCPJSONRPCRequest) async -> MCPJSONRPCResponse? {
-        guard request.jsonrpc == nil || request.jsonrpc == "2.0" else {
-            return .failure(
-                id: request.id,
-                error: .invalidRequest("Only JSON-RPC 2.0 requests are supported.")
-            )
-        }
-
+    func handle(
+        _ request: MCPJSONRPCRequest,
+        context: MCPRequestContext = .init(clientID: "in-process", protocolVersion: "2025-11-25")
+    ) async -> MCPJSONRPCResponse? {
         do {
-            let result = try await result(for: request)
+            try request.validate()
+            try Task.checkCancellation()
+            var result = try await result(for: request, context: context)
             guard request.expectsResponse else { return nil }
+            if context.isModern, var object = result.objectValue {
+                object["resultType"] = .string("complete")
+                // Cacheable modern discovery/list results require these fields.
+                // Use the same conservative envelope for tool results: app mode,
+                // access and document state can change between requests.
+                object["ttlMs"] = .number(0)
+                object["cacheScope"] = .string("private")
+                var meta = object["_meta"]?.objectValue ?? [:]
+                meta["io.modelcontextprotocol/serverInfo"] = Self.serverInfo
+                object["_meta"] = .object(meta)
+                result = .object(object)
+            }
             return .success(id: request.id, result: result)
         } catch let error as MCPJSONRPCError {
             guard request.expectsResponse else { return nil }
@@ -57,12 +67,23 @@ actor ExcalidrawMCPToolRouter {
         }
     }
 
-    private func result(for request: MCPJSONRPCRequest) async throws -> MCPJSONValue {
+    private func result(for request: MCPJSONRPCRequest, context: MCPRequestContext) async throws -> MCPJSONValue {
         switch request.method {
             case "initialize":
-                return await initializeResult()
+                guard !context.isModern else { throw MCPJSONRPCError.methodNotFound(request.method) }
+                return await initializeResult(protocolVersion: context.protocolVersion)
             case "notifications/initialized":
+                guard !context.isModern, !request.expectsResponse else {
+                    throw MCPJSONRPCError.invalidRequest("initialized must be a legacy notification.")
+                }
                 return .object([:])
+            case "server/discover":
+                guard context.isModern else { throw MCPJSONRPCError.methodNotFound(request.method) }
+                return .object([
+                    "supportedVersions": .array(MCPTransportPolicy.supportedVersions.map(MCPJSONValue.string)),
+                    "capabilities": .object(["tools": .object([:])]),
+                    "instructions": .string(await instructionsForCurrentMode())
+                ])
             case "ping":
                 return .object([:])
             case "tools/list":
@@ -71,50 +92,80 @@ actor ExcalidrawMCPToolRouter {
                     "tools": .array(tools.map(\.jsonValue))
                 ])
             case "tools/call":
-                return try await callTool(params: request.params)
+                return try await callTool(params: request.params, clientID: context.clientID)
             default:
                 throw MCPJSONRPCError.methodNotFound(request.method)
         }
     }
 
-    private func initializeResult() async -> MCPJSONValue {
+    private static var serverInfo: MCPJSONValue {
+        .object([
+            "name": .string("ExcalidrawDesktop"),
+            "version": .string(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0")
+        ])
+    }
+
+    private func initializeResult(protocolVersion: String) async -> MCPJSONValue {
         let instructions = await instructionsForCurrentMode()
 
         return .object([
-            "protocolVersion": .string(ExcalidrawMCPUpstreamContract.protocolVersion),
+            "protocolVersion": .string(protocolVersion),
             "capabilities": .object([
                 "tools": .object([:])
             ]),
-            "serverInfo": .object([
-                "name": .string("ExcalidrawZ"),
-                "version": .string(Bundle.main.object(
-                    forInfoDictionaryKey: "CFBundleShortVersionString"
-                ) as? String ?? "0")
-            ]),
+            "serverInfo": Self.serverInfo,
             "instructions": .string(instructions)
         ])
     }
 
-    private func callTool(params: MCPJSONValue?) async throws -> MCPJSONValue {
+    private func callTool(params: MCPJSONValue?, clientID: String) async throws -> MCPJSONValue {
         guard let object = params?.objectValue,
               let name = object["name"]?.stringValue
         else {
             throw MCPJSONRPCError.invalidParams("tools/call requires params.name.")
         }
 
+        if let arguments = object["arguments"], arguments.objectValue == nil {
+            throw MCPJSONRPCError.invalidParams("tools/call arguments must be an object.")
+        }
         let arguments = object["arguments"]?.objectValue ?? [:]
+        let mode = await effectiveServiceMode()
+        var tools = await toolsForCurrentMode()
+        if mode == .full {
+            tools += ExcalidrawMCPOptimizedToolCatalog.tools + ExcalidrawMCPUpstreamToolCatalog.tools
+        }
+        guard let tool = tools.first(where: { $0.name == name }) else {
+            throw MCPJSONRPCError.invalidParams("Unknown tool: \(name)")
+        }
+        try MCPJSONSchemaValidator.validate(.object(arguments), schema: tool.inputSchema)
         let result: ExcalidrawMCPToolResult
-        switch await effectiveServiceMode() {
+        switch mode {
             case .basic:
-                result = try await makeUpstreamToolHandler().callTool(
-                    name: name,
-                    arguments: arguments
-                )
+                let handler = makeUpstreamToolHandler()
+                result = try await ExcalidrawMCPDiagramCommandService.shared.performExclusive {
+                    try await handler.callTool(name: name, arguments: arguments)
+                }
             case .optimized:
-                result = try await makeOptimizedToolHandler().callTool(
-                    name: name,
-                    arguments: arguments
-                )
+                let handler = makeOptimizedToolHandler()
+                result = try await ExcalidrawMCPDiagramCommandService.shared.performExclusive {
+                    try await handler.callTool(name: name, arguments: arguments)
+                }
+            case .full:
+                if ExcalidrawMCPFullToolCatalog.tools.contains(where: { $0.name == name }) {
+                    result = try await ExcalidrawMCPDiagramCommandService.shared.callTool(
+                        name: name, arguments: arguments, clientID: clientID
+                    )
+                } else if ExcalidrawMCPOptimizedToolCatalog.tools.contains(where: { $0.name == name }) {
+                    let handler = makeOptimizedToolHandler()
+                    result = try await ExcalidrawMCPDiagramCommandService.shared.performExclusive {
+                        try await handler.callTool(name: name, arguments: arguments)
+                    }
+                } else {
+                    let handler = makeUpstreamToolHandler()
+                    result = try await ExcalidrawMCPDiagramCommandService.shared.performExclusive {
+                        try await handler.callTool(name: name, arguments: arguments)
+                    }
+                }
         }
         return result.jsonValue
     }
@@ -125,6 +176,8 @@ actor ExcalidrawMCPToolRouter {
                 return ExcalidrawMCPUpstreamToolCatalog.tools
             case .optimized:
                 return ExcalidrawMCPOptimizedToolCatalog.tools
+            case .full:
+                return ExcalidrawMCPFullToolCatalog.tools
         }
     }
 
@@ -134,6 +187,8 @@ actor ExcalidrawMCPToolRouter {
                 return "Use read_me first, then create_view with Excalidraw elements JSON."
             case .optimized:
                 return ExcalidrawMCPOptimizedContract.instructions
+            case .full:
+                return ExcalidrawMCPFullToolCatalog.instructions
         }
     }
 

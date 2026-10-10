@@ -117,6 +117,7 @@ enum AnyCodable: Codable, Hashable, Sendable {
     case int(Int)
     case double(Double)
     case strings([String])
+    case array([AnyCodable])
     case dictinoary([String : AnyCodable])
     case dicArray([String : [AnyCodable]])
     case null
@@ -125,6 +126,10 @@ enum AnyCodable: Codable, Hashable, Sendable {
         let container = try decoder.singleValueContainer()
         if let v = try? container.decode([String].self) {
             self = .strings(v)
+            return
+        }
+        if let v = try? container.decode([AnyCodable].self) {
+            self = .array(v)
             return
         }
         if let v = try? container.decode(String.self) {
@@ -165,6 +170,8 @@ enum AnyCodable: Codable, Hashable, Sendable {
             case .string(let value):
                 try container.encode(value)
             case .strings(let value):
+                try container.encode(value)
+            case .array(let value):
                 try container.encode(value)
             case .int(let value):
                 try container.encode(value)

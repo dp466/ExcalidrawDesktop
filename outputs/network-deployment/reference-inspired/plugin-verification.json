@@ -1,0 +1,45 @@
+{
+  "plugin_version": "0.3.0",
+  "manifest_schema": "Agent Plugins 1.0: PASS",
+  "package_tests": {
+    "passed": 29,
+    "failed": 0
+  },
+  "native_tests": {
+    "passed": 6,
+    "failed": 0,
+    "regression": "Nested JSON arrays in operational metadata survive persistence and reopen"
+  },
+  "relocated_compiler": "PASS in both package formats",
+  "codex": {
+    "installed": true,
+    "enabled": true,
+    "version": "0.3.0",
+    "installed_cache_matches_source": true
+  },
+  "installed_app": {
+    "binary_matches_tested_build": true,
+    "embedded_plugin_matches_marketplace_package": true,
+    "bundled_editor_assets": 469
+  },
+  "packages": [
+    {
+      "version": "0.3.0",
+      "format": "plugin",
+      "files": 21,
+      "bytes": 61927,
+      "sha256": "98c8f77b353e03267890e3b7f78796651ef309d8b0f96fa9ba185ed41651e470",
+      "file": "ExcalidrawDesign-0.3.0-plugin.zip"
+    },
+    {
+      "version": "0.3.0",
+      "format": "marketplace",
+      "files": 24,
+      "bytes": 66846,
+      "sha256": "3a3dc08b21d7c64237908f5060780adc639c0b301744ce53a609e047fc9e38f9",
+      "file": "ExcalidrawDiagramPlugin-0.3.0.zip"
+    }
+  ],
+  "real_claude_acceptance": "Not rerun; Claude remains signed out",
+  "account_share_link": null
+}

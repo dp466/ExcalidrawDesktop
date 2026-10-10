@@ -15,10 +15,8 @@ final class EmbeddedEditorCompatibilityTests: XCTestCase {
         window.isReleasedWhenClosed = false
         window.title = "Excalidraw compatibility fixture"
         window.contentView = webView
-        // Scene completion waits for a rendered frame. An occluded/background
-        // WebKit fixture may throttle requestAnimationFrame indefinitely.
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        // Keep the rendered fixture behind the user's foreground app.
+        window.orderBack(nil)
         testWindows.append(window)
     }
 

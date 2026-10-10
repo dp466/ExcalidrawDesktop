@@ -5,6 +5,40 @@ import CoreData
 
 @MainActor
 final class AutosavePersistenceTests: XCTestCase {
+    func testOperationalMetadataSurvivesCanvasPersistenceAndReopen() throws {
+        let existing = try XCTUnwrap(ExcalidrawFile().content)
+        let metadata: [String: Any] = ["network_device": [
+            "interfaces": [["name": "internal1.40", "vlan": ["tagged": [40, 50, 60]]]],
+            "extension": [true, NSNull(), 12.5, ["future": [1, "two"]]]
+        ]]
+        let element: [String: Any] = [
+            "id": "operational-device", "type": "rectangle", "x": 10, "y": 20,
+            "width": 100, "height": 50, "angle": 0, "strokeColor": "#1b1b1f",
+            "backgroundColor": "transparent", "fillStyle": "solid", "strokeWidth": 1,
+            "strokeStyle": "solid", "roughness": 1, "opacity": 100, "groupIds": [],
+            "frameId": NSNull(), "roundness": NSNull(), "seed": 1, "version": 1,
+            "versionNonce": 2, "isDeleted": false, "boundElements": NSNull(),
+            "updated": 1, "link": NSNull(), "locked": false, "customData": metadata
+        ]
+        let payload = try JSONSerialization.data(withJSONObject: [
+            "elements": [element], "files": [String: Any](), "appState": [String: Any]()
+        ])
+        let prepared = try ExcalidrawFile.prepareCanvasDataUpdate(
+            existingContent: existing,
+            data: .init(documentData: payload, elements: nil, files: [:])
+        )
+        let reopened = try ExcalidrawFile(data: prepared.content)
+        XCTAssertEqual(reopened.elements.count, 1)
+        let encoded = try JSONEncoder().encode(XCTUnwrap(reopened.elements.first))
+        let actual = try XCTUnwrap(
+            (try JSONSerialization.jsonObject(with: encoded) as? [String: Any])?["customData"]
+        )
+        XCTAssertEqual(
+            actual as? NSDictionary,
+            metadata as NSDictionary
+        )
+    }
+
     func testHostedTestsUseOnlyInMemoryStores() {
         XCTAssertTrue(AppRuntime.isRunningTests)
         let stores = PersistenceController.shared.container.persistentStoreCoordinator.persistentStores

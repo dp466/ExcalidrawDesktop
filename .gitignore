@@ -108,6 +108,10 @@ ExcalidrawZ/SidebarTrailing/AIChat/**/*.json
 ExcalidrawZ/SidebarTrailing/AIChat/Prompts/
 ExcalidrawZ/Utils/MCP/Optimized/Resources/
 scripts/
+!plugins/**/scripts/
+!plugins/**/scripts/*.py
+__pycache__/
+*.pyc
 Resources/scripts/
 Resources/scripts/**
 /ASO

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Excalidraw Electrical"
+  short_description: "Detailed illustrated electrical wiring diagrams"
+  brand_color: "#1971C2"
+  default_prompt: "Use $excalidraw-electrical to create a detailed illustrated Victron wiring diagram with Excalifont, visible terminals and traceable conductors."
+policy:
+  allow_implicit_invocation: true

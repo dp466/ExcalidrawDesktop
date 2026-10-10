@@ -169,6 +169,7 @@ struct ExcalidrawZApp: App {
             ExportTool(),
             InsertMathTool(),
             AdjustElementsTool(),
+            FullDiagramTool(),
             NavigateCanvasTool(),
             SetCanvasPreferencesTool(),
             RenameFileTool(),

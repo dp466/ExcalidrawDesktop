@@ -8,7 +8,8 @@
 import Foundation
 import Combine
 
-enum ExcalidrawMCPServiceMode: String, CaseIterable, Identifiable {
+enum ExcalidrawMCPServiceMode: String, CaseIterable, Identifiable, Sendable {
+    case full
     case basic
     case optimized
 
@@ -40,6 +41,12 @@ final class ExcalidrawZMCPServerController: ObservableObject {
     @Published private(set) var state: State = .off
     @Published private(set) var isEnabled: Bool
     @Published private(set) var serviceMode: ExcalidrawMCPServiceMode
+    @Published private(set) var clients: [ExcalidrawMCPClientSummary] = []
+    @Published private(set) var credentialError: String?
+    @Published private(set) var activeRequests: Int = 0
+    @Published private(set) var activeTool: String?
+
+    private let credentials = ExcalidrawMCPCredentialStore()
 
     let port: UInt16
 
@@ -51,7 +58,7 @@ final class ExcalidrawZMCPServerController: ObservableObject {
         self.port = port
         guard Self.isAvailable else {
             self.isEnabled = false
-            self.serviceMode = .basic
+            self.serviceMode = .full
             return
         }
 
@@ -63,6 +70,8 @@ final class ExcalidrawZMCPServerController: ObservableObject {
         if authorizedServiceMode != loadedServiceMode {
             Self.saveServiceMode(authorizedServiceMode)
         }
+
+        refreshClients()
 
         if isEnabled {
             startServerIfNeeded()
@@ -89,7 +98,7 @@ final class ExcalidrawZMCPServerController: ObservableObject {
 
     func setServiceMode(_ mode: ExcalidrawMCPServiceMode) {
         guard Self.isAvailable else {
-            serviceMode = .basic
+            serviceMode = .full
             return
         }
 
@@ -119,7 +128,12 @@ final class ExcalidrawZMCPServerController: ObservableObject {
         guard serverTask == nil else { return }
 
         let router = ExcalidrawMCPToolRouter(serviceMode: serviceMode)
-        let server = ExcalidrawZMCPServer(port: port, router: router)
+        let server = ExcalidrawZMCPServer(port: port, router: router, credentials: credentials) { [weak self] count, tool in
+            await MainActor.run {
+                self?.activeRequests = count
+                self?.activeTool = tool
+            }
+        }
         self.server = server
         self.router = router
         state = .starting
@@ -137,11 +151,17 @@ final class ExcalidrawZMCPServerController: ObservableObject {
                     try await ExcalidrawMCPAppBridge.shared.apply(session)
                 }
 
-                await MainActor.run {
-                    self?.state = .running
+                try await withThrowingTaskGroup(of: Void.self) { group in
+                    group.addTask { try await server.start() }
+                    group.addTask { [weak self] in
+                        try await server.waitUntilListening()
+                        await MainActor.run {
+                            guard let self, self.isEnabled, self.state == .starting else { return }
+                            self.state = .running
+                        }
+                    }
+                    while try await group.next() != nil {}
                 }
-
-                try await server.start()
 
                 await MainActor.run {
                     guard let self else { return }
@@ -170,6 +190,7 @@ final class ExcalidrawZMCPServerController: ObservableObject {
         }
 
         state = .stopping
+        serverTask?.cancel()
         Task { [server] in
             await server.stop()
         }
@@ -181,6 +202,8 @@ final class ExcalidrawZMCPServerController: ObservableObject {
         serverTask = nil
         server = nil
         router = nil
+        activeRequests = 0
+        activeTool = nil
 
         if shouldRestart {
             startServerIfNeeded()
@@ -196,13 +219,45 @@ final class ExcalidrawZMCPServerController: ObservableObject {
     private static func loadServiceMode() -> ExcalidrawMCPServiceMode {
         guard let rawValue = UserDefaults.standard.string(forKey: serviceModeDefaultsKey),
               let mode = ExcalidrawMCPServiceMode(rawValue: rawValue) else {
-            return .basic
+            return .full
         }
         return mode
     }
 
     private static func saveServiceMode(_ mode: ExcalidrawMCPServiceMode) {
         UserDefaults.standard.set(mode.rawValue, forKey: serviceModeDefaultsKey)
+    }
+
+    func refreshClients() {
+        do { clients = try credentials.listClients(); credentialError = nil }
+        catch { credentialError = error.localizedDescription }
+    }
+
+    func createClient(_ kind: ExcalidrawMCPClientKind) {
+        do { try credentials.createClient(kind: kind); refreshClients() }
+        catch { credentialError = error.localizedDescription }
+    }
+
+    func revokeClient(_ client: ExcalidrawMCPClientSummary) {
+        do {
+            try credentials.revoke(id: client.id)
+            refreshClients()
+            let server = server
+            Task { await server?.revokeClient(client.id.uuidString) }
+        } catch { credentialError = error.localizedDescription }
+    }
+
+    /// Secrets are retrieved only for an explicit copy action and never published.
+    func privateConfiguration(for client: ExcalidrawMCPClientSummary) -> String? {
+        do {
+            guard let credential = try credentials.credential(id: client.id) else {
+                credentialError = "This credential was revoked. Create a new client credential."
+                return nil
+            }
+            return ExcalidrawMCPClientConfiguration.configuration(
+                kind: credential.kind, endpoint: "http://127.0.0.1:\(port)/mcp", token: credential.token
+            )
+        } catch { credentialError = error.localizedDescription; return nil }
     }
 
     private static func authorizedServiceMode(_ mode: ExcalidrawMCPServiceMode) -> ExcalidrawMCPServiceMode {

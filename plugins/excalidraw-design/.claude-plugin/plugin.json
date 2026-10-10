@@ -1,0 +1,8 @@
+{
+  "name": "excalidraw-design",
+  "version": "0.4.1",
+  "description": "Detailed illustrated network and electrical diagrams with Excalifont, device identity, terminal wiring and traceable connections.",
+  "author": {
+    "name": "Dilan Paradis"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "result": "PASS",
+  "reopened_after_install": true,
+  "audit": {
+    "ok": true,
+    "errors": [],
+    "elements": 1152,
+    "device_instances": 53,
+    "labelled_connections": 68,
+    "revision": "z8W4e5MVPS4Z-wwhuiD3T:1"
+  },
+  "read_pages": 3
+}

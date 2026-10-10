@@ -1,11 +1,16 @@
 #!/bin/bash
 # Shared toolchain lookup; NODE and YARN_JS can point at other installations.
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-NODE="${NODE:-$(command -v node || true)}"
-if [[ -z "$NODE" ]]; then
-  NODE="$HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node"
+if [[ -z "${NODE:-}" ]]; then
+  for candidate in "$(command -v node || true)" "$HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node"; do
+    if [[ -x "$candidate" && "$("$candidate" --version)" == v24.* ]]; then
+      NODE="$candidate"
+      break
+    fi
+  done
 fi
-[[ -x "$NODE" ]] || { echo 'Set NODE to a Node.js 24 executable.' >&2; exit 1; }
+[[ -n "${NODE:-}" && -x "$NODE" ]] || { echo 'Set NODE to a Node.js 24 executable.' >&2; exit 1; }
+[[ "$("$NODE" --version)" == v24.* ]] || { echo 'This pinned editor build requires Node.js 24; set NODE accordingly.' >&2; exit 1; }
 export PATH="$(dirname "$NODE"):$PATH"
 YARN_JS="${YARN_JS:-/private/tmp/excalidraw-yarn/package/bin/yarn.js}"
 if [[ ! -f "$YARN_JS" ]]; then

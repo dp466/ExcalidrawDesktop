@@ -1,0 +1,40 @@
+{
+  "ok": true,
+  "errors": [],
+  "elements": 1152,
+  "device_instances": 53,
+  "labelled_connections": 68,
+  "revision": "bHHesU4A13Eut0DwkNat1:2",
+  "saved": {
+    "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+    "persistence": "saved",
+    "saved_at": "2026-10-01T18:32:01Z"
+  },
+  "checkpoint_id": "D34BF9FC-8070-4FCB-8E4C-BE41365171CF",
+  "exports": [
+    {
+      "path": "aurora-detailed-network.excalidraw",
+      "sha256": "aa4dbd568026043c6ff3e670722b0897036485dc311aca8ef452a6f2090e9d46",
+      "bytes": 831448,
+      "revision": "bHHesU4A13Eut0DwkNat1:2"
+    },
+    {
+      "path": "aurora-detailed-network.svg",
+      "sha256": "e9ccdba6f8c4d08a59a417e19d382afd6e43440a5a2d1ffe0b955b9f2aa489a9",
+      "bytes": 896456,
+      "revision": "bHHesU4A13Eut0DwkNat1:2"
+    }
+  ],
+  "geometry": {
+    "ok": true,
+    "errors": [],
+    "devices": 41,
+    "physical_cables": 58,
+    "logical_links": 10,
+    "sheets": 8,
+    "elements": 1152,
+    "label_findings": [],
+    "route_findings": []
+  },
+  "verified_at": "2026-10-01T18:32:02.846055+00:00"
+}

@@ -1,2 +1,6 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Preserve document/image bytes and keep generated previews out of text diffs.
+*.pdf binary
+*.docx binary
+*.png binary
+*.icns binary
+*.ico binary

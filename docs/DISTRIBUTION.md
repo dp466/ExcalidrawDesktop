@@ -4,7 +4,8 @@
 
 The native source and documentation are published in the independent
 [dp466/ExcalidrawDesktop fork](https://github.com/dp466/ExcalidrawDesktop).
-Build 129 is an Apple Silicon development preview. Its bundle declares macOS 13.0
+Build 130 is the latest local Apple Silicon development build. The build 129
+preview packaging evidence below remains historical; no build 130 DMG is published. Its bundle declares macOS 13.0
 as the minimum; runtime testing to date was on the development Mac, not a full
 matrix of older macOS versions. There is no Intel build.
 

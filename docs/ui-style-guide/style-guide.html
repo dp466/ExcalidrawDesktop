@@ -1,0 +1,1498 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><title>Quiet Lavender — Application Style Guideline</title><style>/* Quiet Lavender — proposed portable family subset, 2026-09-20.
+   Shell colors/geometry are observed; text-on-selection, web text mapping,
+   explicit focus and reduced-motion behavior are recommended normalization. */
+:root {
+  color-scheme: light;
+  --ql-surface: #ffffff;
+  --ql-workspace: #f6f6f9;
+  --ql-text: #1b1b1f;
+  --ql-text-secondary: #5c5c5c;
+  --ql-accent: #6965db;
+  --ql-selection: #e3e2fe;
+  --ql-on-selection: #030064;
+  --ql-hover: #efedff;
+  --ql-border: #ebebeb;
+  --ql-outline: #767680;
+  --ql-danger: #700000;
+  --ql-danger-surface: #fff0f0;
+  --ql-radius-control: 6px;
+  --ql-radius-panel: 8px;
+  --ql-radius-dialog: 12px;
+  --ql-control-height: 32px;
+  --ql-font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --ql-menu-shadow: 0 5px 12px rgb(0 0 0 / 12%);
+  --ql-motion-fast: 160ms;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --ql-surface: #232329;
+  --ql-workspace: #121212;
+  --ql-text: #e3e3e8;
+  --ql-text-secondary: #b8b8b8;
+  --ql-accent: #a8a5ff;
+  --ql-selection: #4f4d6f;
+  --ql-on-selection: #e0dfff;
+  --ql-hover: #37334f;
+  --ql-border: #36363f;
+  --ql-outline: #8e8d9c;
+  --ql-danger: #fbcbcc;
+  --ql-danger-surface: #672120;
+}
+.ql-button {
+  box-sizing: border-box; display: inline-flex; align-items: center;
+  justify-content: center; gap: 8px; min-height: var(--ql-control-height);
+  padding: 0 10px; border: 1px solid var(--ql-border);
+  border-radius: var(--ql-radius-control); background: transparent;
+  color: var(--ql-text); font: 500 13px/1.2 var(--ql-font); cursor: pointer;
+  transition: background-color var(--ql-motion-fast), color var(--ql-motion-fast);
+}
+.ql-button:hover:not(:disabled) { background: var(--ql-hover); color: var(--ql-accent); }
+.ql-button:active:not(:disabled) { opacity: .7; }
+.ql-button:disabled { opacity: .4; cursor: default; }
+.ql-button--primary, .ql-button--primary:hover:not(:disabled) {
+  background: var(--ql-selection); color: var(--ql-on-selection);
+}
+.ql-button--small { min-height: 24px; }
+.ql-button--large { min-height: 36px; }
+.ql-button--xl { min-height: 40px; }
+.ql-button--icon { width: var(--ql-control-height); padding: 0; }
+.ql-button--destructive { color: var(--ql-danger); background: var(--ql-danger-surface); }
+.ql-button:focus-visible, .ql-row:focus-visible, .ql-field:focus-visible {
+  outline: 2px solid var(--ql-accent); outline-offset: 2px;
+}
+.ql-row {
+  box-sizing: border-box; display: flex; gap: 10px; align-items: center;
+  width: 100%; min-height: 32px; padding: 6px 8px; margin: 1px 0;
+  border: 0; border-radius: 6px; background: transparent;
+  text-align: left; color: var(--ql-text); font: 400 13px/18px var(--ql-font);
+  cursor: pointer; transition: background-color 160ms ease-in-out;
+}
+.ql-row:hover { background: var(--ql-hover); color: var(--ql-accent); }
+.ql-row[aria-pressed='true'], .ql-row[aria-current='page'] {
+  background: var(--ql-selection); color: var(--ql-on-selection);
+}
+.ql-row:active { opacity: .82; }
+.ql-panel { background: var(--ql-surface); border: 1px solid var(--ql-border); border-radius: 8px; padding: 16px; }
+.ql-field {
+  box-sizing: border-box; min-height: 32px; width: 100%; padding: 6px 10px;
+  border: 1px solid var(--ql-outline); border-radius: 6px;
+  background: var(--ql-surface); color: var(--ql-text); font: 400 14px/20px var(--ql-font);
+}
+.ql-field::placeholder { color: var(--ql-text-secondary); }
+.ql-field:hover { border-color: var(--ql-accent); }
+.ql-label { display: block; margin-bottom: 8px; font: 500 13px/18px var(--ql-font); }
+.ql-hint { font: 400 12px/1.5 var(--ql-font); color: var(--ql-text-secondary); }
+@media (prefers-reduced-motion: reduce) {
+  .ql-button, .ql-row, .ql-field { transition: none; }
+}
+
+
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:88px}body{margin:0;background:var(--ql-surface);color:var(--ql-text);font:15px/1.6 var(--ql-font)}a{color:var(--ql-accent);text-underline-offset:3px}a:focus-visible{outline:2px solid var(--ql-accent);outline-offset:3px}button,input{font-family:inherit}button svg{flex-shrink:0}.topbar{position:sticky;top:0;z-index:10;height:64px;padding:0 28px;display:flex;align-items:center;gap:16px;background:var(--ql-surface);border-bottom:1px solid var(--ql-border)}.topbar strong{font-size:14px}.topbar .meta{color:var(--ql-text-secondary);font-size:12px;flex:1}.topbar .ql-button{flex-shrink:0}.layout{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1540px;margin:auto}.contents{padding:28px 20px;position:sticky;top:64px;height:calc(100vh - 64px);overflow:auto;border-right:1px solid var(--ql-border)}.contents a{display:block;font-size:12px;line-height:1.4;text-decoration:none;color:var(--ql-text-secondary);padding:6px 8px;border-radius:6px}.contents a:hover{background:var(--ql-hover);color:var(--ql-accent)}.contents .eyebrow{padding-left:8px}.contents hr{border:0;border-top:1px solid var(--ql-border);margin:16px 8px}main{min-width:0;padding:42px 48px 96px;max-width:1160px}.eyebrow{font-size:10px;letter-spacing:.08em;font-weight:650;color:var(--ql-text-secondary);margin:0 0 12px}h1{font-size:32px;line-height:1.2;letter-spacing:-.025em;max-width:850px;margin:28px 0 20px}h2{font-size:23px;line-height:1.3;margin:54px 0 18px;letter-spacing:-.02em}h3{font-size:17px;line-height:1.4;margin:26px 0 10px}p{margin:12px 0}li{margin:7px 0}code{font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere;background:var(--ql-workspace);padding:2px 4px;border-radius:4px}pre{overflow:auto;white-space:pre-wrap;background:var(--ql-workspace);border:1px solid var(--ql-border);padding:16px;border-radius:8px}pre code{padding:0}.table-scroll{max-width:100%;overflow:auto;margin:20px 0;border:1px solid var(--ql-border);border-radius:8px}table{border-collapse:collapse;width:100%;font-size:13px;line-height:1.55}th,td{text-align:left;padding:10px 12px;vertical-align:top;border-bottom:1px solid var(--ql-border)}th{background:var(--ql-workspace);font-weight:600}tr:last-child td{border-bottom:0}td code{font-size:11px}blockquote{margin:20px 0;padding:12px 20px;border-left:3px solid var(--ql-accent);background:var(--ql-workspace);border-radius:0 8px 8px 0}.specimens{padding-bottom:32px;border-bottom:1px solid var(--ql-border)}.specimens h2{font-size:32px;margin:12px 0;max-width:650px}.intro{max-width:700px;color:var(--ql-text-secondary)}.swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:28px 0 12px}.swatch{min-width:0}.chip{height:54px;border:1px solid var(--ql-outline);border-radius:6px;margin-bottom:8px}.swatch b{display:block;font-size:11px}.swatch code{display:block;font-size:11px;background:none;padding:0;color:var(--ql-text-secondary)}.workbench{display:grid;grid-template-columns:210px minmax(0,1fr);border:1px solid var(--ql-border);border-radius:8px;overflow:hidden;margin-top:24px}.sample-sidebar{display:flex;flex-direction:column;gap:10px;padding:12px;background:var(--ql-surface);border-right:1px solid var(--ql-border)}.sample-brand{height:32px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;margin:0 0 6px}.sample-sidebar .eyebrow{margin:14px 0 0}.sample-footer{display:flex;gap:8px;font-size:11px;color:var(--ql-text-secondary);margin-top:auto;padding-top:24px}.sample-main{min-width:0;background:var(--ql-workspace)}.sample-header{height:52px;padding:0 10px;display:flex;align-items:center;gap:10px;background:var(--ql-surface);border-bottom:1px solid var(--ql-border)}.sample-header strong{font-size:14px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sample-header .ql-hint{display:flex;align-items:center;gap:4px;white-space:nowrap;font-size:11px}.sample-body{padding:24px}.sample-body h3{margin:0;font-size:20px}.sample-body>p{font-size:13px;color:var(--ql-text-secondary)}.button-row{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0}.metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px}.metric-grid div{padding:12px;border:1px solid var(--ql-border);border-radius:8px}.metric-grid b{display:block;font-size:15px;color:var(--ql-accent)}.metric-grid span{display:block;font-size:11px;color:var(--ql-text-secondary);margin-top:4px}.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.skip{position:absolute;top:-80px;left:20px;padding:10px;background:var(--ql-surface);z-index:20}.skip:focus{top:10px}.source-note{border:1px solid var(--ql-border);border-radius:8px;padding:16px;color:var(--ql-text-secondary);font-size:12px;margin:24px 0} @media(max-width:1100px){main{padding:32px 28px}.layout{grid-template-columns:220px minmax(0,1fr)}.contents{padding:20px 12px}.workbench{grid-template-columns:180px minmax(0,1fr)}.sample-header .ql-hint{display:none}.metric-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:800px){.layout{display:block}.contents{position:static;height:auto;border-right:0;border-bottom:1px solid var(--ql-border);max-height:220px}.contents nav{columns:2}.topbar{padding:0 16px;gap:10px}.topbar .meta{display:none}.topbar strong{flex:1}main{padding:28px 18px}.swatches{grid-template-columns:repeat(3,1fr)}.workbench{grid-template-columns:1fr}.sample-sidebar{border-right:0;border-bottom:1px solid var(--ql-border)}.sample-footer{padding-top:8px}.sample-body{padding:18px}.specimens h2{font-size:27px}h1{font-size:27px}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}@media print{.topbar,.contents,.skip,.specimens{display:none}.layout{display:block}main{padding:0;max-width:none}body{background:white;color:#1b1b1f;font-size:10pt}h2{break-after:avoid;font-size:17pt;margin-top:24pt}h3{break-after:avoid}table{font-size:8pt}.table-scroll{overflow:visible}tr{break-inside:avoid}a{color:inherit}code{background:#f5f5f5}.source-note{display:none}}
+</style></head><body><a class="skip" href="#guide">Skip to the full guideline</a><header class="topbar"><strong>Quiet Lavender</strong><span class="meta">ExcalidrawDesktop · source-backed style guideline · 20 September 2026</span><button class="ql-button" id="theme-toggle">Dark appearance</button><a class="ql-button" href="STYLE-GUIDE.md">Markdown</a></header><div class="layout"><aside class="contents"><p class="eyebrow">REFERENCE</p><a href="#specimens">Interactive specimens</a><hr><nav aria-label="Guide sections"><a href="#section-1">1. Scope, evidence, and how to use this package</a><a href="#section-2">2. The visual identity in plain language</a><a href="#section-3">3. The authoritative sources and their precedence</a><a href="#section-4">4. Exact color system</a><a href="#section-5">5. Surface, border, depth, and material rules</a><a href="#section-6">6. Spacing: exact dimensions and the reusable rhythm</a><a href="#section-7">7. Typography</a><a href="#section-8">8. Geometry: sizes, corners, outlines, and icon alignment</a><a href="#section-9">9. State system: every component needs a complete set</a><a href="#section-10">10. Navigation shell and window composition</a><a href="#section-11">11. Menus and command surfaces</a><a href="#section-12">12. Toolbars, inputs, pickers, and other controls</a><a href="#section-13">13. Home, file browsers, thumbnails, lists, and search</a><a href="#section-14">14. Inspectors, libraries, history, and presentation</a><a href="#section-15">15. Dialogs, export, import, security, and confirmations</a><a href="#section-16">16. Settings and secondary application surfaces</a><a href="#section-17">17. Motion, feedback, and perceived responsiveness</a><a href="#section-18">18. Loading, empty, error, save, and availability states</a><a href="#section-19">19. Less prominent and conditional surfaces</a><a href="#section-20">20. Brand assets, product identity, and what to share across apps</a><a href="#section-21">21. Accessibility and legibility findings</a><a href="#section-22">22. Inconsistencies to document rather than accidentally copy</a><a href="#section-23">23. The reusable family specification</a><a href="#section-24">24. Adoption and acceptance checklist</a><a href="#section-25">25. Copyable implementation brief for your other applications</a><a href="#section-26">26. Coverage map and exact source references</a></nav><hr><a href="tokens.json">Portable tokens</a><a href="quiet-lavender.css">Reference CSS</a><a href="SOURCE-INDEX.md">Source declaration index</a><a href="source-inventory.json">Coverage manifest</a></aside><main><section class="specimens" id="specimens" aria-labelledby="specimen-title">
+<p class="eyebrow">INTERACTIVE REFERENCE · PROPOSED FAMILY</p><h2 id="specimen-title">A quiet workspace, in two appearances.</h2>
+<p class="intro">These examples use the audited colors and geometry, with stronger selected text and explicit keyboard focus. They are reference components, not screenshots of the application.</p>
+<div class="swatches"><div class="swatch"><div class="chip" style="background:var(--ql-accent)"></div><b>Accent</b><code data-light="#6965DB" data-dark="#A8A5FF">#6965DB</code></div><div class="swatch"><div class="chip" style="background:var(--ql-surface)"></div><b>Surface</b><code data-light="#FFFFFF" data-dark="#232329">#FFFFFF</code></div><div class="swatch"><div class="chip" style="background:var(--ql-selection)"></div><b>Selection</b><code data-light="#E3E2FE" data-dark="#4F4D6F">#E3E2FE</code></div><div class="swatch"><div class="chip" style="background:var(--ql-hover)"></div><b>Hover</b><code data-light="#EFEDFF" data-dark="#37334F">#EFEDFF</code></div><div class="swatch"><div class="chip" style="background:var(--ql-border)"></div><b>Border</b><code data-light="#EBEBEB" data-dark="#36363F">#EBEBEB</code></div><div class="swatch"><div class="chip" style="background:var(--ql-on-selection)"></div><b>On selection*</b><code data-light="#030064" data-dark="#E0DFFF">#030064</code></div></div>
+<p class="ql-hint">*Recommended on-selection text; the current native shell uses the accent here. Toggle appearance to compare both palettes.</p>
+<div class="workbench">
+<div class="sample-sidebar"><p class="sample-brand"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5h5l2 2h13v12H2z"/></svg> Your application</p><button class="ql-button ql-button--primary" id="new-demo"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg> New item</button><label class="sr-only" for="sample-search">Find a sample item</label><input class="ql-field" id="sample-search" placeholder="Find an item…"><p class="eyebrow">WORKSPACE</p><div id="sample-items"><button class="ql-row" aria-pressed="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h8l4 4v16H6zM14 2v5h5"/></svg> Project overview</button><button class="ql-row" aria-pressed="false"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h8l4 4v16H6zM14 2v5h5"/></svg> Working notes</button><button class="ql-row" aria-pressed="false"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5h5l2 2h13v12H2z"/></svg> Reference files</button></div><p id="no-items" class="ql-hint" hidden>No matching sample items.</p><div class="sample-footer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/></svg> <span>Local workspace</span></div></div>
+<div class="sample-main"><header class="sample-header"><strong id="sample-title">Project overview</strong><span class="ql-hint"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg> Saved</span><button class="ql-button" id="sample-action">Open details</button></header><div class="sample-body"><p class="eyebrow">COMPONENT ANATOMY</p><h3>Small details make the family.</h3><p>32px controls. 6px corners. 8–10px gaps. Solid surfaces, with lavender reserved for interaction.</p><div class="button-row"><button class="ql-button">Neutral</button><button class="ql-button ql-button--primary">Primary</button><button class="ql-button" disabled>Unavailable</button></div><div class="ql-panel"><label class="ql-label" for="example-title">Document name</label><input class="ql-field" id="example-title" value="Project overview"><p class="ql-hint">This editable specimen demonstrates spacing and keyboard focus. It does not save to the app.</p></div><p id="specimen-status" class="ql-hint" role="status">Choose a sample item, type a filter, or press Tab to inspect focus.</p></div></div></div>
+<div class="metric-grid"><div><b>6 / 8 / 12</b><span>Control / panel / dialog radius</span></div><div><b>24 / 32 / 36 / 40</b><span>Desktop control heights</span></div><div><b>13 / 14 / 11</b><span>Button / title / status type</span></div><div><b>100–220ms</b><span>Recommended local feedback</span></div></div></section><article id="guide"><h1>ExcalidrawDesktop UI anatomy and reusable application style guideline</h1>
+<p>Source audit: September 20, 2026. Proposed family name: <strong>Quiet Lavender</strong>. This is a descriptive working name, not an existing brand or a claim of original authorship.</p>
+<p>The app&#39;s recognizable style comes from a quiet, compact workspace: solid white or softly violet charcoal panels; lavender selection and hover; small, clearly drawn icons; restrained system typography; thin dividing lines; and rounded rectangles that soften the interface without making every element a pill. The working document receives most of the space and visual attention. The native shell deliberately echoes the embedded Excalidraw editor.</p>
+<p>This document has two purposes: describe what the code actually implements, and turn its strongest conventions into a coherent specification for other applications. <strong>Observed implementation</strong>, <strong>platform/system behavior</strong>, and <strong>recommended family rule</strong> are different kinds of information. They are identified throughout. A recommendation is not a claim that every existing screen already follows it.</p>
+<h2 id="section-1">1. Scope, evidence, and how to use this package</h2>
+<p>The lexical source inventory covers <strong>1,468 tracked source files</strong>, including <strong>710 Swift files and 79 CSS/SCSS files</strong>. There are <strong>14,249 matching UI declaration lines in 712 files</strong>. This covers native application code, Quick Look, the editor packages, and the editor application wrapper. Matching files include tests, previews, inactive branches, and nonvisual code that happens to match a UI expression; the counts are coverage figures, not a count of production components or manually reviewed screens.</p>
+<p>The inspection combined a repository-wide declaration scan with direct reading of the shared theme and button implementation, layout and routing code, component families, platform guards, asset color definitions, web theme variables, and editor integration. The source appendix retains file/line pointers so small exceptions remain discoverable rather than disappearing into a broad summary.</p>
+<p>Current source snapshot:</p>
+<ul>
+<li>Native repository HEAD: <code>6a524e04970b9684d4a4cb5cf74f9e8f3682fdeb</code>.</li>
+<li>Embedded editor HEAD: <code>b4c2a73a62e00b488d897ef5adba5eca7d34b7dc</code>, with pre-existing modified integration files. The inventory reads those modified files from the working tree.</li>
+<li>Live visual corroboration: the running dark desktop editor, app menu, and native canvas-preferences inspector were viewed. The editor initially displayed an existing drawing. During inspector opening, the document area became blank/white and remained so after the inspector closed; no drawing controls or content were intentionally edited. These observations support the shell&#39;s appearance, not renderer correctness or a successful end-to-end flow audit.</li>
+<li>Light-mode values are verified from source; light mode was not toggled in the user&#39;s app. Other screens below are source-inspected unless explicitly identified as visually observed.</li>
+</ul>
+<p>Excluded from authored design interpretation: generated build output, dependency checkout implementations, minified third-party math engines, snapshot fixtures, untracked editor files, and example integrations. System-rendered menus, forms, font metrics, native dialogs, and third-party components cannot be fully specified by application source alone. No claim is made that every runtime state, localization, platform version, or accessibility mode was exercised.</p>
+<p>Package contents:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>STYLE-GUIDE.md</code></td>
+<td>Full source-backed analysis and reusable rules; primary document</td>
+</tr>
+<tr>
+<td><code>style-guide.html</code></td>
+<td>Readable local edition with light/dark component specimens</td>
+</tr>
+<tr>
+<td><code>tokens.json</code></td>
+<td>Portable semantic tokens; observed and recommended values are distinguished</td>
+</tr>
+<tr>
+<td><code>quiet-lavender.css</code></td>
+<td>Small reference stylesheet for the proposed family components</td>
+</tr>
+<tr>
+<td><code>SOURCE-INDEX.md</code></td>
+<td>Searchable declaration appendix with file names and line numbers</td>
+</tr>
+<tr>
+<td><code>source-inventory.json</code></td>
+<td>Coverage manifest, hashes, source status, and per-file matches</td>
+</tr>
+<tr>
+<td><code>extract-source.py</code></td>
+<td>Rebuilds the lexical appendix from the checkout</td>
+</tr>
+<tr>
+<td><code>build-guide.mjs</code></td>
+<td>Renders the HTML edition using the editor checkout&#39;s existing Markdown parser</td>
+</tr>
+</tbody></table></div>
+<p>Use sections 2–12 to understand the visual language. Use sections 13–20 when implementing specific surfaces. Use sections 21–25 to adopt the family style consistently and check it before release. The appendix is evidence, not a replacement for these decisions.</p>
+<h2 id="section-2">2. The visual identity in plain language</h2>
+<h3>2.1 Workspace before decoration</h3>
+<p>The dominant composition is a file navigator on the left, a narrow action header above the work area, the document in the center, and optional contextual controls on the right. Permanent chrome is quiet. Purple indicates action or state. It is not poured into every surface.</p>
+<p>The hierarchy is primarily created by placement, spacing, font weight, and small color differences. It does not depend on large shadows, repeated cards within cards, saturated gradients, or oversized headings. In a sibling app, an audio timeline, log viewer, document, image, or dashboard should occupy the same dominant role as the drawing canvas.</p>
+<h3>2.2 Soft geometry with desktop density</h3>
+<p>Most core desktop controls have 6-point corners. Cards and floating containers commonly use 8. These are visibly softened rectangles, still compact enough to belong in a productive desktop workspace. The core header&#39;s 32-point buttons and 13-point labels contribute as much to the identity as the purple palette.</p>
+<h3>2.3 A restrained rather than monochrome accent</h3>
+<p>The primary color is a muted violet, not a vivid electric blue or neon purple. Its light-theme value is <code>#6965DB</code>; dark mode uses the lighter <code>#A8A5FF</code>. Selection is a separate opaque lavender surface, not an arbitrary translucent fill. Hover is another, subtler lavender surface.</p>
+<h3>2.4 Native usability with editor-like surfaces</h3>
+<p>The shell uses SwiftUI and AppKit, while the editor uses React and SCSS. The app deliberately replaces many app-owned glass treatments with solid surfaces on macOS. System file pickers, the menu bar, traffic lights, and other platform behavior remain native.</p>
+<p><strong>Family rule:</strong> preserve this combination. Make app-owned components visually consistent; retain platform behavior where users already know how it works.</p>
+<h3>2.5 The canvas&#39;s sketchiness is not the application typography</h3>
+<p>Hand-drawn lettering and rough shapes belong to Excalidraw document content and branding. Native navigation uses the system font; web UI uses Assistant. A sibling application can belong to this family without handwritten buttons or wobbly panel borders.</p>
+<h2 id="section-3">3. The authoritative sources and their precedence</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Source</th>
+<th>What it controls</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ExcalidrawZ/Sidebar/components/NavigationShellTheme.swift</code></td>
+<td>Five native semantic colors; flat button states</td>
+<td>Primary reference for desktop identity</td>
+</tr>
+<tr>
+<td><code>ExcalidrawZ/components/EditorChromeStyle.swift</code></td>
+<td>Opaque surface and button/glass compatibility wrappers</td>
+<td>Read the platform branch before interpreting a call site</td>
+</tr>
+<tr>
+<td><code>ExcalidrawZ/Assets.xcassets/EditorChromeSurface.colorset/Contents.json</code></td>
+<td>Named light/dark surface asset</td>
+<td>Matches the shared white/charcoal surface</td>
+</tr>
+<tr>
+<td><code>ExcalidrawZ/Assets.xcassets/AccentColor.colorset/Contents.json</code></td>
+<td>System indigo accent fallback</td>
+<td>Not an exact alias of the shared violet palette</td>
+</tr>
+<tr>
+<td><code>editor/packages/excalidraw/css/theme.scss</code></td>
+<td>Web semantic palette, sizes, shadows, dark overrides</td>
+<td>Primary reference for embedded UI</td>
+</tr>
+<tr>
+<td><code>editor/packages/excalidraw/css/variables.module.scss</code></td>
+<td>Button state mixins and older supporting colors</td>
+<td>Web interaction and compatibility detail</td>
+</tr>
+<tr>
+<td><code>editor/packages/excalidraw/css/styles.scss</code></td>
+<td>UI font, properties layout, inputs, main workspace</td>
+<td>Web geometry and typography</td>
+</tr>
+<tr>
+<td><code>ExcalidrawZ/components/DesktopNavigationHeader.swift</code></td>
+<td>Fixed native header</td>
+<td>Primary desktop layout reference</td>
+</tr>
+<tr>
+<td><code>ExcalidrawZ/Sidebar/components/SidebarRowModifier.swift</code></td>
+<td>Row padding, active appearance, multi-selection</td>
+<td>Primary navigation row reference</td>
+</tr>
+<tr>
+<td><code>ExcalidrawZ/ContentView+/Detail/Components/FileHomeItemView.swift</code></td>
+<td>Flat desktop file cards</td>
+<td>Primary content-card reference</td>
+</tr>
+</tbody></table></div>
+<p>Precedence for reproducing the <strong>current desktop</strong>: active platform branch and call site, shared implementation, asset definition, then component-specific overrides. Design proposals are useful history but do not establish deployed behavior. There are proposal files in <code>design/</code>; do not copy their screen organization as if it were all implemented.</p>
+<p>The misleading names matter: <code>editorChromeGlassEffect</code> uses an opaque surface plus border on macOS. <code>.glassProminent</code> passed through <code>editorChromeButtonStyle</code> becomes a flat accented button. A search for “glass” alone would misclassify much of the desktop UI.</p>
+<h2 id="section-4">4. Exact color system</h2>
+<p>All hex colors in this section are sRGB. Native system colors remain semantic and vary with platform/environment; they are not given invented fixed hex values.</p>
+<h3>4.1 Native desktop core</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Light</th>
+<th>Dark</th>
+<th>Intended use</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Primary accent</td>
+<td><code>#6965DB</code></td>
+<td><code>#A8A5FF</code></td>
+<td>Active icons, hover foreground, branded actions, selection outline</td>
+</tr>
+<tr>
+<td>Chrome surface</td>
+<td><code>#FFFFFF</code></td>
+<td><code>#232329</code></td>
+<td>Sidebar, custom header, menus, app-owned panels</td>
+</tr>
+<tr>
+<td>Selection surface</td>
+<td><code>#E3E2FE</code></td>
+<td><code>#4F4D6F</code></td>
+<td>Selected navigation row; soft prominent action</td>
+</tr>
+<tr>
+<td>Border/separator</td>
+<td><code>#EBEBEB</code></td>
+<td><code>#36363F</code></td>
+<td>1-point structural lines, card/control outlines</td>
+</tr>
+<tr>
+<td>Hover surface</td>
+<td><code>#EFEDFF</code></td>
+<td><code>#37334F</code></td>
+<td>Pointer feedback on unselected rows/buttons</td>
+</tr>
+<tr>
+<td>Primary native text</td>
+<td><code>Color.primary</code></td>
+<td><code>Color.primary</code></td>
+<td>Normal labels and content</td>
+</tr>
+<tr>
+<td>Secondary native text</td>
+<td><code>.secondary</code></td>
+<td><code>.secondary</code></td>
+<td>Hints, dates, shortcut annotations, status</td>
+</tr>
+<tr>
+<td>Tertiary native text</td>
+<td><code>.tertiary</code></td>
+<td><code>.tertiary</code></td>
+<td>Drag handles and low-priority details</td>
+</tr>
+<tr>
+<td>Destructive native action</td>
+<td><code>Color.red</code></td>
+<td><code>Color.red</code></td>
+<td>Destructive-role flat button foreground</td>
+</tr>
+<tr>
+<td>Native save warning</td>
+<td><code>Color.orange</code></td>
+<td><code>Color.orange</code></td>
+<td>Save/recovery problems in header</td>
+</tr>
+</tbody></table></div>
+<p>The named <code>EditorChromeSurface</code> asset and <code>NavigationShellTheme.surface</code> are two implementations of the same surface. Other applications should define this once and generate platform assets from the common value.</p>
+<p>The asset <code>AccentColor</code> references <code>systemIndigoColor</code>. Some controls inherit an explicit violet tint; others use <code>Color.accentColor</code> directly. Therefore not every native selected control is exactly <code>#6965DB</code> / <code>#A8A5FF</code> today. <strong>Recommended:</strong> make the family tint explicit at the application root and retain semantic overrides for errors or product-specific data.</p>
+<h3>4.2 Web editor semantic colors</h3>
+<p>These are important differences from the shell, not errors in the table above.</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Web role</th>
+<th>Light</th>
+<th>Dark</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Default/background</td>
+<td><code>#FFFFFF</code></td>
+<td><code>#121212</code></td>
+</tr>
+<tr>
+<td>Island/popup</td>
+<td><code>#FFFFFF</code></td>
+<td><code>#232329</code></td>
+</tr>
+<tr>
+<td>On-surface text/icon</td>
+<td><code>#1B1B1F</code></td>
+<td><code>#E3E3E8</code></td>
+</tr>
+<tr>
+<td>Primary</td>
+<td><code>#6965DB</code></td>
+<td><code>#A8A5FF</code></td>
+</tr>
+<tr>
+<td>Primary darker</td>
+<td><code>#5B57D1</code></td>
+<td><code>#B2AEFF</code></td>
+</tr>
+<tr>
+<td>Primary darkest</td>
+<td><code>#4A47B1</code></td>
+<td><code>#BEB9FF</code></td>
+</tr>
+<tr>
+<td>Primary light</td>
+<td><code>#E3E2FE</code></td>
+<td><code>#4F4D6F</code></td>
+</tr>
+<tr>
+<td>Primary light darker</td>
+<td><code>#D7D5FF</code></td>
+<td><code>#43415E</code></td>
+</tr>
+<tr>
+<td>Brand hover</td>
+<td><code>#5753D0</code></td>
+<td><code>#BBB8FF</code></td>
+</tr>
+<tr>
+<td>Brand active</td>
+<td><code>#4440BF</code></td>
+<td><code>#D0CCFF</code></td>
+</tr>
+<tr>
+<td>Surface high</td>
+<td><code>#F1F0FF</code></td>
+<td><code>#2E2D39</code></td>
+</tr>
+<tr>
+<td>Surface mid</td>
+<td><code>#F6F6F9</code></td>
+<td><code>hsl(240 6% 10%)</code></td>
+</tr>
+<tr>
+<td>Surface low</td>
+<td><code>#ECECF4</code></td>
+<td><code>hsl(240 8% 15%)</code></td>
+</tr>
+<tr>
+<td>Surface lowest</td>
+<td><code>#FFFFFF</code></td>
+<td><code>hsl(0 0% 7%)</code></td>
+</tr>
+<tr>
+<td>Selected tool container</td>
+<td><code>#E0DFFF</code></td>
+<td><code>#403E6A</code></td>
+</tr>
+<tr>
+<td>On selected tool container</td>
+<td><code>#030064</code></td>
+<td><code>#E0DFFF</code></td>
+</tr>
+<tr>
+<td>Border outline</td>
+<td><code>#767680</code></td>
+<td><code>#8E8D9C</code></td>
+</tr>
+<tr>
+<td>Border outline variant</td>
+<td><code>#C5C5D0</code></td>
+<td><code>#46464F</code></td>
+</tr>
+<tr>
+<td>Logo text</td>
+<td><code>#190064</code></td>
+<td><code>#E2DFFF</code></td>
+</tr>
+</tbody></table></div>
+<p>Web “darker” naming is historical: the dark-theme variants become lighter. Store semantic roles rather than attempting to derive dark mode by mathematically darkening light colors.</p>
+<p>The browser&#39;s default button hover is <code>surface-high</code>, whereas the native shell&#39;s hover is <code>#EFEDFF</code> / <code>#37334F</code>. A selected tool uses a stronger foreground than a selected navigation row. Keep those as separate tokens if exact reproduction is the goal.</p>
+<h3>4.3 Supporting web palette</h3>
+<p>The gray ramp is <code>#F5F5F5</code>, <code>#EBEBEB</code>, <code>#D6D6D6</code>, <code>#B8B8B8</code>, <code>#999999</code>, <code>#7A7A7A</code>, <code>#5C5C5C</code>, <code>#3D3D3D</code>, <code>#242424</code>, <code>#1E1E1E</code>, and <code>#121212</code>, named gray-10 through gray-100 with gray-85 as an extra stop.</p>
+<p>Status palettes are separate from brand color:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Source values</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Warning surface and steps</td>
+<td><code>#FCEECA</code>, <code>#F5C354</code>, <code>#F3AB2C</code>, <code>#EC8B14</code></td>
+</tr>
+<tr>
+<td>Danger base, light appearance</td>
+<td><code>#DB6965</code>; darker <code>#D65550</code>; darkest <code>#D1413C</code></td>
+</tr>
+<tr>
+<td>Danger light panel</td>
+<td>background <code>#FFF0F0</code>, icon background <code>#FFDAD6</code>, text/icon <code>#700000</code></td>
+</tr>
+<tr>
+<td>Danger dark panel</td>
+<td>background <code>#FBCBCC</code>, icon background <code>#672120</code>, text <code>#261919</code>, icon <code>#FBCBCC</code></td>
+</tr>
+<tr>
+<td>Success surface family</td>
+<td><code>#CAFCCC</code>, <code>#BAFABC</code>, <code>#A5EBA8</code></td>
+</tr>
+<tr>
+<td>Success text</td>
+<td><code>#268029</code></td>
+</tr>
+<tr>
+<td>Success contrast actions</td>
+<td><code>#65BB6A</code>, hover <code>#6BCF70</code>, active <code>#6EDF74</code></td>
+</tr>
+<tr>
+<td>Badge</td>
+<td>foreground <code>#0B6513</code>, background <code>#D3FFD2</code></td>
+</tr>
+</tbody></table></div>
+<p>Not every status palette has a complete independent dark override. Reuse the semantic intent, verify the actual foreground/background pairing, and do not assume a token&#39;s name alone guarantees suitable contrast.</p>
+<h3>4.4 What should stay colored</h3>
+<p>Use violet for navigation state, active controls, primary affordances, focus, and selected outlines. Use red for destructive or error states, orange/amber for warnings, and green for explicit success when needed. File thumbnails, document images, diagrams, and charts keep their own meaningful colors.</p>
+<p>Normal save success in the desktop header is deliberately quiet: a checkmark and secondary text, not a bright green badge that competes with the drawing. A warning gains both an icon and text. This is an especially useful family convention.</p>
+<h2 id="section-5">5. Surface, border, depth, and material rules</h2>
+<h3>5.1 Permanent surfaces</h3>
+<p>The sidebar and custom header are opaque. They can share the same fill; a thin border and layout separation establish their boundaries. There is no permanent shell drop shadow. The dark work area can be darker than the charcoal shell, producing separation without a raised-card aesthetic.</p>
+<p>Native file and folder cards use a solid shared surface with 1-point borders. Pointer hover changes the outline or fill. The current macOS file card explicitly avoids the iOS glass/hover-shadow branch.</p>
+<h3>5.2 Floating surfaces</h3>
+<p>“Flat” does not mean absolutely no shadows. There is a hierarchy:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Source treatment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Custom desktop app menu</td>
+<td>Black at 12% opacity, radius 12, y offset 5; 8-point radius; 1-point border</td>
+</tr>
+<tr>
+<td>Floating native inspector</td>
+<td>Radius-4 shadow; opaque surface; desktop corner radius 8</td>
+</tr>
+<tr>
+<td>Web island</td>
+<td>Three layers: <code>0 0 1px rgba(0,0,0,.17)</code>, <code>0 0 3px rgba(0,0,0,.08)</code>, <code>0 7px 14px rgba(0,0,0,.05)</code></td>
+</tr>
+<tr>
+<td>Stronger web island</td>
+<td>Same first layers; final 7px/14px shadow has 18% opacity</td>
+</tr>
+<tr>
+<td>Web modal</td>
+<td>Six-layer soft shadow; 12px corners and 1px border</td>
+</tr>
+<tr>
+<td>Presentation controls</td>
+<td>Black at 45%, radius 14, y 6; product-specific overlay</td>
+</tr>
+</tbody></table></div>
+<p><strong>Family rule:</strong> reserve elevation for something that overlays other content. Permanent panes and ordinary cards stay flat. Use the menu shadow for small overlays and the existing web island shadow for canvas islands. Keep large modal elevation rare.</p>
+<h3>5.3 Borders are structural, not always sufficient focus indicators</h3>
+<p>Core borders are intentionally very subtle. They can divide adjacent areas without enclosing every label. Do not use the separator color as the only focus, error, or required control-identification signal. Strong outline and focus tokens must be separate.</p>
+<h3>5.4 Platform adaptations</h3>
+<p><code>editorChromeSurface(material:)</code> ignores the material argument on macOS and returns the named opaque color. On iOS it returns the supplied material. The glass compatibility wrapper similarly preserves iOS glass, but replaces it with a solid filled/stroked shape on macOS.</p>
+<p>Older OS branches retain some different radii and shadows. A sibling app should have a coherent fallback using the same palette and geometry, even if the platform cannot render a newer material. Do not let OS version become an accidental new visual brand.</p>
+<h2 id="section-6">6. Spacing: exact dimensions and the reusable rhythm</h2>
+<p>SwiftUI measurements below are logical points; web measurements are CSS pixels or <code>rem</code>. A point in an app is not a physical display pixel, and CSS <code>pt</code> is not the unit to use when translating these measurements to the web. <code>rem</code> examples assume a conventional 16px root size; the source often leaves the browser default in control.</p>
+<p>There is <strong>no single enforced global spacing scale</strong> in the native code. The web has <code>--space-factor: .25rem</code>. Native UI repeatedly uses 4, 6, 8, 10, 12, 16, and 20, with larger margins on Home and sheets. It would be inaccurate to call the entire project a strict 8-point grid.</p>
+<h3>6.1 Proposed family spacing tokens</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Value</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>space-0</td>
+<td>0</td>
+<td>Flush split columns; internal stacks whose children own spacing</td>
+</tr>
+<tr>
+<td>space-1</td>
+<td>2</td>
+<td>Tight label/subtitle stack; small row separation</td>
+</tr>
+<tr>
+<td>space-2</td>
+<td>4</td>
+<td>Micro spacing, badge insets, divider breathing room</td>
+</tr>
+<tr>
+<td>space-3</td>
+<td>6</td>
+<td>Compact row/menu inset, closely related buttons</td>
+</tr>
+<tr>
+<td>space-4</td>
+<td>8</td>
+<td>Default related-control gap, row horizontal padding, compact panel padding</td>
+</tr>
+<tr>
+<td>space-5</td>
+<td>10</td>
+<td>Icon-to-label gap, button horizontal padding, menu padding rhythm</td>
+</tr>
+<tr>
+<td>space-6</td>
+<td>12</td>
+<td>Field/card padding, sidebar inset, adjacent grouped controls</td>
+</tr>
+<tr>
+<td>space-7</td>
+<td>16</td>
+<td>Standard inspector edge inset; section spacing</td>
+</tr>
+<tr>
+<td>space-8</td>
+<td>20</td>
+<td>Comfortable folder-card inset; wider section separation</td>
+</tr>
+<tr>
+<td>space-9</td>
+<td>24</td>
+<td>Dialog body/footer padding; larger block separation</td>
+</tr>
+<tr>
+<td>space-10</td>
+<td>32</td>
+<td>Proposed large section gap; not a universal current native constant</td>
+</tr>
+<tr>
+<td>space-11</td>
+<td>40</td>
+<td>Existing roomy Home/sheet margins; use selectively</td>
+</tr>
+</tbody></table></div>
+<p>These names are a proposed vocabulary for observed values, not names already present in the repository.</p>
+<h3>6.2 The compact-vs-comfortable rule</h3>
+<p>Use 6–10 points within a compact control group; 12–16 around a panel&#39;s contents; 16–24 between distinct sections. Use 30–40 only for spacious landing pages or generous sheets. If everything has 24-point padding, it will no longer feel like the current desktop shell.</p>
+<p>A useful nesting recipe is a 16-point panel inset, 16-point section gap, 8-point label/control gap, and 10-point icon/label gap. This recipe follows recurring values but is a recommended composition, not a global existing modifier.</p>
+<h3>6.3 Do not blindly round away optical exceptions</h3>
+<p>The sidebar heading uses a 9-point gap between its two buttons, 14 top, and 6 bottom. Rows have 1-point outer vertical padding. A file icon&#39;s nested leading padding is <code>2 + (depth + 1) × 12</code>. These numbers align real content; they are not proof of a separate 9-point design grid.</p>
+<p>Keep justified optical adjustments local. Avoid scattering them as new global tokens. The portable system should stay small enough that designers and developers can remember it.</p>
+<h2 id="section-7">7. Typography</h2>
+<h3>7.1 Native UI</h3>
+<p>Core desktop navigation uses system typography. The shared flat button style explicitly applies <code>.system(size: 13, weight: .medium)</code>. The document header is 14 semibold. Status text is 11 regular. Small section labels and shortcut hints use 10–11. Many secondary screens use semantic SwiftUI styles such as <code>.headline</code>, <code>.caption</code>, <code>.footnote</code>, <code>.callout</code>, <code>.title2</code>, and <code>.largeTitle</code>.</p>
+<p>Do not assign fixed numbers to every semantic SwiftUI style in the guide: metrics depend on platform and environment. For close reproduction, retain those semantic styles or inspect the intended deployment target.</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Existing source</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Flat button label</td>
+<td>13, medium</td>
+</tr>
+<tr>
+<td>Header document title</td>
+<td>14, semibold; one line; middle truncation</td>
+</tr>
+<tr>
+<td>Autosave status</td>
+<td>11, regular; secondary color</td>
+</tr>
+<tr>
+<td>Desktop menu section label</td>
+<td>10, semibold; uppercase</td>
+</tr>
+<tr>
+<td>Menu shortcut</td>
+<td>11, secondary</td>
+</tr>
+<tr>
+<td>Sidebar “Desktop” suffix</td>
+<td>10, secondary</td>
+</tr>
+<tr>
+<td>Sidebar search shortcut</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Drawing option glyph/text</td>
+<td>14 in 28-point option control</td>
+</tr>
+<tr>
+<td>Home title</td>
+<td>Semantic large title</td>
+</tr>
+<tr>
+<td>Card title/subtitle</td>
+<td>Semantic sizes selected by style/size class</td>
+</tr>
+<tr>
+<td>Inspector heading</td>
+<td>Often semantic headline with secondary tint</td>
+</tr>
+</tbody></table></div>
+<h3>7.2 Embedded editor</h3>
+<p>The web UI font stack starts with <strong>Assistant</strong>, followed by system-ui, BlinkMacSystemFont, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif. Assistant contributes a slightly more human feel than native system chrome. Keep the distinction intentional.</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Web role</th>
+<th>Size / weight / line-height</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Tool shortcut badge</td>
+<td>.625rem, approximately 10px</td>
+</tr>
+<tr>
+<td>Property section heading</td>
+<td>.75rem, approximately 12px; weight 400</td>
+</tr>
+<tr>
+<td>Dropdown menu item</td>
+<td>.875rem, approximately 14px; weight 400</td>
+</tr>
+<tr>
+<td>Text-field label</td>
+<td>.875rem; weight 600; 150%</td>
+</tr>
+<tr>
+<td>Text-field input</td>
+<td>1rem; weight 400; 150%</td>
+</tr>
+<tr>
+<td>Dialog heading</td>
+<td>1.25rem, approximately 20px</td>
+</tr>
+<tr>
+<td>Tooltip</td>
+<td>13px; weight 500; line-height 1.5</td>
+</tr>
+<tr>
+<td>Toast message</td>
+<td>.75rem; line-height 1.25rem</td>
+</tr>
+<tr>
+<td>Radio/segmented choice</td>
+<td>.75rem; weight 600; line-height 100%; tracking .4px</td>
+</tr>
+</tbody></table></div>
+<p>The application shell does not globally use Assistant. The Excalidraw wordmark is a vector asset, not regular text rendered in the UI font. Canvas fonts and the bundled Seto font are document capabilities, not universal navigation font choices.</p>
+<h3>7.3 Family typography rules</h3>
+<p>For native macOS apps, use the system font. For web apps, use Assistant when deliberately matching the editor, or system-ui when matching the native shell. Choose one per layer and document it. Do not mix several display fonts inside settings and navigation.</p>
+<p>Use 13–14 for compact desktop labels, 11–12 for supporting details, and 14–16 for more readable explanatory text. Use semibold to establish hierarchy; reserve large display text for page-level entrances. Keep paragraph line-height around 1.45–1.6 in web settings/help surfaces; this is a recommended reading style, not an existing global native line-height.</p>
+<p>Use monospaced digits for stable changing numbers such as zoom, slide counts, usage values, and timestamps where alignment matters. Use a monospaced text face for keys, source, expressions, and technical identifiers. Do not set all descriptive text in monospace.</p>
+<p>Long file names should middle-truncate when preserving a suffix/extension helps identification. Display the full name in a tooltip or accessible label. Explanatory text and errors should wrap rather than disappear into a single line.</p>
+<h2 id="section-8">8. Geometry: sizes, corners, outlines, and icon alignment</h2>
+<h3>8.1 Core size vocabulary</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Dimensions</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Shared native regular button</td>
+<td>Height 32; horizontal padding 10</td>
+</tr>
+<tr>
+<td>Shared small button</td>
+<td>Height 24</td>
+</tr>
+<tr>
+<td>Shared large button</td>
+<td>Height 36</td>
+</tr>
+<tr>
+<td>Shared extra-large button</td>
+<td>Height 40</td>
+</tr>
+<tr>
+<td>Circular variant</td>
+<td>Width equals height</td>
+</tr>
+<tr>
+<td>Native drawing option/swatches</td>
+<td>Commonly 28 × 28</td>
+</tr>
+<tr>
+<td>Standard web button</td>
+<td>2rem, usually 32 × 32</td>
+</tr>
+<tr>
+<td>Large web toolbar button</td>
+<td>2.25rem, usually 36 × 36</td>
+</tr>
+<tr>
+<td>Default web icon</td>
+<td>1rem, usually 16 × 16</td>
+</tr>
+<tr>
+<td>Native menu icon column</td>
+<td>Width 17</td>
+</tr>
+<tr>
+<td>Sidebar file icon box</td>
+<td>18 × 16</td>
+</tr>
+<tr>
+<td>Folder card icon</td>
+<td>Height 24</td>
+</tr>
+<tr>
+<td>Native export format tile</td>
+<td>86 × 86</td>
+</tr>
+<tr>
+<td>Native history thumbnail</td>
+<td>82 × 52</td>
+</tr>
+</tbody></table></div>
+<p>A web media query for device widths above 1920px increases large controls to 40px and icons to 20px, with default buttons at 36px. Other selectors use viewport-width queries. Those are not interchangeable with Retina pixel density. For a new app, a deliberate density setting is more predictable than silently basing density on physical screen dimensions.</p>
+<h3>8.2 Corner radius vocabulary</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Radius</th>
+<th>Current role / recommended handling</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>4</td>
+<td>Some web context menus and tiny native search-case toggle</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Core native buttons and sidebar rows; web medium radius; Quick Look clip</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Native history preview exception</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Desktop cards, menus, floating inspector; web large radius</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Some segmented control shells and secondary containers</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Web modal, older/fallback components, secondary native cards</td>
+</tr>
+<tr>
+<td>16</td>
+<td>Existing Home search and some preview placeholders</td>
+</tr>
+<tr>
+<td>20–24</td>
+<td>Some library, sync, mobile, and secondary panels; not the core desktop default</td>
+</tr>
+<tr>
+<td>Half the height</td>
+<td>Deliberate capsule control</td>
+</tr>
+<tr>
+<td>Circle</td>
+<td>Small circular actions, avatars, status markers</td>
+</tr>
+</tbody></table></div>
+<p><strong>Family rule:</strong> 6 for controls, 8 for ordinary cards/panels, 12 for larger dialogs. Retain pills for purposeful segmented, playback, or compact grouped controls. A 20–24-point radius should be an intentional exception with a reason, not the default on every macOS card.</p>
+<h3>8.3 Strokes</h3>
+<p>Use 1 logical point for normal native borders and 1 CSS pixel for web borders. Existing native multi-selection uses 1.5. Swatch selection uses 2. Some older/native detail borders use .5; treat those as hairline exceptions whose visibility must be checked at actual display scale.</p>
+<p>Use stroke-inside/strokeBorder where available so hover and selection do not grow the layout. On the web, keep border width allocated in the default state or use a shadow/outline so an active border does not shift neighboring controls.</p>
+<h3>8.4 Icons and optical fit</h3>
+<p>Native navigation uses SF Symbols via both system names and SFSafeSymbols. Drawing tools have custom outline icons, and the toolbar-order settings row requests stroke width 1.8. Keep symbols visually comparable to a 16–20-point icon box without blindly stretching every glyph to fill it.</p>
+<p>Use a stable icon column so menu labels line up. A folder, short chevron, and wide collaboration icon should not move the text start. For icon-only actions, retain an accessible name and a tooltip. Reserve filled icons for meaningful state or established content types, such as folders.</p>
+<h2 id="section-9">9. State system: every component needs a complete set</h2>
+<h3>9.1 Shared native button, exact behavior</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>State</th>
+<th>Foreground</th>
+<th>Fill</th>
+<th>Other</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Neutral</td>
+<td>System primary</td>
+<td>Clear</td>
+<td>Optional 1-point border</td>
+</tr>
+<tr>
+<td>Hover, enabled</td>
+<td>Shared accent</td>
+<td>Shared hover</td>
+<td>No scaling in the shared style</td>
+</tr>
+<tr>
+<td>Pressed, neutral</td>
+<td>Accent only if pointer is also hovering; otherwise primary</td>
+<td>Shared hover</td>
+<td>Whole control opacity .7</td>
+</tr>
+<tr>
+<td>Accent/prominent</td>
+<td>Shared accent</td>
+<td>Shared selection</td>
+<td>Optional border</td>
+</tr>
+<tr>
+<td>Accent hovered</td>
+<td>Shared accent</td>
+<td>Remains shared selection</td>
+<td>No separate hover fill in this style</td>
+</tr>
+<tr>
+<td>Disabled</td>
+<td>Existing role foreground</td>
+<td>Existing fill</td>
+<td>Whole control opacity .4; enabled hover is suppressed</td>
+</tr>
+<tr>
+<td>Destructive</td>
+<td>System red overrides normal/accent foreground</td>
+<td>Normal state fill logic</td>
+<td>Uses destructive role</td>
+</tr>
+</tbody></table></div>
+<p>These details come from <code>NavigationShellButtonBody</code>, not an inferred design mockup. Press opacity affects the whole rendered button, so final appearance depends on the backdrop.</p>
+<h3>9.2 Sidebar row, exact behavior</h3>
+<p>The row becomes active when hovered, selected, or pressed. Active foreground is the shared accent; otherwise primary. Selected fill is the selection surface. Hover/press without selection uses the hover surface. Inactive fill is zero opacity. Pressed active fill uses .82 opacity. The row has 8 horizontal and 6 vertical internal padding, plus 1 vertical outer padding, a 6-point continuous corner, and a .16-second ease-in-out state transition.</p>
+<p>Multi-selection adds a separate 1.5-point accent outline. Selection and multi-selection are not identical state variables. A generic reusable list should decide what each means and expose it accessibly.</p>
+<h3>9.3 Recommended state model for sibling apps</h3>
+<p>Define neutral, hover, pressed, keyboard-focused, selected, disabled, loading, invalid, and destructive states explicitly. Focus and selection are independent. A selected item can also have keyboard focus, and a button can be busy without being an error.</p>
+<p>Keep lavender selection surfaces, but use a stronger selected-text token for readable small labels. The suggested portable selected foreground is the web editor&#39;s <code>#030064</code> in light mode and <code>#E0DFFF</code> in dark mode. This is a recommended improvement, not the current native row behavior.</p>
+<p>Use a visible 2-point focus indicator that remains distinct from hover. Suppress decorative movement when reduced motion is requested. Prevent repeated activation during a non-repeatable operation, retain the label or reserve its width, and provide a named progress state.</p>
+<p>Do not make disabled controls react on hover. Avoid making selection discoverable only through pointer interaction. Use labels, checkmarks, radio/toggle semantics, or selected state in accessibility APIs where appropriate.</p>
+<h2 id="section-10">10. Navigation shell and window composition</h2>
+<h3>10.1 Main split layout</h3>
+<p><code>ContentViewModern</code> uses <code>HSplitView</code> on macOS. The outer desktop sidebar frame is min 230, ideal 250, max 340. <code>SidebarView</code> also declares NavigationSplitView column preferences (280/280/340 on newer OS versions; 260/240/340 in an older branch); the active desktop uses HSplitView, so these should not be confused with the outer frame constraints. The detail pane has min width 480. Those minima imply approximately 710 points plus divider/chrome when both panes are present; that is a layout implication, not a verified minimum window-size setting.</p>
+<p>The document column extends into the top safe area. A custom header owns app controls. Native toolbar background is hidden, and the stable split structure avoids making toolbar contributions change with every document transition.</p>
+<p>The sidebar can disappear. When it does, the custom header reserves 80 points before its buttons for standard window controls. The header also provides a native AppKit drag region behind appropriate content. Copying the appearance without keeping drag behavior would produce a worse desktop app.</p>
+<h3>10.2 Header recipe</h3>
+<ul>
+<li>Height 52.</li>
+<li>Horizontal inset 10.</li>
+<li>HStack gap 6.</li>
+<li>Leading sidebar toggle and app-menu trigger.</li>
+<li>Divider 1 wide × 20 high with 4-point horizontal padding.</li>
+<li>Optional Back action followed by flexible document/group title.</li>
+<li>Title 14 semibold, middle truncation, one line, minimum width 40, lower layout priority than actions.</li>
+<li>Autosave status max width 150; 11-point text; horizontal inset 6.</li>
+<li>Document actions and export remain compact and aligned.</li>
+<li>Solid shared background and bottom separator 1 point.</li>
+</ul>
+<p>A sibling app should keep the same control rhythm while changing the document nouns and actions. Use a single flexible title region rather than centering a title over unequal button groups and creating collisions.</p>
+<h3>10.3 Sidebar recipe</h3>
+<p>The branding area is 52 high, with 16 horizontal padding. Mark is 20 × 20, wordmark 130 × 18, gap 6, and small “Desktop” suffix at 10. A bottom separator aligns the region structurally.</p>
+<p>Below it, the two main actions have a 9-point gap, 12 horizontal inset, 14 top inset, and 6 bottom inset. “New drawing” is softly prominent; search is a bordered neutral control. Persistent navigation and the folder tree scroll below. A bottom Settings/workspace area anchors utility actions.</p>
+<p>File nesting uses a 12-point increment plus a small initial optical offset. Keep disclosure arrows and folder/file icons in consistent columns. Do not multiply nested card outlines around tree nodes.</p>
+<h2 id="section-11">11. Menus and command surfaces</h2>
+<p>The custom app menu is 266 points wide, padded by 6, with 2 points between rows. It uses the shared flat buttons, 8-point outer corners, a 1-point border, and the small overlay shadow. Its section heading is 10 semibold uppercase with 8 padding. Dividers have 4 vertical padding. Each item has a 17-point icon column, a 10-point gap, and right-aligned 11-point secondary shortcut text.</p>
+<p>The menu is grouped by purpose: document actions; search/navigation/context tools; appearance/settings. It preserves a stable host so opening a native file picker can outlive the menu closing. This is a behavior requirement worth carrying into other applications.</p>
+<p>Keyboard code supports focused menu items and activation/dismissal. The menu trigger reports expanded/collapsed state and regains focus after dismissal. A sibling app should preserve that behavior rather than implement an ornamental popover containing mouse-only rows.</p>
+<p>The embedded web dropdown differs: default 32px row height, 14px text, 8px horizontal row padding, 10px icon gap, 6px row corners, and a container gap of 1px. Web context menus are a separate older family with 4px outer corners and square rows. System context menus are another category again.</p>
+<p><strong>Family rule:</strong> use one app-owned menu recipe per platform. Do not restyle native system menus just to force the same shadow or radius. Use ellipses for actions that open a further decision or dialog; use verbs that say what will happen.</p>
+<h2 id="section-12">12. Toolbars, inputs, pickers, and other controls</h2>
+<h3>12.1 Canvas toolbar</h3>
+<p>The visible desktop drawing tools belong to the web editor. <code>ExcalidrawEditorToolbarModifier</code> places <code>ExcalidrawToolbar()</code> in an iOS-only toolbar path. A source-wide inventory of native tool styling must not be mistaken for the desktop&#39;s visible toolbar.</p>
+<p>The web toolbar&#39;s controls are usually 36 × 36 with 16px icons, 8px corners, a floating island surface, and small shortcut annotations at the lower right. Selected tools use the dedicated primary-container pair. Divider is 1px × 24px. The editor edge inset is normally 16px, reduced to 12px for mobile. Extra-tools dropdown has a 6px top gap and min width 190px.</p>
+<p>For a sibling workspace, show only frequently used tools in the main toolbar, and place occasional tools in a consistent overflow surface. Retain tool names and shortcuts even when the visual label is an icon.</p>
+<h3>12.2 Native option and color controls</h3>
+<p>Drawing options use 28 × 28 controls, 14-point content, 6-point corners, and 8-point group spacing. Unselected fill is secondary at 10%; selected fill uses accent at 20%, with an accent 1-point outline. These are not the exact same state recipe as navigation buttons.</p>
+<p>Native swatches use 6-point corners; selected outline is accent at 2 points, normal outline secondary at 30% and 1 point. The full-color trigger is 28 × 28. A divider between quick picks and the custom color is 28 high. Transparency is indicated with a checkerboard rather than silently treating it as white.</p>
+<p>Dark-mode swatch rendering can invert and hue-rotate drawing colors, matching canvas behavior. Do not use that transformation for the app&#39;s entire brand palette or photographic content.</p>
+<p>The hex input has 28 height, 8 horizontal padding, monospaced body text, 6 corners, a system control background, and secondary 30% border. Keep text input and a native color picker available; color recognition alone is not sufficient.</p>
+<h3>12.3 Text fields</h3>
+<p>There is no universal native text-field style. Grouped forms often inherit platform rendering; the Home search box, inspector search, and color field each have their own surrounding chrome.</p>
+<p>The web <code>ExcTextField</code> is a comfortable dialog field: 48px high, 12px horizontal padding, 8px corners, 1px border, 16px input text. Its label is 14px semibold, with a 4px bottom gap. An optional icon is 20px at a 12px leading inset; text gets 40px leading padding when it is present.</p>
+<p>Use compact 32-point fields for dense desktop utilities and a 40–48-point field where text entry deserves more room. That is a proposed family distinction, not an instruction to shrink every existing dialog field.</p>
+<h3>12.4 Toggles, segments, and sliders</h3>
+<p>Native toggles and segmented pickers retain platform behavior. Custom native segmented-picker code also exists, with OS-dependent 6/10-point indicator geometry; it is not a universal appearance contract.</p>
+<p>Web switches are 40 × 20 with a 12px track radius and 150ms ease-out transitions. The off thumb is 10px; the on thumb is 14px. The source adds a small pressed-width change. Web radio groups use 3px shell padding, 2px gaps, 10px shell corners, 8px choice corners, and a 24px choice height plus shell/border.</p>
+<p>The web range track is 4px high with a 16px circular thumb and 12px value labels. Native opacity control uses a native slider with a 4-point gap to caption-size endpoint labels. Preserve keyboard increments and a readable value; do not implement a purely visual track.</p>
+<h3>12.5 Tooltips and badges</h3>
+<p>Web tooltips are black with white text, 8px padding, 6px corners, centered 13px medium text, and 1.5 line-height. Native controls typically use <code>.help</code> and system tooltips. Reusing the family does not require manually drawing identical tooltip windows on every OS.</p>
+<p>Small native history badges use 6 horizontal/2 vertical padding, caption2 type, a tint fill at 12%, and tint stroke at 30%/.5 points. Lock badges are tiny overlays on file icons and use symbol transitions. They are supporting indicators; critical information still needs text and accessible semantics.</p>
+<h2 id="section-13">13. Home, file browsers, thumbnails, lists, and search</h2>
+<h3>13.1 Existing Home is more spacious than the shell</h3>
+<p><code>HomeView</code> uses a 30-point vertical stack rhythm, a 40-point clear top spacer, a large-title heading, and 40-point outer padding. Its search box has 10 padding, max width 500, and 16-point corners. Recent cards are 200 points wide in a horizontally scrolling row with 10 spacing and 10 padding. Loading placeholders include a 200 × 120 thumbnail region and shimmer.</p>
+<p>This is a real exception to the compact shell; the whole app is not uniformly dense. The flatness wrappers change the surface treatment without necessarily changing the older, roomier layout. The full alternate Home proposal in <code>design/home-proposal.html</code> should not be treated as current implementation.</p>
+<h3>13.2 File and folder cards</h3>
+<p>Desktop file cards have 8-point corners, a shared opaque surface, and a 1-point outline. Hover changes the border to the shared accent and uses a .2-second smooth animation. The macOS open gesture is a double-click; selection and context-menu behavior are separately composed. iOS uses a different single-tap/edit-mode path and 12-point corners.</p>
+<p>Native file-card label insets are 8 in regular size class and 6 in compact. Titles and subtitles vary by card/list presentation. Preserve the code&#39;s content-dependent sizing rather than applying a made-up universal card height.</p>
+<p>Folder cards are more generously padded: 20 horizontal, 12 vertical, icon height 24, and icon/text gap 10. The title is headline; count is footnote and secondary. Hover uses lavender fill; selected/hovered border uses accent; drop highlighting has its own selected-style fill. Availability and loading indicators occupy trailing space.</p>
+<p><code>FileHomeView</code> uses adaptive grids with 20-point gaps, 30-point horizontal content margins, and 30-point bottom space. Its header has 30-point section spacing, with top padding 36 without parent breadcrumbs and 15 with them. This should be classified as a browser-page layout, not reused inside a 300-point inspector.</p>
+<h3>13.3 Thumbnail rules</h3>
+<p>Let document content remain the most colorful part of a card. Use neutral chrome and predictable preview bounds. Fit or clip according to the document type; do not distort the content to fill a card. Show a stable loading area while the image arrives so labels do not jump vertically.</p>
+<p>Missing files, locked files, and unavailable providers have distinct overlays/indicators. A blank thumbnail must not be the only indication that a document cannot be opened. For sibling apps, keep a title and recovery/open action available even when the preview fails.</p>
+<h3>13.4 Search inspector</h3>
+<p>Desktop search content uses 16 horizontal/vertical padding and a 12-point content gap. The field uses 12 horizontal and 8 vertical padding. Navigation controls use a 6-point gap. The case toggle is 22 × 18 with 4-point corners; results use 8 horizontal/6 vertical padding and 6-point corners. Query dispatch is debounced at 200ms.</p>
+<p>Compact iOS has larger edges/gaps and a different case-toggle size. Those differences represent input-mode adaptation, not random inconsistency.</p>
+<p><strong>Family rule:</strong> search should share the application surface, typography, border, and focus tokens while retaining enough target area for its input mode. Provide loading, result count, selected result, no-results, and error states. Use different wording for “nothing exists yet” and “nothing matches your search.”</p>
+<h2 id="section-14">14. Inspectors, libraries, history, and presentation</h2>
+<h3>14.1 Inspector shell</h3>
+<p>Docked native inspector width is min 280, ideal 350, max 400. Floating inspector width defaults to 300 and clamps to 260–440. On desktop the floating panel has 10-point top/horizontal insets, 40 bottom clearance, and 8-point corners. Its resize handle exposes a 30-point interaction zone around a visible 6 × 34 capsule; handle opacity changes from .22 to .42 while dragging.</p>
+<p>This is a good general technique: a small visible handle can have a larger interaction region. Keep the resize cursor and width clamping. Remember the user&#39;s width and selected inspector tab where the product supports it.</p>
+<p><code>LayoutState</code> separates whether the inspector is open from its selected tab. Closing does not forget the tab. Clicking the already-open tab closes it; choosing a different tab switches content. This behavior contributes to a predictable family feel.</p>
+<h3>14.2 Canvas preferences</h3>
+<p>Desktop inspector spacing is 16 between blocks, 8 between related rows, and 16 edge padding. Compact iOS uses 20 block/horizontal spacing, 10 row gap, and 18 vertical padding. Section dividers organize groups; small switches sit opposite labels; explanatory text is caption/secondary. The inactive customization panel dims to .55.</p>
+<p>In another app, use this for document-specific settings. Keep global settings and current-document overrides visually and verbally distinct. A dimmed value should explain why it is unavailable or inherited.</p>
+<h3>14.3 Library</h3>
+<p>The native library uses three columns with 8-point gaps. Items can be selected, dragged, previewed, or imported. Section headings use secondary title3 bold in one path, which is larger than the main navigation&#39;s section labels.</p>
+<p>A library background modifier uses a 20-point radius on newer OS versions and 6 on older versions, with white or <code>#121212</code> preview fill. This differs from flat Home cards. The source draws a stroke and fill as separate children, so visible edge behavior must be checked in the renderer rather than assumed from the declared stroke alone.</p>
+<p>The embedded library-browser sheet has min size 720 × 540, a header with 16 horizontal/10 vertical padding, 12-point horizontal spacing, and headline/caption hierarchy. Import views have additional selection/checkmark states and larger sheet layouts.</p>
+<p><strong>Family recommendation:</strong> normalize new library/gallery components to 8-point outer cards, retain 8-point grid gaps for compact galleries, and keep document previews independent of chrome theme. Preserve an explicit selected mark so the image itself does not obscure state.</p>
+<h3>14.4 History</h3>
+<p>History list uses an 8-point vertical gap with 10 horizontal and 8 vertical outer padding. A row has a leading 82 × 52 preview with radius 7, 10-point main gap, and 6-point internal padding. Text is headline with footnote secondary metadata, using 6 and 2-point internal text spacing.</p>
+<p>The detail preview is 400 × 300 with 8 corners, followed by content padded 20 and title2 bold heading. Badges distinguish checkpoint sources, and errors use red text. Keep restoration as an explicit action; visual selection alone should not restore a historical document.</p>
+<h3>14.5 Presentation</h3>
+<p>Presentation is a specialized full-content experience: black stage/window, dark controls regardless of app theme, and a bottom capsule control strip. The controls use 12-point gaps, 8 internal padding, 24 bottom clearance, 28-high dividers, a slide counter with minimum width 72 and monospaced digits, and a title area max width 240. Buttons are circular, using the shared button adapter.</p>
+<p>Welcome content adds a 64-point circular icon backdrop, a 30-point symbol, title2 semibold heading, and a gentle tinted gradient. The more expressive entrance and stronger presentation shadow are exceptions, not the main settings style.</p>
+<p>For media or slideshow sibling apps, a dedicated dark viewing mode can belong to the same family. Keep its controls and typography familiar while letting the content occupy the stage.</p>
+<h2 id="section-15">15. Dialogs, export, import, security, and confirmations</h2>
+<h3>15.1 Native export</h3>
+<p>The native export flow is not a copy of the web export modal. <code>ShareView</code> has its own route-dependent layout, preferred sheet-height handling, and format tiles. Format actions are 86 × 86, use 8-point corners on macOS, solid surfaces, 1-point borders, and hover fill. Hover animation is .1-second ease-out.</p>
+<p>The source includes 40-point sheet padding, route-specific dimensions, and 10/14/20-point action/group spacing. One section is 460 × 300; it would be wrong to state that every export route has that size. Image export contains a 200 × 120 preview frame and 220 × 140 placeholder components with 16-point corners, as well as loading/error states and different action heights.</p>
+<p>Use this distinction in sibling apps: format selection, preview/options, and final destination are different stages. Give the preview stable space and keep the primary action in a consistent location. Show errors beside the relevant operation rather than silently dismissing the sheet.</p>
+<h3>15.2 Web dialogs</h3>
+<p>The web modal has a dim backdrop using <code>rgba(18,18,18,.2)</code>, a 12px content radius, 1px border, and the modal shadow. The inner island resets its own border/shadow/radius so it does not create a second nested panel. Inner padding is 40px.</p>
+<p>Dialog title is 20px with 12px bottom padding, a bottom border, and 24px bottom margin. Close-button icon is 24px. Dialog action buttons are 48px high, with 8px/24px padding, 8px corners, 14px semibold type, and an 8px icon/text gap. These are intentionally larger than canvas toolbar buttons.</p>
+<h3>15.3 Small utility sheets</h3>
+<p>Rename has a compact 300-point-wide path and 64-point action widths. Folder/group creation and locked-access sheets use native controls and semantic type rather than a single universal custom dialog class. Native sheet sizing and default button placement depend on the specific route and OS.</p>
+<p>For a new app, standardize three categories: small single-value sheet, normal settings/action sheet, and large preview/workspace sheet. Use 24-point body padding as the default proposal, 8/12-point internal gaps, and 10-point action gaps. Preserve larger existing preview workflows when their content needs room.</p>
+<h3>15.4 Recovery and locked-content UI</h3>
+<p>Recovery-key input has 24-point body padding, 18-point block spacing, and a footer with 24 horizontal, 10 top, and 22 bottom padding. Standard header uses a 38-point semibold symbol and title2 semibold title; compact header uses a 20-point symbol inside a 46-point circle tinted at .16. The key uses monospaced body text; errors are red callout text.</p>
+<p>Locked previews use lock/shield/key symbolism and intentionally avoid showing protected content. In a family app, a lock overlay is functional information, not decoration. Use a clear access action and explain what will happen. Do not use color alone to distinguish locked from unlocked content.</p>
+<h3>15.5 System dialogs</h3>
+<p>NSOpenPanel, NSSavePanel, macOS share destinations, native color panels, OS security prompts, and the menu bar should retain platform controls. This guide specifies the app-owned surface around them. Exact system radii, typography, and animation timings are OS-owned and are outside this codebase&#39;s design contract.</p>
+<h2 id="section-16">16. Settings and secondary application surfaces</h2>
+<p>Settings uses a split navigation structure with a custom flat sidebar on macOS. Sidebar rows reuse the shared navigation-row style inside a stack padded by 10. The settings root explicitly tints with the shared theme primary and uses the opaque surface.</p>
+<p><code>SettingsFormContainer</code> uses a grouped <code>Form</code> on macOS 14+, hides the scroll content background, supplies the opaque surface, and installs bordered shared buttons. Earlier versions use a padded scrollable VStack fallback. Grouped section interiors and individual system controls can still be platform-rendered; overriding the background is not a complete custom form design system.</p>
+<p>The settings source scan includes all 40 tracked files in the settings subtree. Key surface families are:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Style and adoption guidance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>General</td>
+<td>Grouped toggles, explanatory captions, layout previews, and experimental-feature notes. Layout samples have 8-point outlines, 120-point images, and selected stroke at accent .5/4 points. Treat illustrative preview borders separately from ordinary controls.</td>
+</tr>
+<tr>
+<td>Drawing defaults</td>
+<td>Reorder rows with 20-point tool icons, 10-point gaps, 18-point handle columns, shortcut capsules, and a drawing panel 260 wide. Preserve consistent controls between global defaults and document overrides.</td>
+</tr>
+<tr>
+<td>Fonts</td>
+<td>Native font-related controls and lists. Installed canvas fonts are content capability, not app-wide typography.</td>
+</tr>
+<tr>
+<td>Media</td>
+<td>Thumbnail grids, detail previews, cleanup selection, and confirmation sheets. Keep thumbnails neutral and make cleanup selection explicit.</td>
+</tr>
+<tr>
+<td>Backups</td>
+<td>Split list/detail browser, dated content, export, and locked previews. Use metadata hierarchy and preserve recoverability actions.</td>
+</tr>
+<tr>
+<td>Security</td>
+<td>Grouped controls plus locked-content/recovery flows. Favor clear explanatory text over decorative security artwork.</td>
+</tr>
+<tr>
+<td>Linked storage</td>
+<td>Provider icons and account/folder management. Provider artwork is third-party identification, not a new palette for the surrounding shell.</td>
+</tr>
+<tr>
+<td>MCP / AI</td>
+<td>Build-flavor-dependent. Local macOS identifies the settings route as MCP; cloud AI interfaces exist in source but are restricted by feature policy.</td>
+</tr>
+<tr>
+<td>About</td>
+<td>128 × 128 app icon, title3 bold application name, build/version metadata, developer identity, and GitHub row with 20-point icon and headline/caption hierarchy.</td>
+</tr>
+<tr>
+<td>Pencil / What&#39;s New</td>
+<td>iOS-specific routes; do not treat their mobile layouts as desktop defaults.</td>
+</tr>
+</tbody></table></div>
+<p>Use a stable left navigation column and a readable detail form in other desktop apps. Keep row labels left aligned and controls predictably aligned. Provide section-level explanatory text where it changes the user&#39;s decision. Avoid making every setting a custom promotional card.</p>
+<h2 id="section-17">17. Motion, feedback, and perceived responsiveness</h2>
+<p>There is no single global motion token set in the app. The following source values are useful anchors:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Source timing/behavior</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Sidebar hover/active change</td>
+<td>.16s ease-in-out</td>
+</tr>
+<tr>
+<td>Desktop file/folder hover</td>
+<td>.2s smooth</td>
+</tr>
+<tr>
+<td>Export tile hover</td>
+<td>.1s ease-out</td>
+</tr>
+<tr>
+<td>Lock-icon change</td>
+<td>.18s smooth or ease-in-out fallback</td>
+</tr>
+<tr>
+<td>File-card lock presentation</td>
+<td>.22s smooth</td>
+</tr>
+<tr>
+<td>Search query debounce</td>
+<td>.2s; request timing, not an animation</td>
+</tr>
+<tr>
+<td>Web switch</td>
+<td>150ms ease-out</td>
+</tr>
+<tr>
+<td>Web modal backdrop</td>
+<td>.1s linear fade</td>
+</tr>
+<tr>
+<td>Web modal content</td>
+<td>.025s ease-out keyframe from scale .9 to 1</td>
+</tr>
+<tr>
+<td>Web toast appearance</td>
+<td>.5s fade</td>
+</tr>
+<tr>
+<td>Generic native loading ring</td>
+<td>.8s looping animation; .5s progress change</td>
+</tr>
+<tr>
+<td>Math token pressed</td>
+<td>Scale .97</td>
+</tr>
+<tr>
+<td>Math template pressed</td>
+<td>Scale .985</td>
+</tr>
+<tr>
+<td>Math circle pressed</td>
+<td>Scale .94</td>
+</tr>
+</tbody></table></div>
+<p>Do not infer a precise duration for <code>.smooth</code>, <code>.default</code>, <code>.easeOut</code>, or spring calls without explicit parameters. Do not copy the web modal&#39;s 25ms timing as a general-purpose animation standard; it is a component-specific source value.</p>
+<p><strong>Proposed family motion:</strong> 100–160ms for hover/press/focus feedback; 180–220ms for local disclosure or modest content transitions; no playful bounce on routine navigation. Avoid scaling the whole navigation row or ordinary card. Preserve position and readable text while loading.</p>
+<p>A style includes how stable it feels. <code>AnimatedPresence</code> accounts for neighboring spacing during collapse rather than letting the gap disappear in a separate jump. The header keeps stable geometry. Preview coordinators cache and schedule expensive work. Apply those principles in sibling apps: asynchronous previews, stable placeholders, cancel stale work, and avoid moving the primary action while the user reaches for it.</p>
+<p>Reduced-motion handling is not globally wired through the shared theme. A targeted scan found explicit support in the WebDAV marquee and a web color-picker branch, but not a complete shared motion policy. A new family implementation should add one. Stop continuous decorative animation, retain immediate state changes, and use a simple fade or no transition for large movements.</p>
+<h2 id="section-18">18. Loading, empty, error, save, and availability states</h2>
+<p>The header is a strong model: “Autosave on,” “Saving…,” “Saved,” “Recovery unavailable,” and “Save failed — retrying” communicate distinct states. Secondary checkmark status stays visually quiet. Orange plus a warning symbol makes problems noticeable. Tooltips explain timing and the last save, and accessibility labels combine the status and detail.</p>
+<p>Use stable status width where possible, but let full explanations appear in a tooltip or detail panel. A short status should not imply successful recovery or synchronization when only the local save succeeded.</p>
+<p>Web toasts are compact floating surfaces: min width 220, max width <code>min(360px, viewport minus 32px)</code>, 8px corners, 1px border, 8px/12px padding, centered 12px text with 20px line-height. A 4px progress bar appears when needed. The close action receives pointer events even though the surrounding toast is not a general interaction surface.</p>
+<p>Native sync popovers use 16 vertical padding, rows with 12-point icon/text gap, a 20-point icon column, 2-point title/detail spacing, and 16 horizontal inset. Their 24-point new-OS corner path and 12-point fallback are exceptions to the compact panel system.</p>
+<p>For sibling apps, define the following before considering the screen finished:</p>
+<ul>
+<li>Initial empty state: what belongs here, and one primary way to add it.</li>
+<li>Search empty state: what query produced no matches, with a clear way to change/reset it.</li>
+<li>Loading: what is loading, with stable space and progress when measurable.</li>
+<li>Error: plain explanation plus retry/recovery action; preserve user input.</li>
+<li>Offline/unavailable: distinguish network/provider availability from missing content.</li>
+<li>Disabled: why an action is unavailable, where explanation is necessary.</li>
+<li>Partial success: say which part succeeded and which part needs attention.</li>
+<li>Saved/synchronized: separate these if they are different operations.</li>
+</ul>
+<p>These are family behavior rules. The source contains multiple implementations, not a unified reusable state-view component.</p>
+<h2 id="section-19">19. Less prominent and conditional surfaces</h2>
+<p>A full source pass reveals additional styles that should not silently become defaults for your other apps.</p>
+<h3>19.1 Math, Mermaid, PDF, and source-entry workspaces</h3>
+<p>Math input has token buttons at radius 8, template cards at radius 12, circle controls at 30 × 30, and generated-action capsules at height 30. Token/card fills use secondary opacity rather than the shared lavender fill. Pressed states include small scaling. Its optional inspector width is 260–360, ideal 300. Code/expression inputs use monospaced typography; previews need their own neutral background and error/loading states.</p>
+<p>A dynamic math AI background uses a rotating angular gradient with a 7-second cycle, a 1.2-point border, and blurred glow. That is not the desktop shell style. Mermaid, PDF insert/viewer, and export previews are utility workspaces with native sheet/navigation affordances. Their special preview geometry is not a global dialog size.</p>
+<h3>19.2 AI chat and subscription</h3>
+<p>There are 96 tracked files in the AI-chat subtree and 17 in Subscription. Their UI includes message bubbles, prompt entry, attachment controls, pending queues, tool/result cards, usage rings, plan cards, glowing generation states, and dedicated error/consent surfaces.</p>
+<p>The local non-App-Store macOS build has <code>allowsCloudAIServices == false</code>; local presentation and MCP have separate policy. Therefore these visual sources must not be described as the default visible local app or recommended because they appear frequently in the file count.</p>
+<p><code>AIAppearancePalette</code> includes multicolor thinking (<code>purple → pink → orange → blue</code>) and foreground (<code>accent → purple → pink</code>) gradients; plan hues around cyan .56, indigo .64, and rose .86; and a light paywall base RGB(.965,.975,1) versus dark RGB(.035,.04,.065). Generation uses cyan/blue/violet/purple/magenta angular stops, with different light/dark saturation and opacity plus inner/mid/halo glows. The source appendix preserves exact declarations.</p>
+<p><strong>Family rule:</strong> if another application has AI, its capability does not require a second rainbow visual identity. Keep everyday AI controls within the normal palette. Add bounded activity feedback only when it clarifies an operation. Treat plan gradients and upsell art as optional marketing surfaces.</p>
+<h3>19.3 Cloud storage and authentication</h3>
+<p>Some UI lives under <code>Persistence/CloudStorage</code>, not just a <code>Views</code> folder. The inventory includes those files. Provider connection panels, WebDAV forms, and provider-specific icons are a distinct family of account/connection surfaces. Match the app&#39;s outer spacing and typography, but keep recognizable provider marks intact and do not assume they define your brand colors.</p>
+<h3>19.4 Tips, onboarding, What&#39;s New, and promotional media</h3>
+<p>These use larger artwork, before/after sliders, video, feature cards, and more generous spacing. Existing image assets can show old product UI. They are explanatory content, not evidence that those screens are current or that their dimensions should be standardized.</p>
+<p>A generic loading ring also has a peach-to-pink gradient default, distinct from the shared lavender palette. Explicit call-site colors or native ProgressView can change actual usage. Do not import its default gradient automatically into new workspace spinners.</p>
+<h3>19.5 Debug and diagnostics</h3>
+<p>Debug panels and file-info views favor dense technical text, identifiers, and diagnostics. Keep these subordinate and platform-appropriate; they do not set the style of ordinary customer settings. The main content should not expose internal implementation names just because they occur in the code.</p>
+<h3>19.6 Quick Look and system integration</h3>
+<p>Quick Look displays a renderer or a circular progress view and clips the result with radius 6. Its host chrome is controlled by the OS. Sparkle&#39;s update UI and third-party packages similarly introduce externally implemented surfaces. The app&#39;s call-site styles can be inventoried, but exact dependency/system internals are outside this source specification.</p>
+<h2 id="section-20">20. Brand assets, product identity, and what to share across apps</h2>
+<p>The sidebar uses the upstream Excalidraw mark and wordmark as vector assets. The app icon is separate monitor-and-pencil artwork. These identities should not be confused with the reusable style system.</p>
+<p>For your other apps, share the palette, spacing, component geometry, type hierarchy, interaction states, keyboard conventions, About-page structure, and developer attribution. Give each app its own product name and icon. An unrelated app should not inherit the Excalidraw wordmark merely to look related.</p>
+<p>Preserve vector aspect ratios and provide light/dark tint behavior. For a suite of application icons, use a related palette and level of detail while giving each a distinct central object. This is a suggested suite convention; the repository contains one application&#39;s icon, not an existing multi-app icon system.</p>
+<p>The source branding notes identify upstream logo provenance and a retained license notice. Keep those notices with any reused assets. The developer row currently uses <code>dp466</code> and a GitHub destination. Third-party provider logos, old promotional images, and bundled font resources remain separate asset categories.</p>
+<h2 id="section-21">21. Accessibility and legibility findings</h2>
+<p>The style can be preserved while making it easier to read. This section is a targeted source-level assessment, not an accessibility certification.</p>
+<h3>21.1 Calculated color contrast</h3>
+<p>Ratios below use the source sRGB values at full opacity and the relative-luminance formula. They do not represent sampled antialiased pixels, system semantic colors, or disabled/pressed composites.</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Pair</th>
+<th>Ratio</th>
+<th>Implication</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Native light accent on white</td>
+<td>4.68:1</td>
+<td>Barely above ordinary text&#39;s 4.5 target; little margin</td>
+</tr>
+<tr>
+<td>Native light accent on selected lavender</td>
+<td>3.70:1</td>
+<td>Weak for 13-point selected labels</td>
+</tr>
+<tr>
+<td>Native dark accent on charcoal</td>
+<td>7.06:1</td>
+<td>Strong contrast</td>
+</tr>
+<tr>
+<td>Native dark accent on selected lavender</td>
+<td>3.62:1</td>
+<td>Weak for small selected labels</td>
+</tr>
+<tr>
+<td>Light separator on white</td>
+<td>1.19:1</td>
+<td>Decorative separation; not a strong focus/required boundary</td>
+</tr>
+<tr>
+<td>Dark separator on charcoal</td>
+<td>1.31:1</td>
+<td>Same limitation</td>
+</tr>
+<tr>
+<td>Web selected foreground/container, light</td>
+<td>13.61:1</td>
+<td>Strong selected-tool pairing</td>
+</tr>
+<tr>
+<td>Web selected foreground/container, dark</td>
+<td>7.64:1</td>
+<td>Strong selected-tool pairing</td>
+</tr>
+</tbody></table></div>
+<p>For web implementations, WCAG&#39;s normal-text threshold is 4.5:1, with 3:1 for qualifying large text and exceptions such as inactive controls. These figures explain why a selected-text token is worth separating from the accent token. See <a href="https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html">W3C text contrast guidance</a>.</p>
+<p>Recommended: keep the existing selection fills, and use <code>#030064</code> / <code>#E0DFFF</code> as selected text in the portable system. Recalculate for the actual chosen background and all interaction states. This is an accessibility-oriented adjustment that preserves the lavender identity.</p>
+<p>Non-text control/state information can require 3:1 against adjacent colors; a faint decorative separator is not automatically a failure, but it should not be the only thing that identifies an essential control or state. See <a href="https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html">W3C non-text contrast guidance</a>.</p>
+<h3>21.2 Target size and input modes</h3>
+<p>The code contains useful 24–40-point desktop controls, but also a 22 × 18 case toggle and tiny icon details. Visible size and hit-target size are different. Some wrappers enlarge the interaction area; others need verification.</p>
+<p>For web controls, WCAG 2.2&#39;s minimum target criterion uses 24 × 24 CSS pixels with specified exceptions, including spacing. Do not apply it as a simplistic blanket statement that every 18px glyph fails. See <a href="https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html">W3C target-size guidance</a>.</p>
+<p>For the proposed family, use 32-point regular desktop targets and at least 44-point comfortable touch targets as a design preference, with larger hit areas around small visible glyphs. The touch value is a proposed family target, not a claim about every current iOS control.</p>
+<h3>21.3 Focus, naming, and selection</h3>
+<p>The custom menu already includes focus state, expanded/collapsed accessibility values, keyboard activation, and focus restoration. The web ToolIcon includes a 2px focus-visible treatment. The generic native flat button style itself does not draw a custom focus ring; final behavior depends on the containing view and platform.</p>
+<p>Some swatches/option buttons appeared unnamed in the native accessibility tree. This needs a targeted VoiceOver check and explicit names such as “Stroke color, red, selected” where absent. Do not infer complete accessibility from a visible color outline.</p>
+<p>Proposed family requirements: every icon-only control has a name; every selected tab/tool exposes state; all menus work without a pointer; labels remain visible or programmatically associated; errors are readable and reachable; dismissal returns focus predictably.</p>
+<h3>21.4 Scaling and motion</h3>
+<p>Fixed row/control heights can clip larger text. Semantic type elsewhere does not solve this automatically. Verify long names, localization, increased text size, large cursor, VoiceOver, contrast settings, and reduced motion. Preserve a scrollable or adaptive layout for compact widths. Large overlays should not obscure the only dismissal action.</p>
+<h2 id="section-22">22. Inconsistencies to document rather than accidentally copy</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>Current evidence</th>
+<th>Recommended family decision</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Two accent sources</td>
+<td>Shared explicit violet versus system-indigo asset</td>
+<td>One semantic accent with per-platform implementation</td>
+</tr>
+<tr>
+<td>Two native surface definitions</td>
+<td>Theme method and asset catalog</td>
+<td>Generate both from one token</td>
+</tr>
+<tr>
+<td>Several selected-state palettes</td>
+<td>Native rows, web tools, option buttons, segments</td>
+<td>Keep role-based tokens; use stronger selected text</td>
+</tr>
+<tr>
+<td>Radius spread</td>
+<td>4 through 30+ across platform/secondary branches</td>
+<td>Default 6/8/12; document exceptions</td>
+</tr>
+<tr>
+<td>Spacing spread</td>
+<td>Recurring 8/10/12/16 plus local odd values</td>
+<td>Small named scale with local optical exceptions</td>
+</tr>
+<tr>
+<td>Mixed typography</td>
+<td>Native system, web Assistant, document fonts</td>
+<td>Intentional native/web split; document fonts stay content-only</td>
+</tr>
+<tr>
+<td>Glass-named flat wrappers</td>
+<td>Adapter changes behavior on macOS</td>
+<td>Name new portable APIs after roles, not outdated effects</td>
+</tr>
+<tr>
+<td>Remaining shadows</td>
+<td>Menus, inspectors, Home search fallback, presentation</td>
+<td>Elevation only for overlays; explicitly list residual exceptions</td>
+</tr>
+<tr>
+<td>Selected label contrast</td>
+<td>Around 3.6–3.7:1 on current native selection fill</td>
+<td>Separate on-selection text token</td>
+</tr>
+<tr>
+<td>Motion has no common policy</td>
+<td>Many per-view animations; sparse reduce-motion handling</td>
+<td>Shared motion tokens and a reduce-motion switch</td>
+</tr>
+<tr>
+<td>Multiple input recipes</td>
+<td>System Form, native search, web text fields</td>
+<td>Compact and comfortable variants with shared state rules</td>
+</tr>
+<tr>
+<td>Build-flavor UI</td>
+<td>Cloud AI/paywall source exists but local policy disables services</td>
+<td>Classify by reachable product flavor</td>
+</tr>
+<tr>
+<td>Old proposals and screenshots</td>
+<td>Several design/proposal and promotional assets</td>
+<td>Use active code and current capture for “as built” claims</td>
+</tr>
+</tbody></table></div>
+<p>No application code was changed by this guideline work. These are recommendations for reuse and future consolidation, not fixes silently applied to the app.</p>
+<h2 id="section-23">23. The reusable family specification</h2>
+<p>This is the concise normative version for new sibling apps. It is a proposed standard distilled from the audit.</p>
+<h3>23.1 What stays constant</h3>
+<ol>
+<li>Use opaque white/charcoal app-owned surfaces and the shared light/dark lavender palette.</li>
+<li>Use 6-point regular controls, 8-point cards/panels, and 12-point large dialogs.</li>
+<li>Use 32-point regular desktop controls, with 24 small, 36 large, and 40 extra-large variants where appropriate.</li>
+<li>Use system typography on native macOS and a deliberate system/Assistant choice on web; keep the same hierarchy.</li>
+<li>Use 8–10-point control gaps, 12–16-point panel insets, and 16–24-point section spacing.</li>
+<li>Use 1-point borders for structure and stronger independent indicators for focus, selected controls, and errors.</li>
+<li>Keep primary actions softly lavender in ordinary workspace chrome. Reserve saturated fills for cases where stronger emphasis is needed and verified.</li>
+<li>Keep hover, selected, pressed, focus, disabled, loading, and error states complete and consistent.</li>
+<li>Keep labels and icons aligned, with predictable shortcut placement and accessible naming.</li>
+<li>Keep content dominant, preserve native platform behaviors, and make navigation and status stable.</li>
+</ol>
+<h3>23.2 What may differ by application</h3>
+<p>The document/content type, primary workflow, product icon, app name, specialized data colors, inspector contents, and screen-specific density can differ. An audio utility may use a timeline instead of a canvas; a security app may use a table; a vault may use a file list. They should share the same surrounding control language.</p>
+<p>Choose a full three-pane shell only when the product needs it. A small menu-bar utility can use the same colors, 6-point buttons, 8-point panel, typography, spacing, and interaction states without pretending to be a document editor.</p>
+<h3>23.3 Suggested component library</h3>
+<p>Build a small shared library around <code>Surface</code>, <code>ActionButton</code>, <code>IconButton</code>, <code>NavigationRow</code>, <code>MenuRow</code>, <code>TextField</code>, <code>Section</code>, <code>ContentCard</code>, <code>Inspector</code>, <code>StatusLabel</code>, <code>EmptyState</code>, and <code>DialogActions</code>. Add <code>Density</code> and <code>MotionPreference</code> at the environment level. Product-specific controls compose those primitives.</p>
+<p>Keep raw colors and geometry out of screen code where they repeat. A new feature should choose a role and size, not re-invent a purple hex value and radius.</p>
+<h3>23.4 Reference token usage</h3>
+<p>The supplied <code>tokens.json</code> separates observed core colors from recommended portable text/state decisions. <code>quiet-lavender.css</code> demonstrates the proposed family in web components. It does not replace all existing editor CSS or implement native OS controls.</p>
+<p>For SwiftUI, the equivalent architecture is a theme that resolves from <code>ColorScheme</code>, a small size/radius vocabulary, and shared button/row styles. Preserve <code>Color.primary</code>/<code>.secondary</code> where system adaptation matters, but provide explicit selected text and error/focus roles where the component paints its own background.</p>
+<p>Do not automatically assign a saturated primary color as text on every tinted surface. A semantic system needs foreground-on-background pairs, not merely a list of attractive colors.</p>
+<h2 id="section-24">24. Adoption and acceptance checklist</h2>
+<p>Before adapting an existing application, map each major screen to these roles. Identify its current component library and replace shared tokens before changing screen layouts. A visual family does not require a disruptive navigation redesign.</p>
+<p>A sensible adoption order is shared color/type/geometry tokens, buttons and rows, navigation and headers, forms/cards/inspectors, then specialized states and secondary screens. Validate real app screens after each meaningful step, including OS-owned transitions.</p>
+<p>Check the following against actual rendered UI:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Acceptance question</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Light and dark</td>
+<td>Do surface, text, selection, hover, border, and focus each have correct paired colors?</td>
+</tr>
+<tr>
+<td>Density</td>
+<td>Are repeated rows and controls consistently sized without clipped text?</td>
+</tr>
+<tr>
+<td>Geometry</td>
+<td>Are ordinary controls 6, cards 8, large dialogs 12 unless documented otherwise?</td>
+</tr>
+<tr>
+<td>Hierarchy</td>
+<td>Is the user&#39;s content more visually prominent than navigation and decoration?</td>
+</tr>
+<tr>
+<td>Alignment</td>
+<td>Do icon columns, labels, trailing shortcuts, and action baselines line up?</td>
+</tr>
+<tr>
+<td>Interaction</td>
+<td>Can hover, selected, keyboard focus, pressed, and disabled be distinguished?</td>
+</tr>
+<tr>
+<td>Loading</td>
+<td>Does content keep stable geometry and communicate progress/failure?</td>
+</tr>
+<tr>
+<td>Errors</td>
+<td>Is there explanatory text and a recovery path, not just a red outline?</td>
+</tr>
+<tr>
+<td>Keyboard</td>
+<td>Can the whole workflow be completed, dismissed, and resumed without a pointer?</td>
+</tr>
+<tr>
+<td>Accessibility</td>
+<td>Are targets usable, controls named, states exposed, contrast tested, and reduced motion respected?</td>
+</tr>
+<tr>
+<td>Resizing</td>
+<td>Are narrow windows, inspector opening, long names, and large text usable?</td>
+</tr>
+<tr>
+<td>Platform</td>
+<td>Do native file pickers, window dragging, menus, and shortcuts still behave correctly?</td>
+</tr>
+<tr>
+<td>Branding</td>
+<td>Is the app&#39;s own icon/name present while the developer identity is consistent?</td>
+</tr>
+<tr>
+<td>Performance</td>
+<td>Do previews, animations, and navigation remain responsive with realistic content?</td>
+</tr>
+</tbody></table></div>
+<p>Test representative populated and empty states, not just a specimen page. A style guide preview proves the tokens and examples render; it does not prove the application adopting them is complete.</p>
+<h2 id="section-25">25. Copyable implementation brief for your other applications</h2>
+<blockquote>
+<p>Apply the Quiet Lavender design guideline from ExcalidrawDesktop to this application. Preserve its existing workflows and use its own product name and icon. Use opaque white (<code>#FFFFFF</code>) and charcoal (<code>#232329</code>) app-owned surfaces, violet accent (<code>#6965DB</code> light, <code>#A8A5FF</code> dark), lavender selection (<code>#E3E2FE</code> / <code>#4F4D6F</code>), subtle hover (<code>#EFEDFF</code> / <code>#37334F</code>), and thin structural borders (<code>#EBEBEB</code> / <code>#36363F</code>). Use stronger on-selection text (<code>#030064</code> / <code>#E0DFFF</code>) for legible small labels. Default to 6-point control corners, 8-point cards/panels, 12-point large dialogs, and 32-point desktop controls. Use 8–10-point internal gaps, 12–16-point panel insets, and 16–24-point section gaps. Keep system typography on native macOS; choose a consistent system or Assistant web UI face. Use complete hover, pressed, focus, selected, disabled, loading, and error states. Reserve shadows for overlays and keep ordinary surfaces flat. Preserve native window behavior, file pickers, keyboard shortcuts, and accessible semantics. Review all light/dark, narrow-window, long-text, empty, loading, and error states in the running application. Treat AI gradients, oversized corner radii, and old platform-specific treatments as exceptions rather than family defaults.</p>
+</blockquote>
+<h2 id="section-26">26. Coverage map and exact source references</h2>
+<p>The declaration index records every scanned matching file, including support UI outside obvious view folders. The JSON also records no-match files, checksums, tests, and working-tree overrides. It is intentionally lexical: a multi-line color or layout expression must be read in its source context, and absence of a regex match does not prove absence of visual behavior.</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Family</th>
+<th>Main source locations</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Shell palette and controls</td>
+<td><code>Sidebar/components/NavigationShellTheme.swift</code>; <code>components/EditorChromeStyle.swift</code>; color assets</td>
+</tr>
+<tr>
+<td>Window and split layout</td>
+<td><code>ContentView+/Detail/ContentViewModern.swift</code>; <code>ContentViewDetail.swift</code>; <code>ExcalidrawZApp.swift</code>; <code>RootView.swift</code></td>
+</tr>
+<tr>
+<td>Desktop header/branding</td>
+<td><code>components/DesktopNavigationHeader.swift</code>; <code>DesktopSidebarHeading.swift</code></td>
+</tr>
+<tr>
+<td>Navigation/tree</td>
+<td><code>Sidebar/SidebarView.swift</code>; group/local/temporary/cloud rows; <code>SidebarRowModifier.swift</code>; <code>FileRowLabel.swift</code>; disclosure helpers</td>
+</tr>
+<tr>
+<td>Menus</td>
+<td><code>components/DesktopAppMenu.swift</code>; <code>DesktopDrawingMenu.swift</code>; file/folder context menus</td>
+</tr>
+<tr>
+<td>Home/browser</td>
+<td><code>ContentView+/Detail/Home/</code>; <code>ContentView+/Detail/Components/</code></td>
+</tr>
+<tr>
+<td>Native toolbar</td>
+<td><code>ExcalidrawView/Toolbar/</code>; platform guards determine visibility</td>
+</tr>
+<tr>
+<td>Web toolbar/properties</td>
+<td><code>editor/packages/excalidraw/components/ToolIcon.scss</code>; <code>Toolbar.scss</code>; <code>Actions.scss</code>; <code>LayerUI.tsx</code>; <code>css/styles.scss</code></td>
+</tr>
+<tr>
+<td>Drawing choices/color</td>
+<td><code>ExcalidrawView/components/DrawingSettingsPanel/</code>; editor ColorPicker/FontPicker</td>
+</tr>
+<tr>
+<td>Inspectors</td>
+<td><code>SidebarTrailing/InspectorPresentation.swift</code>; <code>CanvasSettings/</code>; <code>Search/</code></td>
+</tr>
+<tr>
+<td>Library and history</td>
+<td><code>SidebarTrailing/Library/</code>; <code>SidebarTrailing/FileHistory/</code></td>
+</tr>
+<tr>
+<td>Presentation</td>
+<td><code>SidebarTrailing/Presentation/</code></td>
+</tr>
+<tr>
+<td>Export/archive</td>
+<td><code>Share/</code>; <code>Share/components/ExportButtonStyle.swift</code></td>
+</tr>
+<tr>
+<td>Settings</td>
+<td><code>Settings/</code>, all 40 tracked source files</td>
+</tr>
+<tr>
+<td>Security/locked UI</td>
+<td><code>Sidebar/components/LockedFileAccessSheet.swift</code>; recovery helpers; locked preview overlays</td>
+</tr>
+<tr>
+<td>Storage/auth</td>
+<td><code>Persistence/CloudStorage/</code> plus linked-storage settings/sidebar</td>
+</tr>
+<tr>
+<td>AI and subscriptions</td>
+<td><code>SidebarTrailing/AIChat/</code>; <code>Subscription/</code>; <code>components/styles/AIAppearancePalette.swift</code></td>
+</tr>
+<tr>
+<td>Math/Mermaid/PDF</td>
+<td><code>ExcalidrawView/Toolbar/components/</code>; <code>components/PDFViewer/</code>; math rendering helpers</td>
+</tr>
+<tr>
+<td>Feedback</td>
+<td><code>components/SyncStatus*</code>; <code>LoadingView.swift</code>; <code>CopyFeedbackButton.swift</code>; <code>AnimatedPresence.swift</code></td>
+</tr>
+<tr>
+<td>Other support</td>
+<td><code>components/WhatsNew/</code>; <code>Debug/</code>; <code>Sparkle/</code>; <code>Extensions/</code>; feature tips</td>
+</tr>
+<tr>
+<td>OS preview</td>
+<td><code>QuickLookPreviewExtension/QuickLookView.swift</code>; <code>PreviewViewController.swift</code></td>
+</tr>
+<tr>
+<td>Web secondary components</td>
+<td>All 79 scanned CSS/SCSS files, plus React component/integration declarations</td>
+</tr>
+<tr>
+<td>Assets</td>
+<td>Named color sets, vector marks, app icon source, custom symbols, provider art, bundled fonts</td>
+</tr>
+</tbody></table></div>
+<p>Native relative paths in this table are under <code>ExcalidrawZ/</code> unless they begin with <code>editor/</code> or <code>QuickLookPreviewExtension/</code>. Exact line numbers and full paths are in <code>SOURCE-INDEX.md</code>. Historical design notes were used only to understand intent; the implemented values above were checked against current source.</p>
+</article><p class="source-note">Generated from STYLE-GUIDE.md. The full text and specimens are embedded in this HTML file; no remote fonts, scripts, images, or services are needed to read it. Companion downloads remain separate local files.</p></main></div><script>
+const root=document.documentElement; const themeButton=document.getElementById('theme-toggle');
+function setTheme(theme){root.dataset.theme=theme;themeButton.textContent=theme==='dark'?'Light appearance':'Dark appearance';themeButton.setAttribute('aria-label','Switch specimen and guide to '+(theme==='dark'?'light':'dark')+' appearance');document.querySelectorAll('[data-light]').forEach(x=>x.textContent=x.dataset[theme]);}
+setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+themeButton.addEventListener('click',()=>setTheme(root.dataset.theme==='dark'?'light':'dark'));
+const status=document.getElementById('specimen-status');
+document.querySelectorAll('#sample-items .ql-row').forEach(row=>row.addEventListener('click',()=>{document.querySelectorAll('#sample-items .ql-row').forEach(x=>x.setAttribute('aria-pressed',String(x===row)));document.getElementById('sample-title').textContent=row.textContent.trim();status.textContent='Selected sample: '+row.textContent.trim()+'. No application data changed.';}));
+document.getElementById('sample-search').addEventListener('input',e=>{const q=e.target.value.toLowerCase();let count=0;document.querySelectorAll('#sample-items .ql-row').forEach(x=>{const show=x.textContent.toLowerCase().includes(q);x.hidden=!show;x.style.display=show?'':'none';if(show)count++;});document.getElementById('no-items').hidden=count!==0;status.textContent=count+' matching sample items.';});
+document.getElementById('new-demo').addEventListener('click',()=>{document.getElementById('example-title').focus();status.textContent='Enter a name in the sample field. This is a local interaction specimen.';});
+document.getElementById('sample-action').addEventListener('click',()=>{document.getElementById('example-title').focus();status.textContent='The specimen field is focused. Notice its separate focus outline.';});
+</script></body></html>

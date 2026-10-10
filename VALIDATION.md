@@ -5,6 +5,40 @@ The supported validation target is an Apple Silicon Mac running macOS 27 with Xc
 from installed-app observations. It is not a notarization, App Store, or all-platform
 release certification.
 
+## Build 130: repository and local release readiness (2026-10-10)
+
+Verified on the local Apple Silicon Mac with macOS 27.0.1, Xcode 27.0, and
+Node.js 24.19.0. The embedded editor and Swift packages remain pinned.
+
+- Restored the 16 missing Dropbox/OneDrive source files from the existing commit
+  with the user's approval. Their bootstrap references remain intact; no cloud
+  account was connected or configured.
+- All 42 diagram-plugin tests, 62 editor tests in 11 files, and TypeScript checking
+  passed. Exact editor/dependency patch verification and native source staging
+  fixtures passed.
+- The full native run passed 63 XCTest cases and 26 Swift Testing cases. Its one
+  failed acceptance regression attempted to remove a nonexistent coordination
+  file. Coordination-file cleanup now applies only to the opt-in client harness;
+  the native regression owns a fresh UUID directory. The focused rerun passed
+  the remaining XCTest case, covering native mutation, all four export formats,
+  persistence, and undo. Total: 90 native checks passed across these runs.
+- Rendered test fixtures stay behind the user's foreground app. They use in-memory
+  stores and disposable scenes rather than opening user drawings.
+- The installer passed a disposable-fixture check for the new release-cache
+  location and refusal to replace an unrelated application.
+- Release products and manifests now default to
+  `~/Library/Caches/ExcalidrawDesktop/release`; generated builds are not copied
+  into the iCloud source checkout. The existing ignored build cache was preserved.
+- Source/documentation whitespace and relative Markdown link checks passed.
+  Patch context whitespace is retained for exact reconstruction. PDF and Word
+  artifacts are explicitly binary in Git. A credential-pattern scan of changed
+  and new text files found no matches; this is not an exhaustive security audit.
+- Release installation and runtime checks are recorded separately in the local
+  release cache after committing these sources. The installed build manifest
+  identifies the committed source and checksums used for that build.
+- Independent Codex/Claude CLI acceptance was not rerun. The earlier pending
+  Claude workflow recorded in `docs/MCP-acceptance.md` remains a separate gate.
+
 ## Build 129: icon and fork documentation
 
 - The original Excalidraw vector mark is used for the new flat purple/charcoal icon.
@@ -34,7 +68,7 @@ release certification.
 
 ## Existing automated coverage
 
-The focused native suite contains **38 XCTest cases and 3 Swift Testing cases**.
+The build 130 focused native suite contains **64 XCTest cases and 26 Swift Testing cases**.
 It covers autosave scheduling, persistence acknowledgement and retry, recovery-copy
 replacement and retention, concurrent save boundaries, window binding/reparenting,
 local feature policy, file opening, preview preparation, and embedded-editor behavior.

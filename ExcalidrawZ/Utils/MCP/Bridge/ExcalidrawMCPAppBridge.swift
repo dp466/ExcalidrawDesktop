@@ -11,6 +11,9 @@ import SwiftUI
 
 @MainActor
 final class ExcalidrawMCPAppBridge {
+    /// Set only by the serialized native dispatcher for an internal AI tool.
+    /// External identities are credential UUIDs and cannot supply this flag.
+    var mcpAllowsHostedAICommand = false
     struct ApplyResult: Sendable {
         let targetFileID: String
         let preCheckpointID: UUID?
@@ -107,8 +110,23 @@ final class ExcalidrawMCPAppBridge {
 
     static let shared = ExcalidrawMCPAppBridge()
 
-    private weak var fileState: FileState?
-    private weak var context: NSManagedObjectContext?
+    private final class WindowBinding {
+        let id = UUID().uuidString
+        weak var fileState: FileState?
+        weak var context: NSManagedObjectContext?
+        init(fileState: FileState, context: NSManagedObjectContext) {
+            self.fileState = fileState
+            self.context = context
+        }
+    }
+    private weak var registeredFileState: FileState?
+    private weak var registeredContext: NSManagedObjectContext?
+    private var windowBindings: [WindowBinding] = []
+    private var commandBinding: WindowBinding?
+    private var fileState: FileState? { commandBinding?.fileState ?? registeredFileState }
+    private var context: NSManagedObjectContext? { commandBinding?.context ?? registeredContext }
+    var mcpFileState: FileState? { fileState }
+    var mcpContext: NSManagedObjectContext? { context }
     private var recentApplyResults: [ApplyRequestKey: ApplyResult] = [:]
     private var recentApplyResultKeys: [ApplyRequestKey] = []
     private static let maxRecentApplyResultCount = 32
@@ -119,8 +137,96 @@ final class ExcalidrawMCPAppBridge {
         fileState: FileState,
         context: NSManagedObjectContext
     ) {
-        self.fileState = fileState
-        self.context = context
+        registeredFileState = fileState
+        registeredContext = context
+        windowBindings.removeAll { $0.fileState == nil }
+        if !windowBindings.contains(where: { $0.fileState === fileState }) {
+            windowBindings.append(WindowBinding(fileState: fileState, context: context))
+        }
+    }
+
+    // Called only inside the shared command queue, including compatibility calls.
+    func selectMCPWindow(documentID: String?, windowID: String?) throws {
+        windowBindings.removeAll { $0.fileState == nil }
+        let matches = windowBindings.filter { binding in
+            (windowID == nil || binding.id == windowID)
+                && (documentID == nil || binding.fileState?.currentActiveFile?.id == documentID)
+        }
+        if documentID != nil || windowID != nil {
+            guard matches.count == 1 else {
+                throw MCPJSONRPCError.invalidParams(matches.isEmpty
+                    ? "The requested document is not mounted. Open it first."
+                    : "The document is open in multiple windows. Supply window_id.")
+            }
+            commandBinding = matches[0]
+        } else {
+            commandBinding = windowBindings.first { $0.fileState === registeredFileState }
+        }
+    }
+
+    func clearMCPWindow() { commandBinding = nil }
+
+    func mcpWindowID(for state: FileState) -> String? {
+        windowBindings.first { $0.fileState === state }?.id
+    }
+
+    func mcpOpenWindows() -> MCPJSONValue {
+        .array(windowBindings.compactMap { binding in
+            guard let state = binding.fileState else { return nil }
+            return .object([
+                "window_id": .string(binding.id),
+                "document_id": state.currentActiveFile.map { .string($0.id) } ?? .null,
+                "loaded_document_id": state.excalidrawWebCoordinator?.documentSyncController.currentLoadedFileID.map(MCPJSONValue.string) ?? .null
+            ])
+        })
+    }
+
+    func requireMCPDocument(
+        documentID: String,
+        requiresMutation: Bool
+    ) async throws -> (FileState, ExcalidrawCanvasView.Coordinator) {
+        guard let state = fileState, let active = state.currentActiveFile,
+              active.id == documentID, let coordinator = state.excalidrawWebCoordinator else {
+            throw BridgeError.canvasUnavailable
+        }
+        switch active {
+        case .file: break
+        case .localFile(let url): try ensureMCPApprovedLocalDocument(documentID: url.absoluteString)
+        default: throw BridgeError.unsupportedActiveFile("Full MCP supports app-managed and linked local documents.")
+        }
+        if requiresMutation {
+            guard state.aiChatSession == nil || mcpAllowsHostedAICommand else { throw BridgeError.aiGenerationInProgress }
+            try validateMCPWritableActiveFile(active, fileState: state)
+        }
+        try await ensureMCPCanAccessActiveFile(active)
+        try Task.checkCancellation()
+        guard state.currentActiveFile?.id == documentID,
+              coordinator.documentSyncController.currentLoadedFileID == documentID,
+              coordinator.parent?.file?.id == documentID else {
+            throw BridgeError.fileLoadTimedOut
+        }
+        return (state, coordinator)
+    }
+
+    func fullMCPCheckpoint(documentID: String, description: String, before: Bool) async throws -> String {
+        let (state, core) = try await requireMCPDocument(documentID: documentID, requiresMutation: true)
+        guard let active = state.currentActiveFile else { throw BridgeError.canvasUnavailable }
+        let snapshot = try await core.getCurrentFileSnapshot()
+        guard state.currentActiveFile?.id == documentID,
+              core.documentSyncController.currentLoadedFileID == documentID else { throw BridgeError.canvasUnavailable }
+        // Use the scoped coordinator, never the singleton canvas registry.
+        let content = try snapshot.documentData()
+        let source: FileCheckpointSource = before ? .mcpPre : .mcpPost
+        let id: UUID?
+        switch active {
+        case .file(let file):
+            id = try await PersistenceController.shared.fileRepository.recordCheckpoint(fileObjectID: file.objectID, content: content, source: source, description: description)
+        case .localFile(let url):
+            id = try await recordLocalMCPCheckpoint(url: url, content: content, source: source, description: description)
+        default: throw BridgeError.unsupportedActiveFile("Full MCP checkpoints support local documents.")
+        }
+        guard let id else { throw BridgeError.invalidGeneratedFile("A durable checkpoint could not be created.") }
+        return id.uuidString
     }
 
     @discardableResult
@@ -1696,7 +1802,7 @@ final class ExcalidrawMCPAppBridge {
 
 }
 
-private extension ExcalidrawMCPAppBridge {
+extension ExcalidrawMCPAppBridge {
     nonisolated static func iso8601String(from date: Date) -> String {
         ISO8601DateFormatter().string(from: date)
     }

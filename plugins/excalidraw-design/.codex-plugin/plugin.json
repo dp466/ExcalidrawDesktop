@@ -1,0 +1,24 @@
+{
+  "name": "excalidraw-design",
+  "version": "0.4.1",
+  "description": "Detailed illustrated network and electrical diagrams with Excalifont, device identity, terminal wiring and traceable connections.",
+  "author": {
+    "name": "Dilan Paradis"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Excalidraw Design",
+    "shortDescription": "Illustrated technical diagrams",
+    "defaultPrompt": [
+      "Use $excalidraw-network to create a detailed network deployment with device models, IPs and both cable ports.",
+      "Use $excalidraw-design to create an illustrated editable diagram with Excalifont.",
+      "Use $excalidraw-electrical to create a detailed illustrated Victron wiring diagram with visible terminals and traceable conductors."
+    ],
+    "longDescription": "Create and refine editable diagrams in ExcalidrawDesktop with Excalifont and recognizable equipment. Network documentation preserves models, addresses, ports, VLANs and operational facts. Electrical documentation adds terminal anchors, conductor domains, protection, communication/control and wire schedules, with explicit verification of unknown installation values.",
+    "developerName": "Dilan Paradis",
+    "category": "Productivity",
+    "logo": "./assets/logo.svg",
+    "composerIcon": "./assets/logo.svg",
+    "brandColor": "#7669C8"
+  }
+}

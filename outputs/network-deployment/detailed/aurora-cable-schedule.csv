@@ -1,0 +1,69 @@
+ID,Kind,Source device,Source port,Destination device,Destination port,Medium,Speed Mbps,VLANs / mode,Purpose
+C01,physical,ISP-A,ether1,HQ-WAN-A,ether1,Cat6,1000,Access 201,1G WAN handoff 198.51.100.8/30
+C02,physical,HQ-WAN-A,ether2,HQ-FW-A,wan1,Cat6,1000,Access 201,WAN to active member; shared public VIP
+C03,physical,HQ-WAN-A,ether3,HQ-FW-B,wan1,Cat6,1000,Access 201,WAN to passive member; same L2 segment
+C04,physical,ISP-B,ether1,HQ-WAN-B,ether1,Cat6,1000,Access 202,1G WAN handoff 203.0.113.16/30
+C05,physical,HQ-WAN-B,ether2,HQ-FW-A,wan2,Cat6,1000,Access 202,WAN to active member; shared public VIP
+C06,physical,HQ-WAN-B,ether3,HQ-FW-B,wan2,Cat6,1000,Access 202,WAN to passive member; same L2 segment
+C07,physical,HQ-WAN-A,ether24,HQ-CORE-A,Eth1/7,Cat6,1000,Access 10,Isolated switch management; 1000BASE-T SFP at Nexus
+C08,physical,HQ-WAN-B,ether24,HQ-CORE-B,Eth1/8,Cat6,1000,Access 10,Isolated switch management; 1000BASE-T SFP at Nexus
+C09,physical,HQ-FW-A,ha1,HQ-FW-B,ha1,Cat6,1000,,HA heartbeat primary
+C10,physical,HQ-FW-A,ha2,HQ-FW-B,ha2,Cat6,1000,,HA heartbeat secondary
+C11,physical,HQ-FW-A,x1,HQ-CORE-A,Eth1/1,SFP+ DAC,10000,"T10,20,30,40,50,60,70,90",FW A LACP inside aggregate; vPC peers
+C12,physical,HQ-FW-A,x2,HQ-CORE-B,Eth1/1,SFP+ DAC,10000,"T10,20,30,40,50,60,70,90",FW A LACP inside aggregate; vPC peers
+C13,physical,HQ-FW-B,x1,HQ-CORE-A,Eth1/4,SFP+ DAC,10000,"T10,20,30,40,50,60,70,90",FW B LACP inside aggregate; vPC peers
+C14,physical,HQ-FW-B,x2,HQ-CORE-B,Eth1/4,SFP+ DAC,10000,"T10,20,30,40,50,60,70,90",FW B LACP inside aggregate; vPC peers
+C15,physical,HQ-CORE-A,Eth1/49,HQ-CORE-B,Eth1/49,QSFP28 DAC,100000,"T10,20,30,40,50,60,70,90",vPC peer-link Po1
+C16,physical,HQ-CORE-A,Eth1/50,HQ-CORE-B,Eth1/50,QSFP28 DAC,100000,"T10,20,30,40,50,60,70,90",vPC peer-link Po1
+C17,physical,HQ-CORE-A,Eth1/48,HQ-CORE-B,Eth1/48,SFP28 DAC,25000,L3 10.255.0.0/30,vPC keepalive VRF; separate from peer link
+C18,physical,HQ-CORE-A,Eth1/2,HQ-ACCESS-A,Te1/1/1,SFP+ DAC,10000,"T10,20,30,40,50,60",Access LACP Po10 to vPC pair
+C19,physical,HQ-CORE-B,Eth1/2,HQ-ACCESS-A,Te1/1/2,SFP+ DAC,10000,"T10,20,30,40,50,60",Access LACP Po10 to vPC pair
+C20,physical,HQ-CORE-A,Eth1/3,HQ-ACCESS-B,Te1/1/1,SFP+ DAC,10000,"T10,20,30,40,50,60",Access LACP Po10 to vPC pair
+C21,physical,HQ-CORE-B,Eth1/3,HQ-ACCESS-B,Te1/1/2,SFP+ DAC,10000,"T10,20,30,40,50,60",Access LACP Po10 to vPC pair
+C22,physical,HQ-CORE-A,Eth1/15,HQ-ADMIN-01,RJ45,Cat6,1000,Access 10,Admin jump host; copper 1G SFP at Nexus
+C23,physical,HQ-ACCESS-A,Gi1/0/1,HQ-PC-01,RJ45,Cat6,1000,Access 20,Representative wired client
+C24,physical,HQ-ACCESS-A,Gi1/0/25,HQ-PHONE-01,LAN,Cat6,1000,Voice 30; data 20,PoE phone; voice tag by LLDP-MED
+C25,physical,HQ-ACCESS-B,Gi1/0/17,HQ-AP-01,GbE,Cat6,1000,"Native10; tagged40,50",PoE AP uplink
+C26,physical,HQ-ACCESS-B,Gi1/0/33,HQ-CAM-01,RJ45,Cat6,100,Access 60,PoE camera
+C27,physical,HQ-FW-A,port3,HQ-PROXY-01,Gb1,Cat6,1000,Access 80,DMZ reverse proxy
+C28,physical,HQ-CORE-A,Eth1/52,HQ-FABRIC-A,Eth1/51,QSFP28 DAC,100000,"T10,70,90",Fabric LACP uplink to core vPC
+C29,physical,HQ-CORE-B,Eth1/52,HQ-FABRIC-A,Eth1/52,QSFP28 DAC,100000,"T10,70,90",Fabric LACP uplink to core vPC
+C30,physical,HQ-CORE-A,Eth1/53,HQ-FABRIC-B,Eth1/51,QSFP28 DAC,100000,"T10,70,90",Fabric LACP uplink to core vPC
+C31,physical,HQ-CORE-B,Eth1/53,HQ-FABRIC-B,Eth1/52,QSFP28 DAC,100000,"T10,70,90",Fabric LACP uplink to core vPC
+C32,physical,HQ-FABRIC-A,Eth1/49,HQ-FABRIC-B,Eth1/49,QSFP28 DAC,100000,"T10,70,90,110,120",Fabric vPC peer-link Po1
+C33,physical,HQ-FABRIC-A,Eth1/50,HQ-FABRIC-B,Eth1/50,QSFP28 DAC,100000,"T10,70,90,110,120",Fabric vPC peer-link Po1
+C34,physical,HQ-FABRIC-A,Eth1/48,HQ-FABRIC-B,Eth1/48,SFP28 DAC,25000,L3 10.255.0.4/30,Fabric vPC keepalive VRF
+C35,physical,HQ-FABRIC-A,Eth1/5,HQ-HV-01,NIC1/P1,SFP28 DAC,25000,"T10,70 · active",Hypervisor management and VM traffic; vSwitch0 active independent trunk; no port-channel
+C36,physical,HQ-FABRIC-B,Eth1/5,HQ-HV-01,NIC1/P2,SFP28 DAC,25000,"T10,70 · standby",Hypervisor management and VM traffic; vSwitch0 standby independent trunk; no port-channel
+C37,physical,HQ-FABRIC-A,Eth1/6,HQ-HV-02,NIC1/P1,SFP28 DAC,25000,"T10,70 · active",Hypervisor management and VM traffic; vSwitch0 active independent trunk; no port-channel
+C38,physical,HQ-FABRIC-B,Eth1/6,HQ-HV-02,NIC1/P2,SFP28 DAC,25000,"T10,70 · standby",Hypervisor management and VM traffic; vSwitch0 standby independent trunk; no port-channel
+C39,physical,HQ-FABRIC-A,Eth1/11,HQ-HV-01,NIC2/P1,Cat6A,10000,Access 110,iSCSI MPIO; 10GBASE-T SFP at fabric
+C40,physical,HQ-FABRIC-B,Eth1/11,HQ-HV-01,NIC2/P2,Cat6A,10000,Access 120,iSCSI MPIO; 10GBASE-T SFP at fabric
+C41,physical,HQ-FABRIC-A,Eth1/12,HQ-HV-02,NIC2/P1,Cat6A,10000,Access 110,iSCSI MPIO; 10GBASE-T SFP at fabric
+C42,physical,HQ-FABRIC-B,Eth1/12,HQ-HV-02,NIC2/P2,Cat6A,10000,Access 120,iSCSI MPIO; 10GBASE-T SFP at fabric
+C43,physical,HQ-FABRIC-A,Eth1/10,HQ-SAN-01,LAN5,Cat6A,10000,Access 110,iSCSI path A; 10GBASE-T SFP at fabric
+C44,physical,HQ-FABRIC-B,Eth1/10,HQ-SAN-01,LAN6,Cat6A,10000,Access 120,iSCSI path B; 10GBASE-T SFP at fabric
+C45,physical,HQ-FABRIC-A,Eth1/14,HQ-SAN-01,LAN1,Cat6,1000,Access 10,SAN administration; copper 1G SFP at fabric
+C46,physical,HQ-FABRIC-A,Eth1/13,HQ-BACKUP-01,LAN5,Cat6A,10000,Access 90,Backup LACP bond across vPC; 10GBASE-T SFP
+C47,physical,HQ-FABRIC-B,Eth1/13,HQ-BACKUP-01,LAN6,Cat6A,10000,Access 90,Backup LACP bond across vPC; 10GBASE-T SFP
+C48,physical,BR-ISP,ether1,BR-FW,wan1,Cat6,1000,Routed 192.0.2.8/30,Branch local WAN handoff
+C49,physical,BR-FW,internal1,BR-ACCESS-01,Gi1/0/48,Cat6,1000,"Native10; tagged20,30,40,50,60",Branch gateway trunk
+C50,physical,BR-ACCESS-01,Gi1/0/1,BR-PC-01,RJ45,Cat6,1000,Access 20,Dispatch endpoint
+C51,physical,BR-ACCESS-01,Gi1/0/17,BR-AP-01,GbE,Cat6,1000,"Native10; tagged40,50,60",PoE warehouse AP
+C52,physical,BR-ACCESS-01,Gi1/0/25,BR-PHONE-01,LAN,Cat6,1000,Voice30; data20,PoE warehouse phone
+C53,physical,BR-ACCESS-01,Gi1/0/33,BR-PRINTER-01,RJ45,Cat6,1000,Access 60,Warehouse printer
+C54,physical,DR-ISP,ether1,DR-FW,wan1,Cat6,1000,Routed 192.0.2.16/30,DR local WAN handoff
+C55,physical,DR-FW,internal1,DR-SWITCH-01,ether1,Cat6,1000,"Native10; tagged20,30,90",DR gateway trunk
+C56,physical,DR-SWITCH-01,ether2,DR-APP-01,Gb1,Cat6,1000,Access 20,DR local access
+C57,physical,DR-SWITCH-01,ether3,DR-DB-01,Gb1,Cat6,1000,Access 30,DR local access
+C58,physical,DR-SWITCH-01,ether4,DR-VAULT-01,LAN1,Cat6,1000,Access 90,DR local access
+L01,logical,BR-AP-01,Aurora-IoT,BR-SCANNER-01,wlan0,Wi-Fi 5GHz,1000,SSID Aurora-IoT / VLAN60,"Wireless association, not a cable"
+L02,logical,DR-APP-01,postgres-repl,DR-DB-01,tcp5432,TCP 5432,1000,,Application database replication through DR firewall
+L03,logical,HQ-FW-A,ipsec-br,BR-FW,ipsec-hq,IPsec IKEv2,1000,L3 10.254.0.0/30,HQ/branch route: 10.40/16 to 10.50/16
+L04,logical,HQ-FW-A,ipsec-dr,DR-FW,ipsec-hq,IPsec IKEv2,1000,L3 10.254.0.4/30,HQ/DR route: 10.40/16 to 10.60/16
+L05,logical,REMOTE-01,ipsec-hq,HQ-FW-A,ipsec-remote,IPsec IKEv2 / MFA,1000,VPN pool 10.40.100.0/24,Remote access; outer peer 203.0.113.66
+L06,logical,HQ-BACKUP-01,ssh-client,DR-VAULT-01,ssh/tcp22,SSH rsync / TCP22,1000,,Encrypted offsite transfer over L04; retention policies at destination
+L07,logical,HQ-HV-01,vSwitch0/PG70,HQ-DC-01,vNIC0,Virtual switch / VMXNET3,N/A,Port group PG70 / VLAN70,Directory / DNS; preferred resolver; carried by physical NIC1 uplinks
+L08,logical,HQ-HV-02,vSwitch0/PG70,HQ-DC-02,vNIC0,Virtual switch / VMXNET3,N/A,Port group PG70 / VLAN70,Directory / DNS; secondary resolver; carried by physical NIC1 uplinks
+L09,logical,HQ-HV-01,vSwitch0/PG70,HQ-ERP-01,vNIC0,Virtual switch / VMXNET3,N/A,Port group PG70 / VLAN70,ERP / internal application; carried by physical NIC1 uplinks
+L10,logical,HQ-HV-02,vSwitch0/PG70,HQ-SIEM-01,vNIC0,Virtual switch / VMXNET3,N/A,Port group PG70 / VLAN70,Central logs / security monitoring; carried by physical NIC1 uplinks

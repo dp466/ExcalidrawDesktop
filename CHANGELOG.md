@@ -4,6 +4,13 @@ This changelog covers the ExcalidrawDesktop fork. Historical ExcalidrawZ release
 
 ## Unreleased
 
+### Local build 130
+
+- Added authenticated, loopback-only MCP transport, complete diagram and document commands, durable mutation receipts, and visible MCP activity.
+- Added packaged design, network, and electrical diagram plugins, editable examples, and UI style guidance.
+- Preserved asset extension metadata during document hydration and covered persistence and editor regressions.
+- Moved completed release products and their manifests to a machine-local cache outside the iCloud source checkout.
+
 ### Fork identity and distribution
 
 - Renamed the installed app and local data identity to ExcalidrawDesktop without replacing an installed upstream ExcalidrawZ app.

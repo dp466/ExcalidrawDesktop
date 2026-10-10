@@ -1,0 +1,15 @@
+{
+  "result": "PASS",
+  "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+  "tested_at": "2026-10-01T17:04:48.779324+00:00",
+  "start_and_subsequent_status": true,
+  "go_to_addressing_frame": true,
+  "addressing_slide_visibly_confirmed": true,
+  "stop_and_subsequent_status": false,
+  "page_count": 2,
+  "scene_revision": "u7cD6pcNCcH0LAEmL0PYU:15",
+  "element_count": 450,
+  "restart_status_verified": true,
+  "final_presenting": false,
+  "left_open_in_editor": true
+}

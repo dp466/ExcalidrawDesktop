@@ -1,0 +1,8 @@
+{
+  "result": "PASS",
+  "rendered_revision": "bHHesU4A13Eut0DwkNat1:1",
+  "current_revision": "bHHesU4A13Eut0DwkNat1:2",
+  "element_count": 1152,
+  "all_elements_identical_to_rendered_scene": true,
+  "view_only_change": "fitted first frame, then cleared selection"
+}

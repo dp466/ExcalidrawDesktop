@@ -1,0 +1,30 @@
+{
+  "portable_marketplace": {
+    "marketplaceName": "excalidraw-desktop-local",
+    "installedRoot": "/private/tmp/network-detail-work/portable-install/excalidraw-diagram-plugin",
+    "alreadyAdded": false
+  },
+  "portable_install": {
+    "pluginId": "excalidraw-design@excalidraw-desktop-local",
+    "name": "excalidraw-design",
+    "marketplaceName": "excalidraw-desktop-local",
+    "version": "0.2.0",
+    "installedPath": "/Users/dparadis/.codex/plugins/cache/excalidraw-desktop-local/excalidraw-design/0.2.0",
+    "authPolicy": "ON_USE"
+  },
+  "portable_cached_files_verified": true,
+  "restored_marketplace": {
+    "marketplaceName": "excalidraw-desktop-local",
+    "installedRoot": "/Users/dparadis/Library/Mobile Documents/com~apple~CloudDocs/code/1_Perso/swift/ExcalidrawDesktop",
+    "alreadyAdded": false
+  },
+  "final_install": {
+    "pluginId": "excalidraw-design@excalidraw-desktop-local",
+    "name": "excalidraw-design",
+    "marketplaceName": "excalidraw-desktop-local",
+    "version": "0.2.0",
+    "installedPath": "/Users/dparadis/.codex/plugins/cache/excalidraw-desktop-local/excalidraw-design/0.2.0",
+    "authPolicy": "ON_USE"
+  },
+  "result": "PASS"
+}

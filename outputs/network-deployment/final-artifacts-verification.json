@@ -1,0 +1,92 @@
+{
+  "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+  "revision": "u7cD6pcNCcH0LAEmL0PYU:15",
+  "checkpoint": {
+    "checkpoint_id": "716B1464-0FF1-4DBB-B682-8C9E67E1DDDC",
+    "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+    "persistence": "saved",
+    "revision": "u7cD6pcNCcH0LAEmL0PYU:15"
+  },
+  "exported_at": "2026-10-01T17:01:17.021416+00:00",
+  "previews": [
+    {
+      "frame_id": "topology-frame",
+      "path": "topology-frame-preview.png",
+      "revision": "u7cD6pcNCcH0LAEmL0PYU:15",
+      "size_bytes": 704110,
+      "sha256": "9edd293e49ff2ab01f892af43c15376b6c01ccdf10ebee1da0c605aaf88a3627"
+    },
+    {
+      "frame_id": "addressing-frame",
+      "path": "addressing-frame-preview.png",
+      "revision": "u7cD6pcNCcH0LAEmL0PYU:15",
+      "size_bytes": 286225,
+      "sha256": "a53e5bf45b2c0083bd35b554c1da69453f79fa63518f44ad10a0ee295e9e39b0"
+    }
+  ],
+  "exports": [
+    {
+      "format": "excalidraw",
+      "path": "aurora-network-deployment.excalidraw",
+      "size_bytes": 292569,
+      "sha256": "1f1b3b310db9ab4afb2495eaa944cd2ef2446c82048bb66c351be1d50eeca61d",
+      "revision": "u7cD6pcNCcH0LAEmL0PYU:15",
+      "persistence": {
+        "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+        "persistence": "saved",
+        "saved_at": "2026-10-01T17:01:17Z"
+      },
+      "element_count": 450,
+      "bound_connections": 39,
+      "font_families": [
+        5
+      ],
+      "groups": 31
+    },
+    {
+      "format": "png",
+      "path": "aurora-network-deployment.png",
+      "size_bytes": 2862933,
+      "sha256": "3e6a8f76ba907e35807eebef9c1c0fba23814f1aa5b8a65bb32087dbb5ffeb17",
+      "revision": "u7cD6pcNCcH0LAEmL0PYU:15",
+      "persistence": {
+        "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+        "persistence": "saved",
+        "saved_at": "2026-10-01T17:01:18Z"
+      },
+      "dimensions": [
+        6700,
+        6881
+      ]
+    },
+    {
+      "format": "svg",
+      "path": "aurora-network-deployment.svg",
+      "size_bytes": 359437,
+      "sha256": "f3cf99990f5fd282d343590052f68582e1c320b35926a57fb1e94781b0071161",
+      "revision": "u7cD6pcNCcH0LAEmL0PYU:15",
+      "persistence": {
+        "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+        "persistence": "saved",
+        "saved_at": "2026-10-01T17:01:19Z"
+      },
+      "width": "3350",
+      "height": "3440.5",
+      "editable_scene_metadata": true
+    },
+    {
+      "format": "pdf",
+      "path": "aurora-network-deployment.pdf",
+      "size_bytes": 107776,
+      "sha256": "3d8a6c0fd44da81a8449c896b1a5dbc007f430a02244a50e048f157231e0b288",
+      "revision": "u7cD6pcNCcH0LAEmL0PYU:15",
+      "persistence": {
+        "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+        "persistence": "saved",
+        "saved_at": "2026-10-01T17:01:20Z"
+      },
+      "valid_pdf_signature": true
+    }
+  ],
+  "result": "PASS"
+}

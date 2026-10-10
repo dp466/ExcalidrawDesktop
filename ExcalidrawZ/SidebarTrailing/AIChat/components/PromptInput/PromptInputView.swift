@@ -40,6 +40,8 @@ struct ExcalidrawChatInvocationContext: ChatInvocationContext, Sendable {
     var readCanvasTarget: ExcalidrawCoordinatorRegistry.CanvasTarget? = nil
     var selectedElementIDs: [String]? = nil
     var currentFileID: UUID? = nil
+    var currentDocumentID: String? = nil
+    var windowID: String? = nil
     var hasActiveFile: Bool = false
     var currentModelSupportsImageInput: Bool = true
     var isCurrentFileContextProtected: Bool = false
@@ -152,6 +154,8 @@ struct AIChatInvocationPlan: Sendable {
             readCanvasTarget: readCanvasTarget,
             selectedElementIDs: includesCurrentFileContext ? selectedElementIDs : nil,
             currentFileID: includesCurrentFileContext ? currentFileID : nil,
+            currentDocumentID: includesCurrentFileContext ? fileState.currentActiveFile?.id : nil,
+            windowID: ExcalidrawMCPAppBridge.shared.mcpWindowID(for: fileState),
             hasActiveFile: hasActiveFile,
             currentModelSupportsImageInput: supportsImageInput ?? model.supportsExcalidrawImageInput,
             isCurrentFileContextProtected: isCurrentFileContextProtected,

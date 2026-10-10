@@ -35,6 +35,9 @@ struct ExcalidrawServerLogger: Logging {
 
 class ExcalidrawServer {
     static var port: UInt16 {
+        // An installed app can remain open while XCTest serves its own bundled
+        // editor. Never let tests silently exercise an older app's assets.
+        if AppRuntime.isRunningTests { return 18497 }
         if ExcalidrawFeaturePolicy.isLocalMacOSFork { return 8497 }
 #if DEBUG
         return 8486

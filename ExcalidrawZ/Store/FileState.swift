@@ -678,6 +678,7 @@ final class FileState: ObservableObject {
         _ file: ActiveFile?,
         generation: Int
     ) async -> Bool {
+        guard !diagramAutomationInProgress || currentActiveFile == file else { return false }
         let file = if case .cloudStorageFile(let reference) = file {
             ActiveFile.cloudStorageFile(
                 CloudStorageDocumentStore.shared.resolvingCurrentIdentity(for: reference)
@@ -1119,6 +1120,21 @@ final class FileState: ObservableObject {
     @Published var collaboratingFilesState: [CollaborationFile : ExcalidrawCanvasView.LoadingState] = [:]
     @Published var collaborators: [CollaborationFile : [Collaborator]] = [:]
     @Published var isFinalizingActiveFileClose = false
+    private(set) var diagramAutomationInProgress = false
+
+    /// Keeps a captured document mounted through asynchronous command staging
+    /// and persistence. Canvas edits remain possible and are handled by CAS.
+    @MainActor
+    func beginDiagramAutomation(documentID: String) -> Bool {
+        guard currentActiveFile?.id == documentID, !diagramAutomationInProgress,
+              !isFinalizingActiveFileClose, !isPreparingTermination else { return false }
+        activeFileChangeGeneration += 1
+        diagramAutomationInProgress = true
+        return true
+    }
+
+    @MainActor
+    func endDiagramAutomation() { diagramAutomationInProgress = false }
 
     var activeCollaborationFileIsLoading: Bool {
         guard case .collaborationFile(let file) = currentActiveFile else {

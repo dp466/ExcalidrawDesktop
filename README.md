@@ -29,7 +29,7 @@ Requirements: an Apple Silicon Mac, Xcode 27 command-line tools, Node.js 24, and
 ./script/build_and_run.sh --verify
 ```
 
-Use `./script/build_release.sh` to build and install without launching. A successful release build installs `ExcalidrawDesktop.app` in `/Applications` and keeps the completed build product under `build/Release`. Quit the installed app normally before rebuilding so pending saves can finish.
+Use `./script/build_release.sh` to build and install without launching. A successful release build installs `ExcalidrawDesktop.app` in `/Applications` and keeps the completed build product under `~/Library/Caches/ExcalidrawDesktop/release/Release`. Quit the installed app normally before rebuilding so pending saves can finish.
 
 See [LOCAL-BUILD.md](LOCAL-BUILD.md) for source pairing, reproducible staging, cache controls, testing, and reinstall instructions. See [VALIDATION.md](VALIDATION.md) for the validation record and [AUTOSAVE.md](AUTOSAVE.md) for persistence and recovery details.
 

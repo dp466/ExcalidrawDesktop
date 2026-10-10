@@ -145,7 +145,7 @@ struct InsertMathTool: Tool {
     }
 }
 
-private struct InsertMathToolInput: Decodable {
+struct InsertMathToolInput: Decodable {
     enum Mode: String, Decodable {
         case formula
         case function

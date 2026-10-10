@@ -1,0 +1,348 @@
+{
+  "result": "PASS",
+  "tested_at_utc": "2026-10-01T18:22:24.465109+00:00",
+  "document": {
+    "id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+    "name": "AURORA Logistics — Fictional Network Deployment",
+    "window_id": "59D96D9D-F3D1-4863-8C4C-A1AE97380FA6"
+  },
+  "plugin": {
+    "name": "excalidraw-design",
+    "installed_version": "0.2.0",
+    "skills": [
+      "excalidraw-network",
+      "excalidraw-design"
+    ],
+    "installed_path": "/Users/dparadis/.codex/plugins/cache/excalidraw-desktop-local/excalidraw-design/0.2.0",
+    "fixture_sha256": "fb8199575abd9c2c15f8f0ac4310174035fcfa522ef433c5d4b76dd71f6cdd4b",
+    "resource_evidence": "installed-resources.json"
+  },
+  "mcp": {
+    "schema_version": "1",
+    "service_mode": "full",
+    "app_metadata": {
+      "name": "ExcalidrawZ",
+      "version": "2.4.4"
+    },
+    "operations_atomic": true,
+    "undo_steps_per_batch": 1,
+    "update_schema": {
+      "required": [
+        "patches"
+      ],
+      "shape": "patches: [{id, updates}]"
+    }
+  },
+  "observed_counts": [
+    {
+      "stage": "before",
+      "elements": 1152,
+      "unique_devices": 41,
+      "device_instances": 53,
+      "physical_links": 58,
+      "logical_links": 10,
+      "connection_labels": 68,
+      "fontFamily_5_texts": 466,
+      "all_texts": 466
+    },
+    {
+      "stage": "restored",
+      "elements": 1152,
+      "unique_devices": 41,
+      "device_instances": 53,
+      "physical_links": 58,
+      "logical_links": 10,
+      "connection_labels": 68,
+      "fontFamily_5_texts": 466,
+      "all_texts": 466
+    },
+    {
+      "stage": "export",
+      "elements": 1152,
+      "unique_devices": 41,
+      "device_instances": 53,
+      "physical_links": 58,
+      "logical_links": 10,
+      "connection_labels": 68,
+      "fontFamily_5_texts": 466,
+      "all_texts": 466
+    }
+  ],
+  "pagination": {
+    "before": {
+      "revision": "z8W4e5MVPS4Z-wwhuiD3T:2",
+      "pages": [
+        {
+          "offset": 0,
+          "count": 250,
+          "next_offset": 250
+        },
+        {
+          "offset": 250,
+          "count": 250,
+          "next_offset": 500
+        },
+        {
+          "offset": 500,
+          "count": 250,
+          "next_offset": 750
+        },
+        {
+          "offset": 750,
+          "count": 250,
+          "next_offset": 1000
+        },
+        {
+          "offset": 1000,
+          "count": 152,
+          "next_offset": null
+        }
+      ],
+      "complete_scene_file": "client-scene.json"
+    },
+    "edited": {
+      "revision": "z8W4e5MVPS4Z-wwhuiD3T:3",
+      "pages": [
+        {
+          "offset": 0,
+          "count": 250,
+          "next_offset": 250
+        },
+        {
+          "offset": 250,
+          "count": 250,
+          "next_offset": 500
+        },
+        {
+          "offset": 500,
+          "count": 250,
+          "next_offset": 750
+        },
+        {
+          "offset": 750,
+          "count": 250,
+          "next_offset": 1000
+        },
+        {
+          "offset": 1000,
+          "count": 152,
+          "next_offset": null
+        }
+      ],
+      "complete_scene_file": "client-scene-edited.json"
+    },
+    "restored": {
+      "revision": "z8W4e5MVPS4Z-wwhuiD3T:4",
+      "pages": [
+        {
+          "offset": 0,
+          "count": 250,
+          "next_offset": 250
+        },
+        {
+          "offset": 250,
+          "count": 250,
+          "next_offset": 500
+        },
+        {
+          "offset": 500,
+          "count": 250,
+          "next_offset": 750
+        },
+        {
+          "offset": 750,
+          "count": 250,
+          "next_offset": 1000
+        },
+        {
+          "offset": 1000,
+          "count": 152,
+          "next_offset": null
+        }
+      ],
+      "complete_scene_file": "client-scene-restored.json"
+    }
+  },
+  "audits": {
+    "before": {
+      "ok": true,
+      "errors": [],
+      "elements": 1152,
+      "device_instances": 53,
+      "labelled_connections": 68,
+      "revision": "z8W4e5MVPS4Z-wwhuiD3T:2"
+    },
+    "restored": {
+      "ok": true,
+      "errors": [],
+      "elements": 1152,
+      "device_instances": 53,
+      "labelled_connections": 68,
+      "revision": "z8W4e5MVPS4Z-wwhuiD3T:4"
+    },
+    "export": {
+      "ok": true,
+      "errors": [],
+      "elements": 1152,
+      "device_instances": 53,
+      "labelled_connections": 68,
+      "revision": null
+    }
+  },
+  "analyzer_findings": {
+    "before": [],
+    "restored": []
+  },
+  "native_renders": [
+    {
+      "frame_id": "hq-access",
+      "native_image": true,
+      "requested_max_dimension": 1800,
+      "actual_dimensions": [
+        1793,
+        972
+      ],
+      "revision": "z8W4e5MVPS4Z-wwhuiD3T:2",
+      "artifact": "/private/tmp/network-detail-work/hq-access.png",
+      "sha256": "487e134cb3cb015ac25780a8103bb256541f9c1d298aac5ae31180383a8b131a",
+      "visual_inspected": true,
+      "visual_findings": [
+        "Recognizable switches, laptop, phone, AP, camera, firewall and server icons; model/IP captions remain distinct.",
+        "SRC/DST cable labels are visible; routes use separate lanes and stay inside the frame."
+      ]
+    },
+    {
+      "frame_id": "hq-compute",
+      "native_image": true,
+      "requested_max_dimension": 1800,
+      "actual_dimensions": [
+        1794,
+        1167
+      ],
+      "revision": "z8W4e5MVPS4Z-wwhuiD3T:2",
+      "artifact": "/private/tmp/network-detail-work/hq-compute.png",
+      "sha256": "bb5828ba99ffe59af9554212eaca6a454da0012677d4e641eded2f38004fb04b",
+      "visual_inspected": true,
+      "visual_findings": [
+        "Distinct core/fabric switches, rack servers, storage cylinder and backup symbol; model/IP captions remain distinct.",
+        "Dense parallel uplink/storage paths and crossings are visible; cable labels remain separate with no obvious clipping. Small overview lettering requires zoom for detailed tracing."
+      ]
+    },
+    {
+      "frame_id": "hq-perimeter",
+      "native_image": true,
+      "requested_max_dimension": 1800,
+      "actual_dimensions": [
+        1792,
+        1419
+      ],
+      "revision": "z8W4e5MVPS4Z-wwhuiD3T:4",
+      "artifact": "/private/tmp/network-detail-work/hq-perimeter.png",
+      "sha256": "5f56aee93f1f3346e3390c6b09c6f4012daead35050db689a3223319b846c391",
+      "visual_inspected": true,
+      "visual_findings": [
+        "The original AURORA / HQ perimeter & core title is visible after undo; WAN, HA and core groups remain intact."
+      ]
+    }
+  ],
+  "title_test": {
+    "id": "hq-perimeter-title",
+    "original": "AURORA / HQ perimeter & core",
+    "temporary": "AURORA / temporary Codex network-skill verification",
+    "operation": {
+      "type": "update",
+      "patches": [
+        {
+          "id": "hq-perimeter-title",
+          "updates": {
+            "text": "AURORA / temporary Codex network-skill verification"
+          }
+        }
+      ]
+    },
+    "dry_run": {
+      "request_id": "aurora-title-dry-run-1790878766654-wtl7wof2l5g",
+      "persistence": "not_applied"
+    },
+    "edit": {
+      "expected_revision": "z8W4e5MVPS4Z-wwhuiD3T:2",
+      "request_id": "aurora-title-edit-1790878785492-ithq6eoplh",
+      "result_revision": "z8W4e5MVPS4Z-wwhuiD3T:3",
+      "changed_ids": [
+        "hq-perimeter-title"
+      ]
+    },
+    "undo": {
+      "expected_revision": "z8W4e5MVPS4Z-wwhuiD3T:3",
+      "request_id": "aurora-title-undo-1790878804235-94p4oxcqcg",
+      "operation": "undo",
+      "result_revision": "z8W4e5MVPS4Z-wwhuiD3T:4",
+      "restored_title": "AURORA / HQ perimeter & core"
+    },
+    "restoration": {
+      "exact_title_restored": true,
+      "exact_originalText_restored": true,
+      "ports_bindings_customData_identical": true,
+      "all_other_elements_exact": true,
+      "semantic_differences": []
+    },
+    "remaining_title_changes": [
+      "updated",
+      "version",
+      "versionNonce"
+    ]
+  },
+  "save": {
+    "request": {
+      "action": "save",
+      "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+      "window_id": "59D96D9D-F3D1-4863-8C4C-A1AE97380FA6",
+      "expected_revision": "z8W4e5MVPS4Z-wwhuiD3T:4",
+      "request_id": "aurora-explicit-save-1790878854570-mnfg9vool3"
+    },
+    "result": {
+      "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+      "persistence": "saved",
+      "saved_at": "2026-10-01T18:20:58Z"
+    }
+  },
+  "editable_export": {
+    "artifact": "/private/tmp/network-detail-work/AURORA Logistics — Fictional Network Deployment.excalidraw",
+    "source": "/var/folders/mv/c99ygcxn5gx215v2xsg827dm0000gn/T/ExcalidrawDesktop-MCP-Exports/4BD26F80-C954-4538-AA98-4BE5EB01E9AE-AURORA Logistics — Fictional Network Deployment.excalidraw",
+    "revision": "z8W4e5MVPS4Z-wwhuiD3T:4",
+    "persistence": "saved",
+    "bytes": 831178,
+    "sha256": "61eaa4f7c19d044fe954b1a05ff271929f4efe39437b18474d900c0219d9d146",
+    "elements_exactly_match_restored_read": true,
+    "json_envelope_keys": [
+      "elements",
+      "appState",
+      "files"
+    ],
+    "external_import_tested": false
+  },
+  "checks": {
+    "target_document_only": true,
+    "all_1152_elements_read_before_and_after": true,
+    "complete_pagination_verified_by_installed_helper": true,
+    "fixture_and_all_scene_audits_pass": true,
+    "required_counts_and_font_verified": true,
+    "both_endpoint_labels_and_136_reciprocal_bindings_intact": true,
+    "single_edit_only_changed_authorized_title": true,
+    "exact_title_restoration_and_other_1151_elements_unchanged": true,
+    "native_renders_inspected_within_1800": true,
+    "explicit_save_durable": true,
+    "editable_native_export_matches_restored_elements": true,
+    "final_live_title_and_target_restored": true
+  },
+  "evidence_files": [
+    "mcp-evidence.json",
+    "restoration-verification.json",
+    "export-verification.json",
+    "final-live-verification.json"
+  ],
+  "observations": [
+    "MCP app metadata reports the legacy name ExcalidrawZ.",
+    "Undo advances the revision and title bookkeeping fields; all title content, geometry, fonts and network data are restored."
+  ]
+}

@@ -32,6 +32,10 @@ for name, expected in original_manifest['bundled_editor_assets_sha256'].items():
     asset = args.app / 'Contents/Resources/excalidraw-latest' / name
     if not asset.is_file() or hashlib.sha256(asset.read_bytes()).hexdigest() != expected:
         raise SystemExit(f'Bundled editor integrity mismatch: {name}')
+plugin_archive = args.app / 'Contents/Resources/ExcalidrawDiagramPlugin.zip'
+if (not plugin_archive.is_file() or
+        hashlib.sha256(plugin_archive.read_bytes()).hexdigest() != original_manifest['diagram_plugin_sha256']):
+    raise SystemExit('Bundled diagram plugin integrity mismatch')
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
 app = out / 'ExcalidrawDesktop.app'

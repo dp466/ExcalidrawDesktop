@@ -1,0 +1,117 @@
+{
+  "result": "PASS",
+  "verified_at": "2026-10-01T18:32:03.245391+00:00",
+  "installed_app": "/Applications/ExcalidrawDesktop.app",
+  "editor_assets_checked": 469,
+  "native_binary_matches_release": true,
+  "editor_patch_matches_manifest": true,
+  "plugin": {
+    "version": "0.2.1",
+    "sha256": "b46d9d40a51839a00e744239d2f85aedcbcd534848a3ebdcb3327cb5f56e4ca9",
+    "native_export_matches": true,
+    "installed_source_files_checked": 18,
+    "relocated_compiler_pass": true,
+    "enabled_in_codex": true
+  },
+  "diagram": {
+    "ok": true,
+    "errors": [],
+    "elements": 1152,
+    "device_instances": 53,
+    "labelled_connections": 68,
+    "revision": "bHHesU4A13Eut0DwkNat1:2",
+    "saved": {
+      "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+      "persistence": "saved",
+      "saved_at": "2026-10-01T18:32:01Z"
+    },
+    "checkpoint_id": "D34BF9FC-8070-4FCB-8E4C-BE41365171CF",
+    "exports": [
+      {
+        "path": "aurora-detailed-network.excalidraw",
+        "sha256": "aa4dbd568026043c6ff3e670722b0897036485dc311aca8ef452a6f2090e9d46",
+        "bytes": 831448,
+        "revision": "bHHesU4A13Eut0DwkNat1:2"
+      },
+      {
+        "path": "aurora-detailed-network.svg",
+        "sha256": "e9ccdba6f8c4d08a59a417e19d382afd6e43440a5a2d1ffe0b955b9f2aa489a9",
+        "bytes": 896456,
+        "revision": "bHHesU4A13Eut0DwkNat1:2"
+      }
+    ],
+    "geometry": {
+      "ok": true,
+      "errors": [],
+      "devices": 41,
+      "physical_cables": 58,
+      "logical_links": 10,
+      "sheets": 8,
+      "elements": 1152,
+      "label_findings": [],
+      "route_findings": []
+    },
+    "verified_at": "2026-10-01T18:32:02.846055+00:00"
+  },
+  "artifacts": {
+    "03-hq-compute.png": {
+      "bytes": 889832,
+      "sha256": "316b9d0a401cbf1ac217c8d82f540af80f2dcb7af46f88a575de1e169cf4cad0"
+    },
+    "aurora-detailed-network.svg": {
+      "bytes": 896456,
+      "sha256": "e9ccdba6f8c4d08a59a417e19d382afd6e43440a5a2d1ffe0b955b9f2aa489a9"
+    },
+    "07-services.png": {
+      "bytes": 450576,
+      "sha256": "c5ea86fcd485dc468e7e4a77d67fce889a4998e5cc586d266d53f439384d0fb0"
+    },
+    "aurora-detailed-network.excalidraw": {
+      "bytes": 831448,
+      "sha256": "aa4dbd568026043c6ff3e670722b0897036485dc311aca8ef452a6f2090e9d46"
+    },
+    "aurora-detailed-network.pdf": {
+      "bytes": 3756331,
+      "sha256": "ff3079566fcef13d2ab83e82fc314ac2a97b92e710c4cca567c8d8714327292d"
+    },
+    "04-branch.png": {
+      "bytes": 561037,
+      "sha256": "4d59fe6fe5087151932ecfe3e32c2a6cc92bd98ff175df5f20ac6e6f451c4e5b"
+    },
+    "02-hq-access.png": {
+      "bytes": 680589,
+      "sha256": "77ae45cbebd5f29c01e4251f7b671f88936c32d002cbc81a1c0b827124142adf"
+    },
+    "05-dr.png": {
+      "bytes": 554885,
+      "sha256": "a93a51765679d42fcfb8273b31faba61b2cf6b4eec79a3c414100957c612a924"
+    },
+    "06-overlay.png": {
+      "bytes": 512687,
+      "sha256": "f3c7d3489301b984d111480b8e81471da320c00194d146834681ae616a8c5678"
+    },
+    "aurora-cable-schedule.csv": {
+      "bytes": 7988,
+      "sha256": "d1fa4bfc63974992a1a3a11403663187c0c21edd83bc17d1faf24880cd22e070"
+    },
+    "01-hq-perimeter.png": {
+      "bytes": 1016544,
+      "sha256": "3e7b082b806ce5c94b55172b51d1ca56f20ca7b9f802f06a456de3549cbc253a"
+    },
+    "08-addressing.png": {
+      "bytes": 606893,
+      "sha256": "a1e50cbcbdfe827e7542c89759b730448393c87251c1d2f9e00343c624918562"
+    }
+  },
+  "claude_live_acceptance": "pending login",
+  "pdf": "8-page raster companion from native frame renders; editable source separate",
+  "final_live_canvas": {
+    "result": "PASS",
+    "rendered_revision": "bHHesU4A13Eut0DwkNat1:1",
+    "current_revision": "bHHesU4A13Eut0DwkNat1:2",
+    "element_count": 1152,
+    "all_elements_identical_to_rendered_scene": true,
+    "view_only_change": "fitted first frame, then cleared selection",
+    "persistence": "saved"
+  }
+}

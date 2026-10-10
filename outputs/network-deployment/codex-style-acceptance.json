@@ -1,0 +1,231 @@
+{
+  "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+  "document_name": "AURORA Logistics — Fictional Network Deployment",
+  "revision": "N_5xywT0SQPQXyG2WtAz3:9",
+  "final_checkpoint": {
+    "checkpoint_id": "3C3E26CD-78F7-4028-A4A4-6E4AEC28CD10",
+    "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+    "persistence": "saved",
+    "revision": "N_5xywT0SQPQXyG2WtAz3:9"
+  },
+  "counts": {
+    "frame": 2,
+    "rectangle": 88,
+    "arrow": 39,
+    "text": 137,
+    "ellipse": 49,
+    "line": 135
+  },
+  "elements": 450,
+  "device_groups": 31,
+  "bound_connectors": 39,
+  "text_font_families": [
+    5
+  ],
+  "corrections": [
+    "Moved 60 addressing elements into addressing-frame",
+    "Wrapped standby firewall detail",
+    "Routed ISP A around the HQ subtitle",
+    "Separated DR cloud prefixes from the Québec branch VLAN column",
+    "Clarified logical HA/WAN abstraction"
+  ],
+  "render_inspection": {
+    "result": "PASS",
+    "scope": [
+      "topology-frame",
+      "addressing-frame",
+      "dense HQ region"
+    ],
+    "native_mcp_images": true
+  },
+  "analyzer": {
+    "result": "PASS",
+    "initial_findings": [
+      {
+        "code": "clipped_label",
+        "element_ids": [
+          "fw-standby-detail"
+        ]
+      }
+    ],
+    "final_findings": []
+  },
+  "undo": {
+    "initial_result": "FAIL",
+    "initial_observation": "One undo restored a stale pre-existing title in font family 2; all 39 connectors remained bound.",
+    "repeat_result": "PASS",
+    "repeat_observation": "After restoring the intended title, one title-only batch followed by one undo restored the entire pre-test scene.",
+    "verification": {
+      "revision": "N_5xywT0SQPQXyG2WtAz3:9",
+      "title": "AURORA Logistics",
+      "titleRestored": true,
+      "total": 450,
+      "boundArrows": 39,
+      "sceneRestored": true,
+      "changedElementIds": [],
+      "fonts": [
+        5
+      ]
+    }
+  },
+  "persistence_reopen": {
+    "result": "PASS",
+    "method": "Explicit native save, document_command open on the same document only, exact live readback",
+    "verification": {
+      "revision": "N_5xywT0SQPQXyG2WtAz3:9",
+      "total": 450,
+      "counts": {
+        "frame": 2,
+        "rectangle": 88,
+        "arrow": 39,
+        "text": 137,
+        "ellipse": 49,
+        "line": 135
+      },
+      "allElementsExactlyMatch": true,
+      "groups": 31,
+      "boundArrows": 39,
+      "badBindings": [],
+      "fonts": [
+        5
+      ],
+      "title": "AURORA Logistics",
+      "frameCounts": {
+        "topology-frame": 388,
+        "addressing-frame": 60
+      }
+    }
+  },
+  "exports": {
+    "result": "PASS",
+    "artifacts": [
+      {
+        "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+        "elementCount": 450,
+        "fileName": "AURORA Logistics — Fictional Network Deployment.excalidraw",
+        "format": "excalidraw",
+        "kind": "file",
+        "mimeType": "application/vnd.excalidraw+json",
+        "persistence": {
+          "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+          "persistence": "saved",
+          "saved_at": "2026-10-01T16:44:12Z"
+        },
+        "revision": "N_5xywT0SQPQXyG2WtAz3:9",
+        "sizeBytes": 292231,
+        "url": "file:///var/folders/mv/c99ygcxn5gx215v2xsg827dm0000gn/T/ExcalidrawDesktop-MCP-Exports/4A139BEB-E9E4-404B-B9A5-2357DBA13304-AURORA%20Logistics%20%E2%80%94%20Fictional%20Network%20Deployment.excalidraw"
+      },
+      {
+        "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+        "elementCount": 450,
+        "fileName": "AURORA Logistics — Fictional Network Deployment.png",
+        "format": "png",
+        "kind": "image",
+        "mimeType": "image/png",
+        "persistence": {
+          "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+          "persistence": "saved",
+          "saved_at": "2026-10-01T16:44:33Z"
+        },
+        "revision": "N_5xywT0SQPQXyG2WtAz3:9",
+        "sizeBytes": 2819409,
+        "url": "file:///var/folders/mv/c99ygcxn5gx215v2xsg827dm0000gn/T/ExcalidrawDesktop-MCP-Exports/9F8BD7BA-B7CA-4F68-A394-DCB40CB9C5AE-AURORA%20Logistics%20%E2%80%94%20Fictional%20Network%20Deployment.png"
+      },
+      {
+        "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+        "elementCount": 450,
+        "fileName": "AURORA Logistics — Fictional Network Deployment.excalidraw.svg",
+        "format": "svg",
+        "kind": "image",
+        "mimeType": "image/svg+xml",
+        "persistence": {
+          "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+          "persistence": "saved",
+          "saved_at": "2026-10-01T16:44:35Z"
+        },
+        "revision": "N_5xywT0SQPQXyG2WtAz3:9",
+        "sizeBytes": 359409,
+        "url": "file:///var/folders/mv/c99ygcxn5gx215v2xsg827dm0000gn/T/ExcalidrawDesktop-MCP-Exports/1EA96C30-D3BB-4011-8E46-B88527E36055-AURORA%20Logistics%20%E2%80%94%20Fictional%20Network%20Deployment.excalidraw.svg"
+      },
+      {
+        "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+        "elementCount": 450,
+        "fileName": "AURORA Logistics — Fictional Network Deployment.pdf",
+        "format": "pdf",
+        "kind": "pdf",
+        "mimeType": "application/pdf",
+        "persistence": {
+          "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+          "persistence": "saved",
+          "saved_at": "2026-10-01T16:44:36Z"
+        },
+        "revision": "N_5xywT0SQPQXyG2WtAz3:9",
+        "sizeBytes": 107776,
+        "url": "file:///var/folders/mv/c99ygcxn5gx215v2xsg827dm0000gn/T/ExcalidrawDesktop-MCP-Exports/69D1A38A-AA30-4897-B256-C506E4952667-AURORA%20Logistics%20%E2%80%94%20Fictional%20Network%20Deployment.pdf"
+      }
+    ],
+    "file_checks": [
+      {
+        "format": "excalidraw",
+        "path": "/var/folders/mv/c99ygcxn5gx215v2xsg827dm0000gn/T/ExcalidrawDesktop-MCP-Exports/4A139BEB-E9E4-404B-B9A5-2357DBA13304-AURORA Logistics — Fictional Network Deployment.excalidraw",
+        "exists": true,
+        "size_bytes": 292231,
+        "reported_size_matches": true,
+        "valid_json": true,
+        "scene_type": null,
+        "counts": {
+          "frame": 2,
+          "rectangle": 88,
+          "arrow": 39,
+          "text": 137,
+          "ellipse": 49,
+          "line": 135
+        },
+        "bound_arrows": 39,
+        "font_families": [
+          5
+        ],
+        "groups": 31,
+        "title": "AURORA Logistics"
+      },
+      {
+        "format": "png",
+        "path": "/var/folders/mv/c99ygcxn5gx215v2xsg827dm0000gn/T/ExcalidrawDesktop-MCP-Exports/9F8BD7BA-B7CA-4F68-A394-DCB40CB9C5AE-AURORA Logistics — Fictional Network Deployment.png",
+        "exists": true,
+        "size_bytes": 2819409,
+        "reported_size_matches": true,
+        "valid_signature": true,
+        "dimensions": [
+          6700,
+          6881
+        ]
+      },
+      {
+        "format": "svg",
+        "path": "/var/folders/mv/c99ygcxn5gx215v2xsg827dm0000gn/T/ExcalidrawDesktop-MCP-Exports/1EA96C30-D3BB-4011-8E46-B88527E36055-AURORA Logistics — Fictional Network Deployment.excalidraw.svg",
+        "exists": true,
+        "size_bytes": 359409,
+        "reported_size_matches": true,
+        "valid_xml": true,
+        "dimensions": {
+          "width": "3350",
+          "height": "3440.5",
+          "viewBox": "0 0 3350 3440.5"
+        },
+        "has_scene_metadata": true
+      },
+      {
+        "format": "pdf",
+        "path": "/var/folders/mv/c99ygcxn5gx215v2xsg827dm0000gn/T/ExcalidrawDesktop-MCP-Exports/69D1A38A-AA30-4897-B256-C506E4952667-AURORA Logistics — Fictional Network Deployment.pdf",
+        "exists": true,
+        "size_bytes": 107776,
+        "reported_size_matches": true,
+        "valid_signature": true,
+        "has_eof": true,
+        "page_objects": 1
+      }
+    ]
+  },
+  "left_open": true,
+  "other_documents_mutated": false
+}

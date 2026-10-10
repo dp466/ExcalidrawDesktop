@@ -1,0 +1,32 @@
+{
+  "result": "PASS",
+  "steps": [
+    {
+      "undo_elements": 874,
+      "redo_audit": {
+        "ok": true,
+        "errors": [],
+        "elements": 1152,
+        "device_instances": 53,
+        "labelled_connections": 68,
+        "revision": "u7cD6pcNCcH0LAEmL0PYU:20"
+      },
+      "verified_in_prior_run": true
+    },
+    {
+      "checkpoint_restore_audit": {
+        "ok": true,
+        "errors": [],
+        "elements": 1152,
+        "device_instances": 53,
+        "labelled_connections": 68,
+        "revision": "u7cD6pcNCcH0LAEmL0PYU:22"
+      },
+      "save": {
+        "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+        "persistence": "saved",
+        "saved_at": "2026-10-01T18:08:57Z"
+      }
+    }
+  ]
+}

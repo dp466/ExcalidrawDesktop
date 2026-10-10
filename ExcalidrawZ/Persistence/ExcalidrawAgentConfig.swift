@@ -45,6 +45,7 @@ enum ExcalidrawAgentConfig {
         "calculator",
         "datetime",
         "adjust_elements",
+        "diagram_command",
         "navigate_canvas",
         "set_canvas_preferences",
         "rename_file",
@@ -163,6 +164,7 @@ enum ExcalidrawAgentConfig {
     /// Keeping a pair around it stays consistent with every other
     /// canvas mutation.
     static let canvasModifyingToolNames: Set<String> = [
+        "diagram_command",
         "insert_math",
         "adjust_elements",
         "add_library_item_to_canvas",

@@ -1,0 +1,51 @@
+{
+  "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+  "installed_app": "/Applications/ExcalidrawDesktop.app",
+  "tested_at": "2026-10-01T17:00:20.501636+00:00",
+  "checks": {
+    "restart_persistence": {
+      "result": "PASS",
+      "element_count": 450,
+      "bound_connectors": 39,
+      "font_families": [
+        5
+      ]
+    },
+    "same_id_import_undo": {
+      "result": "PASS",
+      "previous_version": 16,
+      "imported_version": 17,
+      "first_undo_restored_import": true,
+      "second_undo_restored_full_original_scene": true
+    },
+    "measured_text_wrap": {
+      "result": "PASS",
+      "font_family": 5,
+      "line_count": 11,
+      "height": 275,
+      "original_text_preserved": true,
+      "undo_restored_full_scene": true
+    },
+    "final_analysis": {
+      "result": "PASS",
+      "findings": []
+    },
+    "final_save": {
+      "result": "PASS",
+      "response": {
+        "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+        "persistence": "saved",
+        "saved_at": "2026-10-01T17:00:25Z"
+      }
+    }
+  },
+  "checkpoint_before_test": {
+    "checkpoint_id": "C4364D12-3124-48B8-B0D2-DE4361C84FA2",
+    "document_id": "03126433-D492-4AEB-9E3D-CDA021FD9214",
+    "persistence": "saved",
+    "revision": "u7cD6pcNCcH0LAEmL0PYU:9"
+  },
+  "revision": "u7cD6pcNCcH0LAEmL0PYU:15",
+  "element_count": 450,
+  "result": "PASS"
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Excalidraw Network"
+  short_description: "Detailed network diagrams with models, IPs and ports"
+  default_prompt: "Use $excalidraw-network to create a detailed editable network deployment with every device model and IP, both cable ports, and Excalifont typography."
+policy:
+  allow_implicit_invocation: true
