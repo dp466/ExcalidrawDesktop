@@ -4,3 +4,5 @@
 *.png binary
 *.icns binary
 *.ico binary
+# CSV exports use CRLF; retain those bytes and allow readable text diffs.
+*.csv -text diff whitespace=cr-at-eol
