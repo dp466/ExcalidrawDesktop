@@ -1,7 +1,30 @@
 import XCTest
+#if os(macOS)
+import AppKit
+#endif
 @testable import ExcalidrawZ
 
 final class LocalFeaturePolicyTests: XCTestCase {
+    func testLocalForkBundleUsesDesktopNameForMacOS() {
+#if os(macOS) && !APP_STORE
+        XCTAssertEqual(Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String, "ExcalidrawDesktop")
+        XCTAssertEqual(Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String, "ExcalidrawDesktop")
+        XCTAssertEqual(NSRunningApplication.current.localizedName, "ExcalidrawDesktop")
+#endif
+    }
+
+    func testWhatsNewBrandingInEveryBundledLocalization() throws {
+        XCTAssertGreaterThanOrEqual(Bundle.main.localizations.count, 18)
+        for language in Bundle.main.localizations where language != "Base" {
+            let path = try XCTUnwrap(Bundle.main.path(forResource: language, ofType: "lproj"))
+            let localizedBundle = try XCTUnwrap(Bundle(path: path))
+            for key in ["whatsNewTitle", "whatsNewAIForExcalidrawZTitle"] {
+                let title = localizedBundle.localizedString(forKey: key, value: nil, table: nil)
+                XCTAssertTrue(title.contains("ExcalidrawDesktop"), "Incorrect branding for \(key) in \(language): \(title)")
+            }
+        }
+    }
+
     func testLocalMacForkKeepsLocalFeaturesWithoutSubscription() {
 #if os(macOS) && !APP_STORE
         XCTAssertTrue(ExcalidrawFeaturePolicy.isLocalMacOSFork)

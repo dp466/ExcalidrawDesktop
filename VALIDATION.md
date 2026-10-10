@@ -1,5 +1,34 @@
 # Fork validation
 
+## Build 131: Dock name and What's New branding
+
+- The local fork's Debug and Release product name is now `ExcalidrawDesktop`.
+  Xcode 27 ignored both a source-plist `CFBundleName` and an
+  `INFOPLIST_KEY_CFBundleName` override while the product name remained
+  `ExcalidrawZ`; the final change fixes the product name instead. The internal
+  Swift module, executable, and build-output paths stay compatible with the
+  existing installer and test host.
+- A Release build on aLaptop (macOS 27.0.1, Xcode 27.0) passed **7 focused XCTest
+  cases**. The built bundle reports `ExcalidrawDesktop` for both `CFBundleName`
+  and `CFBundleDisplayName`; `NSRunningApplication.current.localizedName` also
+  reports `ExcalidrawDesktop`.
+- All 18 bundled languages pass the What's New title checks. A source comparison
+  verifies that the localization edit changes only branding in 15 What's New
+  keys (270 translated values).
+- The actual SwiftUI What's New view rendered successfully in a disposable window
+  behind the foreground app. Its captured preview was visually checked: the
+  heading, logo and cover name show ExcalidrawDesktop. Automatic presentation,
+  dismissal tracking and the Help notification handler are unchanged.
+- The previously built editor's 469 asset hashes, editor patch and Swift lockfile
+  matched this checkout before reusing those unchanged assets. No dependencies
+  or embedded-editor code were upgraded.
+- The two cable-schedule CSV changes preserve CRLF bytes; normalized CSV contents
+  match their prior committed contents. Whitespace checks pass.
+- Evidence on aLaptop: `/private/tmp/excalidraw-branding-131-tests-verified.log`
+  and `/private/tmp/excalidraw-branding-131-whatsnew.png`. This is build and runtime
+  validation in temporary output; installed Applications copies, other Macs and
+  downloadable binaries were not updated during this change.
+
 The supported validation target is an Apple Silicon Mac running macOS 27 with Xcode
 27, using the local Release configuration. This record separates automated checks
 from installed-app observations. It is not a notarization, App Store, or all-platform

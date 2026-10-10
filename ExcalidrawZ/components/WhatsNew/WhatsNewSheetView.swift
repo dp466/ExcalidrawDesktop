@@ -417,6 +417,20 @@ struct WhatsNewView: View {
 
     @ViewBuilder
     private func whatsNewCoverArtwork() -> some View {
+#if os(macOS)
+        // The upstream screenshot has its old app name baked into the pixels.
+        VStack(spacing: 20) {
+            Image("ExcalidrawLogoMark")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 100, height: 100)
+                .foregroundStyle(Color.accentColor)
+            Text("ExcalidrawDesktop")
+                .font(.largeTitle.weight(.semibold))
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 340)
+#else
         Image("AI Cover")
             .resizable()
             .scaledToFill()
@@ -462,6 +476,7 @@ struct WhatsNewView: View {
                     Color.black
                 }
             }
+#endif
     }
 
     @ViewBuilder

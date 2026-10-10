@@ -6,6 +6,25 @@ import AppKit
 
 @MainActor
 final class AppWindowBindingTests: XCTestCase {
+    func testWhatsNewViewRendersDesktopBranding() async throws {
+        let host = NSHostingView(rootView: WhatsNewView(showContinue: false))
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 720, height: 780),
+            styleMask: [.titled], backing: .buffered, defer: false
+        )
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+        window.contentView = host
+        window.orderBack(nil)
+        try await Task.sleep(nanoseconds: 300_000_000)
+        host.layoutSubtreeIfNeeded()
+        let image = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: image)
+        let png = try XCTUnwrap(image.representation(using: .png, properties: [:]))
+        XCTAssertGreaterThan(png.count, 1_000)
+        try png.write(to: URL(fileURLWithPath: "/private/tmp/excalidraw-branding-131-whatsnew.png"))
+    }
+
     func testHostingWindowIsResolvedWithoutOSVersionAllowlist() async throws {
         var observed: NSWindow?
         let binding = Binding<NSWindow?>(get: { observed }, set: { observed = $0 })

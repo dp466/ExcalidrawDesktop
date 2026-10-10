@@ -4,6 +4,13 @@ This changelog covers the ExcalidrawDesktop fork. Historical ExcalidrawZ release
 
 ## Unreleased
 
+### Local build 131
+
+- Fixed the macOS bundle name so the running app identifies as ExcalidrawDesktop in the Dock.
+- Rebranded What's New titles and feature text in all 18 languages, and replaced the macOS cover screenshot that contained the old name with the fork's logo and name.
+- Kept the automatic What's New pop-up and its Help menu entry.
+- Preserved CRLF line endings in the two cable-schedule CSV exports.
+
 ### Local build 130
 
 - Added authenticated, loopback-only MCP transport, complete diagram and document commands, durable mutation receipts, and visible MCP activity.
